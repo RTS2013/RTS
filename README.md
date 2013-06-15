@@ -51,5 +51,5 @@ Becoming knowledgeable in the area of mutation will grant you:
 
 Learning the art of diplomacy will give you the ability to:
   * Persuade others to follow you in your quest for survival.
-  * Inspire those around you to great acts of courage when all hope seems to fade.
-  * Drive others to further your goals, better themselves, or to get things done.
+  * Inspire those around you to great acts of courage and determination.
+  * Drive others to further your goals, better themselves, or to just get things done.
