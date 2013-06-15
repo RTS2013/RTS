@@ -8,8 +8,11 @@ your foes.  Once all opposition is defeated the world is yours for the taking.
 Each player starts in a tiny lab with only one robo-minion.  The player has only limited options available at this point:
 
   1) build another helper robot
+  
   2) research a creature
+  
   3) send the robo-minion scouting instead of build a robot?
+  
   4) maybe you start with one robo-builder?
   
   either way......
@@ -29,6 +32,8 @@ You have two paths of research available in the begining:
   When researching Robots you harvest the usual resources, metal, fuel, etc...
   When you use genetic research you have to have "food" in order to feed your minions.
   Fuel and Food act the same.
+  
+  ==========================================================================================
   
   
   
