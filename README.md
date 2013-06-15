@@ -28,7 +28,9 @@ You have two paths of research available in the begining:
   
   When researching Robots you harvest the usual resources, metal, fuel, etc...
   When you use genetic research you have to have "food" in order to feed your minions.
-  Fuel and Food act the same
+  Fuel and Food act the same.
+  
+  
   
   
   
