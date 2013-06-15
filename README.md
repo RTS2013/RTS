@@ -41,7 +41,7 @@ give them hope for a new future, or snuff out their lives for your own gain.
 
 Should you choose to improve in automation, you will receive:
   * Advanced food production, weapons manufacturing, and armor forging.
-  * Killer robots to assert you will.
+  * Killer robots to assert your will.
   * Automated turrets to defend your goods.
 
 Becoming knowledgeable in the area of mutation will grant you:
