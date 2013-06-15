@@ -35,7 +35,7 @@ You have two paths of research available in the begining:
   
   ==========================================================================================
   
-You're a solitary man with the determination to survive in this post apocalyptic world. 
+You're a lone human with the determination to survive in a post apocalyptic world. 
 Using automation, mutation, and diplomacy, you can bend the populace to your will,
 give them hope for a new future, or snuff out their lives for your own gain.
 
