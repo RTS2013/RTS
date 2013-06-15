@@ -35,11 +35,21 @@ You have two paths of research available in the begining:
   
   ==========================================================================================
   
-  
-  
-  
-  
-  
-  
-  
+You're a solitary man with the determination to survive in this post apocalyptic world. 
+Using automation, mutation, and diplomacy, you can bend the populace to your will,
+give them hope for a new future, or snuff out their lives for your own gain.
 
+Should you choose to improve in automation, you will receive:
+  * Advanced food production, weapons manufacturing, and armor forging.
+  * Killer robots to assert you will.
+  * Automated turrets to defend your goods.
+
+Becoming knowledgeable in the area of mutation will grant you:
+  * Super soldiers capable of withstanding blasts that would kill a man thrice over.
+  * Mutant freaks that can spit acid, see in the dark, and camouflage themselves.
+  * Resistance to hot, cold, and a reduced need for nutrition/medicine.
+
+Learning the art of diplomacy will give you the ability to:
+  * Persuade others to follow you in your quest for survival.
+  * Inspire those around you to great acts of courage when all hope seems to fade.
+  * Drive others to further your goals, better themselves, or to get things done.
