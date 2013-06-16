@@ -32,6 +32,30 @@ You have two paths of research available in the begining:
   When researching Robots you harvest the usual resources, metal, fuel, etc...
   When you use genetic research you have to have "food" in order to feed your minions.
   Fuel and Food act the same.
+  <><><><><><><><><><><><><><><><>
+  Change of plans 
+  <><><><><><><><><><><><><><><><>
+  
+Restart:
+
+Surviving scientist on a planet that just defended itself against a technologically advanced alien race.
+
+This gives us our 3 recources:
+  *  Alien Tech
+  *  Pre-war Tech
+  *  Weapons/Ammo (Arms)
+
+Mutant path:
+  *  Alien Tech
+  *  Pre-war Tech
+
+Robot path:
+  *  Alien Tech
+  *  Weapons
+
+Human path:
+  *  Weapons
+  *  Pre-war Tech
   
   ==========================================================================================
   
@@ -53,3 +77,4 @@ Learning the art of diplomacy will give you the ability to:
   * Persuade others to follow you in your quest for survival.
   * Inspire those around you to great acts of courage and determination.
   * Drive others to further your goals, better themselves, or to just get things done.
+
