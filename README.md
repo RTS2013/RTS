@@ -39,7 +39,7 @@ You have two paths of research available in the begining:
   
 Restart:
 
-Surviving scientist on a planet that just defended itself against a technologically advanced alien race.
+Surviving scientist on a planet that just defended itself against a technologically advanced alien invasion.
 
 This gives us our 3 recources:
   *  Alien Tech
