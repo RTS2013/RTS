@@ -32,6 +32,7 @@ You have two paths of research available in the begining:
   When researching Robots you harvest the usual resources, metal, fuel, etc...
   When you use genetic research you have to have "food" in order to feed your minions.
   Fuel and Food act the same.
+  
   <><><><><><><><><><><><><><><><>
   Change of plans 
   <><><><><><><><><><><><><><><><>
@@ -57,6 +58,18 @@ Human path:
   *  Weapons
   *  Pre-war Tech
   
+Map characteristics:
+  *  Procedurally generated
+  *  Day/Night cycle
+  *  Night cycle spawns "enemies"
+  *  Night will be bad for Humans; reduced visability, slower movement? etc...
+  *  Day will be bad for Mutants;  reduced visability, more damage? etc...
+  *  
+  *  only bi-level ?
+  *  water ?
+  *  do different terrains spawn different "enemies"; 
+     does a map with no dessert fail to produce "enemies" w/venom? 
+
   ==========================================================================================
   
 You're a lone human with the determination to survive in a post apocalyptic world. 
