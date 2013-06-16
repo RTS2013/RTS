@@ -46,13 +46,21 @@ This gives us our 3 recources:
   *  Pre-war Tech
   *  Weapons/Ammo (Arms)
 
+Resource harvesting:
+  *  Like "chests" - Towns / Ruins / (caves?) are "scavanged" and (random?) resources pop out.
+                     *  there are two ways this can play out
+                     *  1)  regular pillaging of the same towns as they are "replenished" (caves would make this easy)
+                     *  2)  scavanging results in HUGE payoffs but only rarely and plots DON'T replenish
+                            This way would play out better if the resources weren't random but HUGE single 
+                            resource plots that a player could decide to bypass instead of "waisting" there time. 
+
 Mutant path:
-  *  Alien Tech
-  *  Pre-war Tech
+  *  Alien Tech  
+  *  Pre-war Tech  (or weapons?)
 
 Robot path:
   *  Alien Tech
-  *  Weapons
+  *  Weapons       (or pre-war tech?)
 
 Human path:
   *  Weapons
@@ -66,11 +74,11 @@ Map characteristics:
   *  Day will be bad for Mutants;  reduced visability, more damage? etc...
   *  Robots might overheat during the day and spend too much power at night (cuz they're solar and THE STRONGEST)
   *  
-  *  what about a 4 part day cycle?  day = bad for mutant, night = bad for humans, dawn / dusk = even odds
-  *  only bi-level ?
+  *  what about a 4 part day cycle?      day = bad for mutant, night = bad for humans, dawn / dusk = even odds
+  *  only one level (just barriers)? or bi-level (with ramps?)?
   *  water ?
   *  do different terrains spawn different "enemies"; 
-     does a map with no dessert fail to produce "enemies" w/venom? 
+     does a map with no desert fail to produce "enemies" w/venom? 
 
 Avatar: Yes
   *  The robot upgrading could depend on it as the "final piece" to teching-up (the brain-throne idea)
@@ -79,6 +87,10 @@ Avatar: Yes
 
 Avatat: No
   *  What is there to say?
+
+About Nomad-style play:
+  *  instead of using the lab you start in you decide to scavange it 
+  
 
   ==========================================================================================
   
