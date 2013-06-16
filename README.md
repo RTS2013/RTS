@@ -47,7 +47,8 @@ This gives us our 3 recources:
   *  Weapons/Ammo (Arms)
 
 Resource harvesting:
-  *  Like "chests" - Towns / Ruins / (caves?) are "scavanged" and (random?) resources pop out.
+  *  Like "chests" - Towns / Ruins / (caves?) are "scavanged" and (random?) resources pop out
+  
                      *  there are two ways this can play out
                      *  1)  regular pillaging of the same towns as they are "replenished" (caves would make this easy)
                      *  2)  scavanging results in HUGE payoffs but only rarely and plots DON'T replenish
