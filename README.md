@@ -64,7 +64,9 @@ Map characteristics:
   *  Night cycle spawns "enemies"
   *  Night will be bad for Humans; reduced visability, slower movement? etc...
   *  Day will be bad for Mutants;  reduced visability, more damage? etc...
+  *  Robots might overheat during the day and spend too much power at night (cuz they're solar and THE STRONGEST)
   *  
+  *  what about a 4 part day cycle?  day = bad for mutant, night = bad for humans, dawn / dusk = even odds
   *  only bi-level ?
   *  water ?
   *  do different terrains spawn different "enemies"; 
