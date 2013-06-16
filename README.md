@@ -70,6 +70,14 @@ Map characteristics:
   *  do different terrains spawn different "enemies"; 
      does a map with no dessert fail to produce "enemies" w/venom? 
 
+Avatar: Yes
+  *  The robot upgrading could depend on it as the "final piece" to teching-up (the brain-throne idea)
+  *  The mutants would give the ability to pull a "Mr. Hyde" / Berserker rage
+  *  The humans would get shafted on the avatar upgrading unless they had some kind of "moral" bonus.
+
+Avatat: No
+  *  What is there to say?
+
   ==========================================================================================
   
 You're a lone human with the determination to survive in a post apocalyptic world. 
