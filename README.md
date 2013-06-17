@@ -90,11 +90,11 @@ Avatat: No
   *  What is there to say?
 
 About Nomad-style play:
-  *  instead of using the lab you start in you decide to scavange it
+  *  instead of using the lab you start in you decide to scavange it (this would make your avatar mad buff so you could last the night solo)
   *  your focus is solely on attack
   *  your units would be the buffest in the game (I'm thinking 25-35 maxed out nomads could win the game)
   *  "all" your resources would be spent on converting tech into weapons
-  *  even if you used alien tech or pre-war tech you'd pretty much just make weapons with it (with a few exceptions)
+  *  even if you used alien tech or pre-war tech you'd pretty much just make weapons with it (with a few exceptions; guard dogs/elec fences)
 
 People: recruit only (If you never "made" humans)
   *  People would be an incredible resource
