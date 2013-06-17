@@ -90,8 +90,22 @@ Avatat: No
   *  What is there to say?
 
 About Nomad-style play:
-  *  instead of using the lab you start in you decide to scavange it 
-  
+  *  instead of using the lab you start in you decide to scavange it
+  *  your focus is solely on attack
+  *  your units would be the buffest in the game (I'm thinking 25-35 maxed out nomads could win the game)
+  *  "all" your resources would be spent on converting tech into weapons
+  *  even if you used alien tech or pre-war tech you'd pretty much just make weapons with it (with a few exceptions)
+
+People: recruit only (If you never "made" humans)
+  *  People would be an incredible resource
+  *  As you recruited more humans you would spend resources "outfitting" individuals instead of making new higher level units
+  *  They would need to regenerate so that when they retreated they would eventually recover (I wanted this to take "food"?)
+
+People: with creation ("making" humans)
+  *  Humans would be regular units
+  *  They would need to "spawn" from some kind of "recruiting" structure?
+  *  People COULD just wander around everywhere outside and when they saw you they would just join you (if you had humans)
+  *  Robots and mutants have to "catch" humans but NPC humans are drawn to other humans
 
   ==========================================================================================
   
