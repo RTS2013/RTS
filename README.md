@@ -103,9 +103,9 @@ People: recruit only (If you never "made" humans)
 
 People: with creation ("making" humans)
   *  Humans would be regular units
-  *  They would need to "spawn" from some kind of "recruiting" structure?
+  *  They would need to "spawn" from some kind of "recruiting" structure or beacan?
   *  People COULD just wander around everywhere outside and when they saw you they would just join you (if you had humans)
-  *  Robots and mutants have to "catch" humans but NPC humans are drawn to other humans
+  *  Robots and mutants would have to "catch" humans but NPC humans are drawn to other humans (hum > robo+mut = join freely)
 
   ==========================================================================================
   
