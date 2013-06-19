@@ -1,4 +1,4 @@
-You start with as one human in a post apocalyptic world. 
+You start as one human in a post apocalyptic world. 
 You can choose to either be known by your reputation, your knowledge in gene splicing, or your designs in robotics.
 You have a power cell and some equipment that you can use to run either a robot, a gene splicer, or a plasma rifle.
 
