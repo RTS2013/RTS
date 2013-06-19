@@ -1,9 +1,9 @@
-You start with as one human in a post apocalyptic world. You can either know how to make advanced robotics, splice genes, or have the leadership skills to attract others. You have stumbled upon a lab with some technology you can scavenge. You have the resources to power either a robot, a gene splicing machine, or a plasma rifle. With your newfound gadget, it's time to round up more resources. The mad scientist would use others and their materials to fuel his machinations. Poor victims would be turned into monsters under the scientists control. Other may just turn their victims into fuel for their robots. A great leader would inspire others to follow. The leader would equip a small band of survivalists with the tools they need to face the horrors of this world.
+You start with as one human in a post apocalyptic world. You can choose to either be known by your reputation, your knowledge in gene splicing, or your designs in robotics.
 
 Each path will require the following resources:
-  * Robots = Metal + Software + Energy
+  * Robotics = Metal + Software + Energy
   * Survivors = Metal + Biomass + Energy
-  * Mutants = Metal + Software + Biomass
+  * Mutantions = Metal + Biomass + Software
   
 Robot Strengths:
   * Fast producers.
