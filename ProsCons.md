@@ -5,7 +5,7 @@ You have a power cell and some equipment that you can use to run either a robot,
 Each path will require the following resources:
   * Robotics = Metal + Software + Energy
   * Survivors = Metal + Biomass + Energy
-  * Mutantions = Metal + Biomass + Software
+  * Mutations = Metal + Biomass + Software
   
 Robot Strengths:
   * Fast producers.
