@@ -16,6 +16,8 @@ Towns / Ruins, Crash sites and Military dropspots are "scavanged" for the differ
   * This way would play out better if the resources were single resource plots that a player could decide 
     to bypass instead of "waisting" there time. 
 
+  * Maybe you can't tell from looking at a resource what it is.  You have to do a "test mine".  "does this suck"???
+
 Mutant path:
   
   * METAL
@@ -42,9 +44,12 @@ Map characteristics:
   * Night will be bad for Humans; reduced visability, slower movement? etc...
   * Day will be bad for Mutants; reduced visability, more damage? etc...
   * Robots might overheat during the day and spend too much power at night (cuz they're solar and THE STRONGEST)
-    what about a 4 part day cycle? day = bad for mutant, night = bad for humans, dawn / dusk = even odds
-    only one level (just barriers)? or bi-level (with ramps?)?  water ?  do different terrains spawn 
-    different "enemies"; does a map with no desert fail to produce "enemies" w/venom?
+  * 4 part day cycle: 2min per cycle; 1day = 8min (10sec graphic "cycle warning"?)
+      day = bad for mutant, bad for robots
+      night = bad for humans, bad for robots
+      dawn / dusk = even odds, for robots too
+  * only one level (just barriers). 
+  * ?? water ??  do different terrains spawn different "enemies"; does a map with no desert fail to produce "enemies" w/venom?
 
 Avatar: Yes
 
