@@ -74,9 +74,12 @@ Devices VS Structures
 
   * Structures allow an enemy to destroy your tech
   * Devices allow an enemy to destroy your tech (AND steal it?)
-  * 
-  
+  *
 
+Tech Tree:
+
+  So the one I drew (on google drive) "starts" at the stars for each pure "tech path".  The non-colored nodes are 
+  "in-between tech" that are a combo   
 
   
 
