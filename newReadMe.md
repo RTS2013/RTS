@@ -60,19 +60,21 @@ Avatar: Yes
 About Nomad-style play:
 
   * Instead of using the lab you start in you decide to scavange it (this would make your avatar mad buff so you could last the night solo)
-    your focus is solely on attack
-  * Your units would be the buffest in the game (I'm thinking 25-35 maxed out nomads could win the game)
-    "all" your resources would be spent on converting tech into weapons even if you used alien tech or pre-war tech 
-     you'd pretty much just make weapons with it (with a few exceptions; guard dogs/elec fences)
+    and your focus is now solely on attack; some kind of "siege" capability
+  * Your units would be the buffest in the game (maybe 2nd to the mutants; I'm thinking 25-35 maxed out nomads could win the game)
+    "all" your resources would be spent on converting tech into weapons, even if you used alien tech or pre-war tech 
+    you'd pretty much just make weapons with it (with a few exceptions; guard dogs/elec fences/better scavenging)
 
-People: recruit only (If you never "made" humans)
+People: are only "recruited"; you never "make" humans
 
   * People would be the only unit resource.
-  * Your units would only come from NPCs who either joined or got caught.
+  * Your units would only come from NPCs who either joined or got caught (with the possible exception of the "robot path").
   * As you recruited more humans and gained greater tech you would spend "regular" resources "outfitting" individuals instead of making new higher level units
   * They would need to regenerate so that when they retreated they would eventually recover (I wanted this to take "food"?)
   * People (NPCs) COULD just wander around everywhere outside (during the day) and when they saw you they would just join you (if you had humans)
-  * Robots and mutants would have to "catch" humans but NPC humans are drawn to other humans (hum > robo+mut = join freely)
+  * People could also be spawned at a steady rate from "cities".  If you even harvested the population below 2 (ha ha) the "city" 
+    would die out and be dead for the rest of the game.
+  * Robots and mutants would have to "catch" humans but NPC humans are drawn to other humans (IF hum > robo+mut = join freely)
 
 Teching up:
 Devices VS Structures
@@ -83,8 +85,12 @@ Devices VS Structures
 
 Tech Tree:
 
-  So the one I drew (on google drive) "starts" at the stars for each pure "tech path".  The non-colored nodes are 
-  "in-between tech" that are a combo   
+  So the one I drew (on google drive) starts at the stars for each pure "tech path".  The non-colored nodes are 
+  "in-between tech" that are a combo of the surounding tech-types.  The humans are in the middle so they have 
+  access to all three kinds of tech.  The othe two paths do not.  This is hella easy fix by creating a third grey node series 
+  inbetween the Mutant and Robot paths to make a "tech cylinder".  
+  
+  
 
   
 
