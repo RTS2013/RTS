@@ -5,7 +5,7 @@ This gives us our 3 recources (plus metal):
 
   * Software
   * Biomass
-  * Weapons/Ammo (Arms)
+  * Energy / Power cells
   * METAL
 
 Resource harvesting:
@@ -26,12 +26,12 @@ Robot path:
 
   * METAL
   * Software
-  * Weapons
+  * Energy / Powercells
 
 Human path:
   
   * METAL
-  * Weapons
+  * Energy / Powercells
   * Biomass
 
 Map characteristics:
