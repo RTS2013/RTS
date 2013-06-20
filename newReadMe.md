@@ -1,30 +1,36 @@
-Surviving scientist on a planet that just defended itself against a technologically advanced alien invasion.
+Surviving scientist on a post-apocolyptic planet, 
+OR that just defended itself against a technologically advanced alien invasion.
 
-This gives us our 3 recources:
+This gives us our 3 recources (plus metal):
 
-  * Alien Tech
-  * Pre-war Tech
+  * Software
+  * Biomass
   * Weapons/Ammo (Arms)
+  * METAL
 
 Resource harvesting:
 Towns / Ruins, Crash sites and Military dropspots are "scavanged" for the different resource types.
-
+  
+  * Plots are few and far between and are not "sprawling" but are instead only a few "squares" in area making them eay to miss
   * Scavanging results in HUGE payoffs but only rarely and plots DON'T replenish
-  * This way would play out better if the resources were HUGE single 
-    resource plots that a player could decide to bypass instead of "waisting" there time. 
+  * This way would play out better if the resources were single resource plots that a player could decide 
+    to bypass instead of "waisting" there time. 
 
 Mutant path:
-
+  
+  * METAL
   * Alien Tech
   * Pre-war Tech (or weapons?)
 
 Robot path:
 
+  * METAL
   * Alien Tech
   * Weapons (or pre-war tech?)
 
 Human path:
-
+  
+  * METAL
   * Weapons
   * Pre-war Tech
 
@@ -45,10 +51,6 @@ Avatar: Yes
   * The robot upgrading could depend on it as the "final piece" to teching-up (the brain-throne idea)
   * The mutants would give the ability to pull a "Mr. Hyde" / Berserker rage
   * The humans would get shafted on the avatar upgrading unless they had some kind of "moral" bonus.
-
-Avatar: No
-
-  * What is there to say?
 
 About Nomad-style play:
 
