@@ -19,20 +19,20 @@ Towns / Ruins, Crash sites and Military dropspots are "scavanged" for the differ
 Mutant path:
   
   * METAL
-  * Alien Tech
-  * Pre-war Tech (or weapons?)
+  * Software
+  * Biomass
 
 Robot path:
 
   * METAL
-  * Alien Tech
-  * Weapons (or pre-war tech?)
+  * Software
+  * Weapons
 
 Human path:
   
   * METAL
   * Weapons
-  * Pre-war Tech
+  * Biomass
 
 Map characteristics:
 
