@@ -88,7 +88,10 @@ Tech Tree:
   So the one I drew (on google drive) starts at the stars for each pure "tech path".  The non-colored nodes are 
   "in-between tech" that are a combo of the surounding tech-types.  The humans are in the middle so they have 
   access to all three kinds of tech.  The othe two paths do not.  This is hella easy fix by creating a third grey node series 
-  inbetween the Mutant and Robot paths to make a "tech cylinder".  
+  inbetween the Mutant and Robot paths to make a "tech cylinder" (also on google drive).  I did it the non-cylinder way just to be able to ensure the
+  Humans ability to be more diverse. But I don't know if it's fair not having a way to "get from" mutants to robots.
+  
+  
   
   
 
