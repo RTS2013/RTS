@@ -1,4 +1,4 @@
-We have two games in mind. One can be neatly described as a Fallout RTS. The other is Dwarf Fortress done right.
+We have two games in mind so far. One can be neatly described as a Fallout RTS. The other is Dwarf Fortress done right.
 
 I'll be giving my own view of the following for each game:
 * Strategy
