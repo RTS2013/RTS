@@ -11,9 +11,7 @@ Rating 1-5 stars (*)
 Higher is always better.
 
 +----------------+
-
 | Dwarf Fortress |
-
 +----------------+
 
 === Strategy (***** Five Stars) ===
@@ -42,9 +40,7 @@ When you see a unit with a spear and a shield, you aren't wondering if your oppo
 Pathfinding, terrain generation, and the UI are the major challenges. Determining how we want units to behave could be difficult as well. 
 
 +-------------+
-
 | Fallout RTS |
-
 +-------------+
 
 === Strategy (*** Three Stars) ===
