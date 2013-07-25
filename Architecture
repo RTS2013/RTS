@@ -1,0 +1,30 @@
+Lobby Client:
+    Display list of games.
+    Join/Post Game Lobbies with messages to Lobby Server.
+    Send messages to other players through Lobby Server.
+    
+Lobby Server:
+    Manage active online users.
+    Manage active Game Lobbies.
+    Manage Game Servers.
+    Handle Lobby Client messages.
+    
+Game Lobby:
+    User can configure game, start game, and interact/speak with other players.
+    Starting a game does the following:
+        Sends command to Lobby Server to create a game with your configuration.
+        The Lobby Server then finds an inactive Game Server and fires up an
+        instance of the game with your configuration and a unique ID.
+        Players in lobby are given unique ID and the Game Client is fired up for each player.
+        Game Server waits for "loading done" message from each player and then begins logic loop.
+    
+Game Client:
+    Receive information to render from Game Server.
+    User can send messages to Game Server to interact with game.
+    User can send messages to Lobby Server to interact/speak with other players.
+    
+Game Server:
+    Loop game logic.
+    Handle Game Client messages.
+    Serve rendering information to Game clients.
+    Track stats in game and post stats to a database at end of game.
