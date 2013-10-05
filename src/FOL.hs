@@ -4,6 +4,7 @@ module FOL where
 uq :: [a] -> (a -> Bool) -> Bool
 uq = flip all
 
+-- Match all but n elements
 uq_n :: (Int -> Bool) -> [a] -> (a -> Bool) -> Bool
 uq_n n xs f = n . length $ filter (not . f) xs
 
@@ -11,6 +12,6 @@ uq_n n xs f = n . length $ filter (not . f) xs
 ex :: [a] -> (a -> Bool) -> Bool
 ex = flip any
 
--- Match n or more elements
+-- Match n elements
 ex_n :: (Int -> Bool) -> [a] -> (a -> Bool) -> Bool
 ex_n n xs f = n . length $ filter f xs
