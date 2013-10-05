@@ -19,7 +19,7 @@ funcs = some $ do
     return (name,args,expr)
 
 validTokenText :: P Token Doc T.Text
-validTokenText = choice [number,identifier,void,operator,singleChar,singlePunc]
+validTokenText = choice [real,identifier,void,operator,singleChar,singlePunc]
     where
     identifier = fmap T.pack $ some $ alpha <|> digit
     operator = matchChars $ flip elem "=:\\|;+*-/<>~!@#$%^&?"

@@ -72,13 +72,13 @@ curly f = do
     token "}" <? "Missing closing '}'."
     return v
 
--- Returns the column and the row of the next Token
+-- Returns the column and the row of the next token
 position :: P Token Tokens (Int,Int)
 position = P $ \i -> case i of
         x:xs -> case x of Token _ c r -> Value (x:xs) (c,r)
         [  ] -> Error [Token "End of file." 0 0]
 
--- Returns an error if the next token isn't indented
+-- Returns an error if the next token isn't indented correctly
 indented :: (Int -> Bool) -> P Token Tokens a -> P Token Tokens a
 indented ind p = do
     (c,r) <- position

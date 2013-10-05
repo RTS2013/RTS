@@ -34,13 +34,6 @@ data Doc = Doc
 (?>) :: T.Text -> P Token Doc a -> P Token Doc a
 (?>) = flip (<?)
 
-{-
-fatal :: T.Text -> P Token Doc a
-fatal e = P $ \(Doc _ c r s) -> Fatal [Token e c r]
-
-throw :: T.Text -> P Token Doc a
-throw e = P $ \(Doc _ c r s) -> Error [Token e c r]
--}
 anyChar :: P Token Doc Char
 anyChar = P $ \i@(Doc t c r s) ->
     if T.null t
@@ -61,7 +54,9 @@ matchChar :: (Char -> Bool) -> P Token Doc Char
 matchChar f = do
     s@(Doc _ c r ts) <- save
     a <- anyChar
-    if f a then return a else load s $ Token "Couldn't match character." c r
+    if f a 
+    then return a 
+    else load s $ Token "Couldn't match character." c r
 
 matchChars :: (Char -> Bool) -> P Token Doc T.Text
 matchChars f = fmap T.pack $ some $ matchChar f
@@ -105,15 +100,12 @@ real = "Failed to parse real." ?> do
     n <- natural <|> return ""
     return $ i <> p <> n
 
-number :: P Token Doc T.Text
-number = real <|> integer
-
 tokenize :: P Token Doc T.Text -> P Token Doc Tokens
 tokenize f = some $ do
     space
     Doc _ c r _ <- save
-    x <- f
-    return $ Token x c r
+    a <- f
+    return $ Token a c r
 
 parse :: String -> P Token Doc a -> IO (Either T.Text a)
 parse s p = do
@@ -124,9 +116,10 @@ parse s p = do
         Fatal e   -> return . Left . properErrorMessage $ e
     where
     properErrorMessage :: Tokens -> T.Text
-    properErrorMessage = foldl (\m d -> m `T.append` d2m d) ""
+    properErrorMessage = foldl (\msg t -> msg `T.append` t2m t) ""
         where
-        d2m (Token t c r) = 
+        -- Token to message.
+        t2m (Token t c r) = 
             "(c/r : " `T.append` 
             T.pack (show c) `T.snoc`
             '/' `T.append`
