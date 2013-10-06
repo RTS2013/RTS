@@ -1,2 +1,0 @@
-ifThenElse True a _ = a
-ifThenElse False _ a = a
