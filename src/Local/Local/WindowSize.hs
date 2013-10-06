@@ -1,4 +1,4 @@
-module WindowSize (getWindowSize) where
+module Local.WindowSize (getWindowSize) where
 
 import Graphics.UI.GLUT.State
 import Graphics.Rendering.OpenGL.GL.StateVar

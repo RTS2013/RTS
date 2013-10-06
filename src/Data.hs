@@ -8,7 +8,7 @@ info you can fit into such a small space. Also having it all in this file makes
 it very easy to reference. import qualified Data as D
 -}
 
-import KDT
+import Local.KDT
 import Control.DeepSeq
 
 data Unit = Unit { posX, posY, radius, weight :: !Float, reached :: !Bool} deriving (Eq)

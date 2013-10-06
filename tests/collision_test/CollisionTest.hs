@@ -4,7 +4,7 @@ module Main where
 
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
-import KDT
+import Local.KDT
 import Data
 import Collision
 

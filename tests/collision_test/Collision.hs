@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 
 module Collision where
+    
 -- dist = range * cos radianZ | range * (adjacent / hypotenuse)
 -- xo = dist * cos radianXY | dist * (adjacent / hypotenuse)
 -- yo = dist * sin radianXY | dist * (opposite / hypotenuse)
@@ -8,8 +9,8 @@ module Collision where
 
 import Control.Parallel.Strategies
 import qualified Data.Vector as V
-import qualified Matrices as M
-import qualified KDT as K
+import qualified Local.Matrices as M
+import qualified Local.KDT as K
 import qualified Data as D
 
 type Matrix a = V.Vector (V.Vector a)

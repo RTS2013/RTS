@@ -1,7 +1,7 @@
 import Graphics.Gloss.Interface.IO.Game
 import Control.Monad.Writer.Strict
 import Data.Map.Strict
-import WindowSize (getWindowSize)
+import Local.WindowSize (getWindowSize)
 
 
 data Button a = Button {btn_x, btn_y, btn_w, bth_h :: Float, btn_clicked :: (Float,Float) -> a}
