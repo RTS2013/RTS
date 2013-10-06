@@ -1,0 +1,1 @@
+ghc CollisionTest.hs -o build\collision_test -threaded -odir build -hidir build -O2

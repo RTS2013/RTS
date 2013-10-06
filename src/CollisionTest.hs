@@ -11,7 +11,7 @@ import Collision
 main :: IO ()
 main = do
     rs <- fmap (randomRs (0.0::Float,1.0::Float)) getStdGen
-    let numUnits = 2000
+    let numUnits = 2500
         xs = take numUnits rs
         ys = take numUnits $ drop numUnits rs
         units = fmap (\(x,y) -> Unit (x * 4000 - 2000) (y * 4000 - 2000) 10 1 False) $ zip xs ys

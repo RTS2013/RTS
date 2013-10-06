@@ -7,8 +7,8 @@ module Collision where
 -- zo = dist * tan radianXY
 
 import Control.Parallel.Strategies
-import qualified Matrices as M
 import qualified Data.Vector as V
+import qualified Matrices as M
 import qualified KDT as K
 import qualified Data as D
 
