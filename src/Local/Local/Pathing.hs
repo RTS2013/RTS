@@ -10,12 +10,12 @@ import qualified Data.Vector as V
 class Path a where
     isOpen :: a -> Bool
 
--- Class of data that moves in a 2D environment.
+-- Class of data that can utilize the move function.
 class Move2D n a where
-    getW :: a -> n -- Weight
-    setW :: n -> a -> a
-    getR :: a -> n -- Radius
-    setR :: n -> a -> a
+    getWeight :: a -> n
+    setWeight :: n -> a -> a
+    getRadius :: a -> n
+    setRadius :: n -> a -> a
     getX :: a -> n
     setX :: n -> a -> a
     getY :: a -> n
@@ -122,7 +122,7 @@ Here's the general high level steps of this function:
    ensure the unit isn't going through walls. If a unit does try to go
    through a wall then it is corrected.
 -}
-move :: (Eq a, RealFloat n, Move2D n a, Path t) =>
+move2D :: (Eq a, RealFloat n, Move2D n a, Path t) =>
     Matrix t -> -- Matrix of tiles
     K.KDT n a -> -- The KD-Tree of units
     n -> -- X coordinate you want to move the unit to
@@ -130,13 +130,13 @@ move :: (Eq a, RealFloat n, Move2D n a, Path t) =>
     n -> -- How far you want to move the unit
     a -> -- Unit you want to move
     a -- Newly positioned unit
-move m k x y d u = 
+move2D matrix kdt x y range u = 
     let ux = getX u
         uy = getY u
-        ur = getR u -- Unit Radius
-        uw = getW u -- Unit Weight
+        ur = getRadius u -- Unit Radius
+        uw = getWeight u -- Unit Weight
         -- Get all units in range of u
-        inRng = filter (/=u) $ K.inRange k [getX,getY] [ux,uy] (ur*2) 
+        inRng = filter (/=u) $ K.inRange kdt [getX,getY] [ux,uy] (ur*2) 
         -- Count units in range
         inLen = fromIntegral $ length inRng
         -- Calculate offsets from nearby units
@@ -144,26 +144,28 @@ move m k x y d u =
             let xDif = ux - getX ou
                 yDif = uy - getY ou
                 -- Semi-arbitrary dampener. Makes sure unit isn't pushed around too much.
-                wDif = ((getW ou + uw) / inLen / uw) * 0.8
+                wDif = ((getWeight ou + uw) / inLen / uw) * 0.8
                 -- Distance between units, multiplied by dampener.
-                dist = ((ur + getR ou) - (sqrt $ xDif^2 + yDif^2)) * wDif
+                dist = ((ur + getRadius ou) - (sqrt $ xDif^2 + yDif^2)) * wDif
                 angl = atan2 yDif xDif in 
             (xo + cos angl * dist, yo + sin angl * dist)) 
             (0,0) inRng 
+        angle = atan2 (y - uy) (x - ux)
         -- Newly caluclated X/Y coordinates for the unit
-        (nx,ny) = (ux + xo, uy + yo) -- New coordinates
+        nx = ux + xo + cos angle * range
+        ny = uy + yo + sin angle * range
         -- Current tile X/Y
         (cx,cy) = (floor ux, floor uy) -- Current tile coordinates
         -- Check if a tile in the matrix is open
-        f x y = maybe False isOpen $ get2D x y m
-        movit sx -- Shift wall X coord (1 or 0)
-              sy -- Shift wall Y coord (1 or 0)
+        f x y = maybe False isOpen $ get2D x y matrix
+        movit sx -- Shift check X coord (1 or 0)
+              sy -- Shift check Y coord (1 or 0)
               ix -- Int X addition/subtraction
               iy -- Int Y addition/subtraction
               fx -- Float X addition/subtraction (should be same as ix)
               fy -- Float Y addition/subtraction (should be same as iy)
-              fx' -- Float X addition/subtraction (should be opposite ix)
-              fy' -- Float Y addition/subtraction (should be opposite iy)
+              fx' -- Float X addition/subtraction (should be opposite fx)
+              fy' -- Float Y addition/subtraction (should be opposite fy)
               ox -- Greater when ix is (+). Less when ix is (-).
               oy -- Greater when iy is (+). Less when iy is (-).
               = if f cx (cy `iy` 1) then -- Y open
@@ -171,13 +173,13 @@ move m k x y d u =
                         if f (cx `ix` 1) (cy `iy` 1) then -- Corner open
                             setX nx $ setY ny u
                         else -- Corner closed
-                            -- Get angle from new coords to old coords
-                            let na = atan2 (ny - uy) (nx - ux)
-                                tx = fromIntegral $ cx + sx
+                            let tx = fromIntegral $ cx + sx
                                 ty = fromIntegral $ cy + sy in
                             if (nx - tx)^2 + (ny - ty)^2 <= ur^2 then
-                                setX (tx `fx'` cos na * ur) $
-                                setY (ty `fy'` sin na * ur) u
+                                -- Get angle from new coords to old coords
+                                let na = atan2 (ny - uy) (nx - ux) in
+                                    setX (tx `fx'` cos na * ur) $
+                                    setY (ty `fy'` sin na * ur) u
                             else
                                 setX nx $ setY ny u
                     else -- X closed
