@@ -150,7 +150,7 @@ move2D maxRadius isOpen matrix kdt x y range entity =
             let xDif = ux - getX ou
                 yDif = uy - getY ou
                 -- Semi-arbitrary dampener. Makes sure entity isn't pushed around too much.
-                wDif = ((getWeight ou + uw) / fromIntegral len / uw) * 0.9
+                wDif = ((getWeight ou + uw) / fromIntegral len / uw) * 0.5
                 -- Distance between units, multiplied by dampener.
                 dist = ((ur + getRadius ou) - (sqrt $ xDif^2 + yDif^2)) * wDif
                 angl = atan2 yDif xDif 
@@ -162,8 +162,9 @@ move2D maxRadius isOpen matrix kdt x y range entity =
             if len < 5 then 
                 let angle = atan2 (y - uy) (x - ux) 
                     dist = min (sqrt $ (y - uy)^2 + (x - ux)^2) range
+                    moveDist = range / ((3+len) / 3)
                 in 
-                    (ux + xo + cos angle * range, uy + yo + sin angle * range)
+                    (ux + xo + cos angle * moveDist, uy + yo + sin angle * moveDist)
             else 
                 (ux + xo, uy + yo)
         -- Current tile X/Y

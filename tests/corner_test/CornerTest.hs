@@ -1,15 +1,12 @@
 module Main where
 
-import Pathing as P
 import System.Random
-import Matrices
+import Local.Matrices
+import Local.Pathing
 import qualified Data.Vector as V
 import Graphics.Gloss
 
 data Tile = Tile Bool [(Int,Int)] deriving (Show)
-
-instance P.Path Tile where
-  isOpen (Tile b _) = b
 
 main = do
   {-rs <- fmap (randomRs (0,255)) getStdGen

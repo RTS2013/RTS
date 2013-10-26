@@ -1,0 +1,100 @@
+	Fri Oct 25 17:22 2013 Time and Allocation Profiling Report  (Final)
+
+	   CollisionTest.exe +RTS -p -hc -N8 -RTS
+
+	total time  =        4.39 secs   (16278 ticks @ 1000 us, 8 processors)
+	total alloc = 1,492,123,348 bytes  (excludes profiling overheads)
+
+COST CENTRE      MODULE                                  %time %alloc
+
+stepWorld.bumped Main                                     44.2   26.3
+drawComponent    Graphics.Gloss.Internals.Render.Picture  30.2   38.5
+stepWorld.kdt    Main                                     17.4   12.2
+main             Main                                      3.0    1.5
+toPicture.\      Main                                      1.2    2.3
+toPicture        Main                                      1.2   17.8
+setX             Main                                      0.1    1.2
+
+
+                                                                                                                 individual     inherited
+COST CENTRE                        MODULE                                                      no.     entries  %time %alloc   %time %alloc
+
+MAIN                               MAIN                                                        186           0    0.5    0.0     3.8    1.7
+ main                              Main                                                        373           0    3.0    1.5     3.2    1.7
+  main.world                       Main                                                        383           1    0.2    0.1     0.2    0.1
+   posY                            Main                                                        388      109965    0.0    0.0     0.0    0.0
+   posX                            Main                                                        386      115043    0.0    0.0     0.0    0.0
+  main.ys                          Main                                                        382           1    0.0    0.0     0.0    0.0
+  main.units                       Main                                                        381           1    0.0    0.0     0.0    0.1
+   main.units.\                    Main                                                        387        8000    0.0    0.0     0.0    0.0
+  main.xs                          Main                                                        378           1    0.0    0.0     0.0    0.0
+  main.background                  Main                                                        375           1    0.0    0.0     0.0    0.0
+  main.display                     Main                                                        374           1    0.0    0.0     0.0    0.0
+ CAF                               GHC.Integer.Logarithms.Internals                            371           0    0.0    0.0     0.0    0.0
+ CAF                               GHC.IO.Encoding.CodePage                                    354           0    0.0    0.0     0.0    0.0
+ CAF                               System.CPUTime                                              352           0    0.0    0.0     0.0    0.0
+ CAF                               System.Environment                                          349           0    0.0    0.0     0.0    0.0
+ CAF                               System.Exit                                                 345           0    0.0    0.0     0.0    0.0
+ CAF                               GHC.Conc.Windows                                            344           0    0.0    0.0     0.0    0.0
+ CAF                               GHC.IO.Encoding                                             331           0    0.0    0.0     0.0    0.0
+ CAF                               GHC.IO.Handle.FD                                            330           0    0.0    0.0     0.0    0.0
+ CAF                               Data.Fixed                                                  326           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.Rendering.OpenGL.Raw.ARB.Compatibility.Functions   299           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.Rendering.OpenGL.Raw.Core31.Functions              298           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.Rendering.GLU.Raw.Functions                        296           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.Rendering.OpenGL.GL.PerFragment                    284           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.Rendering.OpenGL.GL.LineSegments                   280           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.Rendering.OpenGL.GL.CoordTrans                     275           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.Rendering.OpenGL.GL.VertexSpec                     274           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.Rendering.OpenGL.GLU.ErrorsInternal                267           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.UI.GLUT.Callbacks.Registration                     258           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.UI.GLUT.Raw.Functions                              255           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.UI.GLUT.State                                      252           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.Gloss.Internals.Interface.Window                   223           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.Gloss.Internals.Render.Picture                     220           0    0.0    0.0     0.0    0.0
+ CAF                               Graphics.Gloss.Internals.Interface.Backend.GLUT             213           0    0.0    0.0     0.0    0.0
+ CAF                               Data.Time.Clock.POSIX                                       208           0    0.0    0.0     0.0    0.0
+ CAF                               System.Random                                               207           0    0.0    0.0     0.0    0.0
+ CAF:main1                         Main                                                        205           0    0.0    0.0     0.0    0.0
+  main                             Main                                                        372           1    0.0    0.0     0.0    0.0
+ CAF:xs'1_r4Bc                     Main                                                        204           0    0.0    0.0     0.0    0.0
+  main                             Main                                                        384           0    0.0    0.0     0.0    0.0
+   main.world                      Main                                                        385           0    0.0    0.0     0.0    0.0
+ CAF:numUnits_r4B4                 Main                                                        201           0    0.0    0.0     0.0    0.0
+  main                             Main                                                        379           0    0.0    0.0     0.0    0.0
+   main.numUnits                   Main                                                        380           1    0.0    0.0     0.0    0.0
+ CAF:lvl6_r4B0                     Main                                                        200           0    0.0    0.0     0.0    0.0
+  stepWorld                        Main                                                        403           0    0.0    0.0     0.0    0.0
+   stepWorld.bumped                Main                                                        404           0    0.0    0.0     0.0    0.0
+ CAF:xs'_r4AU                      Main                                                        198           0    0.0    0.0     0.0    0.0
+  stepWorld                        Main                                                        406           0    0.0    0.0     0.0    0.0
+   stepWorld.kdt                   Main                                                        407           0    0.0    0.0     0.0    0.0
+ CAF:$fMove2DFloatUnit_$cgetWeight Main                                                        196           0    0.0    0.0     0.0    0.0
+  getWeight                        Main                                                        401           1    0.0    0.0     0.0    0.0
+ CAF:$fMove2DFloatUnit_$cgetRadius Main                                                        195           0    0.0    0.0     0.0    0.0
+  getRadius                        Main                                                        393           1    0.0    0.0     0.0    0.0
+ CAF:$fMove2DFloatUnit_$cgetX      Main                                                        194           0    0.0    0.0     0.0    0.0
+  getX                             Main                                                        391           1    0.0    0.0     0.0    0.0
+ CAF:$fMove2DFloatUnit_$cgetY      Main                                                        193           0    0.0    0.0     0.0    0.0
+  getY                             Main                                                        395           1    0.0    0.0     0.0    0.0
+  drawComponent                    Graphics.Gloss.Internals.Render.Picture                     411     6433340   30.2   38.5     0.0    0.0
+  toPicture                        Main                                                        410         268    1.2   17.8     0.0    0.0
+   toPicture.\                     Main                                                        412     2144000    1.2    2.3     0.0    0.0
+    radius                         Main                                                        415     2144000    0.1    0.0     0.0    0.0
+    posY                           Main                                                        414     2144000    0.0    0.0     0.0    0.0
+    posX                           Main                                                        413     2144000    0.0    0.0     0.0    0.0
+  callbackIdle                     Graphics.Gloss.Internals.Interface.Simulate.Idle            377         268    0.0    0.0     0.0    0.0
+   stepWorld                       Main                                                        389          90    0.0    0.0     0.0    0.0
+    stepWorld.kdt                  Main                                                        405          90   17.4   12.2     0.0    0.0
+     posY                          Main                                                        409    11219271    0.3    0.0     0.0    0.0
+     posX                          Main                                                        408    11677678    0.3    0.0     0.0    0.0
+    stepWorld.bumped               Main                                                        390          90   44.2   26.3     0.0    0.0
+     weight                        Main                                                        402       65268    0.0    0.0     0.0    0.0
+     setX                          Main                                                        400      747036    0.1    1.2     0.0    0.0
+     setY                          Main                                                        399      742795    0.0    0.0     0.0    0.0
+     /=                            Main                                                        397      787962    0.7    0.0     0.0    0.0
+      ==                           Main                                                        398      789141    0.1    0.0     0.0    0.0
+     posY                          Main                                                        396     2275456    0.1    0.0     0.0    0.0
+     radius                        Main                                                        394      785008    0.0    0.0     0.0    0.0
+     posX                          Main                                                        392     2224500    0.3    0.0     0.0    0.0
+  handleEvent                      Main                                                        376           8    0.0    0.0     0.0    0.0
