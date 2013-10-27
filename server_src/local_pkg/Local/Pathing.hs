@@ -2,7 +2,8 @@
 
 module Local.Pathing where
 
-import Local.Matrices
+import Prelude hiding (read)
+import Local.Matrices.Sliced.Matrix2D
 import qualified Local.KDT as K
 import qualified Data.Vector as V
 
@@ -40,7 +41,7 @@ inSight isOpen mtrx x0 y0 x1 y1 = rat (1 + dx + dy) x0 y0 err
     x_inc = if x1 > x0 then 1 else -1
     y_inc = if y1 > y0 then 1 else -1
     rat 0 _ _ _ = True
-    rat c x y e = case get2D x y mtrx of
+    rat c x y e = case read x y mtrx of
         Just ok -> 
             if isOpen ok then
                 if x == x1 && y == y1 then 
@@ -58,13 +59,13 @@ inSight isOpen mtrx x0 y0 x1 y1 = rat (1 + dx + dy) x0 y0 err
                 False
         Nothing -> False
     eitherOpen x0 y0 x1 y1 = 
-        case get2D x0 y0 mtrx of
+        case read x0 y0 mtrx of
         Just ok -> isOpen ok || 
-            case get2D x1 y1 mtrx of
+            case read x1 y1 mtrx of
             Just ok -> isOpen ok
             Nothing -> False
         Nothing -> 
-            case get2D x1 y1 mtrx of
+            case read x1 y1 mtrx of
             Just ok -> isOpen ok
             Nothing -> False
 
@@ -74,7 +75,7 @@ setCorners ::
     ([(Int,Int)] -> tile -> tile) -> -- Assign list of corners to node
     ([(Int,Int)], Matrix tile) -- (List of corners, Matrix with corners setup)
 setCorners isOpen mtrx addCorners = 
-    (corners, foldl (\m (x,y) -> update2D x y 
+    (corners, foldl (\m (x,y) -> modify x y 
         (addCorners $ filter 
             (\(x0,y0) -> if x0 == x && y0 == y 
                          then False 
@@ -87,7 +88,7 @@ setCorners isOpen mtrx addCorners =
       where
         -- Is the node at (x,y) a corner?
         isCorner x y t = 
-            let f x y = maybe False isOpen $ get2D x y mtrx 
+            let f x y = maybe False isOpen $ read x y mtrx 
                 cn = isOpen t -- Checked node is open?
                 n  = f x (y + 1) -- Node above (North) is open?
                 ne = f (x + 1) (y + 1) -- So on and so forth.
@@ -142,35 +143,35 @@ move2D maxRadius isOpen matrix kdt x y range entity =
         ur = getRadius entity -- Entity Radius
         uw = getWeight entity -- Entity Weight
         -- Get all units in range of entity
-        inRng = filter (/=entity) $ K.inRange kdt [getX,getY] [ux,uy] $ ur + maxRadius
+        isInRange e = (getX e - ux)^2 + (getY e - uy)^2 <= (ur + getRadius e)^2
+        nearby = filter (\e -> e /= entity && isInRange e) $ K.inRange kdt [getX,getY] [ux,uy] $ ur + maxRadius
         -- Count units in range
-        len = length inRng
+        len = length nearby
         -- Calculate offsets from nearby entities
         (xo,yo) = foldl (\(xo,yo) ou -> 
             let xDif = ux - getX ou
                 yDif = uy - getY ou
                 -- Semi-arbitrary dampener. Makes sure entity isn't pushed around too much.
-                wDif = ((getWeight ou + uw) / fromIntegral len / uw) * 0.5
+                wDif = ((getWeight ou + uw) / fromIntegral len / uw) * 0.8
                 -- Distance between units, multiplied by dampener.
                 dist = ((ur + getRadius ou) - (sqrt $ xDif^2 + yDif^2)) * wDif
                 angl = atan2 yDif xDif 
             in 
             (xo + cos angl * dist, yo + sin angl * dist)) 
-            (0,0) inRng 
+            (0,0) nearby 
         -- Newly caluclated X/Y coordinates for the entity
         (nx,ny) = 
-            if len < 5 then 
+            if len < 6 then 
                 let angle = atan2 (y - uy) (x - ux) 
                     dist = min (sqrt $ (y - uy)^2 + (x - ux)^2) range
-                    moveDist = range / ((3+len) / 3)
                 in 
-                    (ux + xo + cos angle * moveDist, uy + yo + sin angle * moveDist)
+                    (ux + xo + cos angle * dist, uy + yo + sin angle * dist)
             else 
                 (ux + xo, uy + yo)
         -- Current tile X/Y
         (cx,cy) = (floor ux, floor uy) -- Current tile coordinates
         -- Check if a tile in the matrix is open
-        f x y = maybe False isOpen $ get2D x y matrix
+        f x y = maybe False isOpen $ read x y matrix
         -- Corrects an entity from moving through walls
         movit sx -- Shift check X coord (1 or 0)
               sy -- Shift check Y coord (1 or 0)

@@ -7,7 +7,7 @@ import System.Random
 import Local.KDT
 import Local.Pathing
 import qualified Data.Vector as V
-import qualified Local.Matrices as M
+import qualified Local.Matrices.Sliced.Matrix2D as M
 import qualified Control.Parallel.Strategies as PS
 import Local.WindowSize (getWindowSize)
 
@@ -31,6 +31,8 @@ data World = World
     , mouseY :: Float
     }
 
+maxRadius = 2
+
 main :: IO ()
 main = do
     (wx,wy) <- getWindowSize
@@ -39,9 +41,9 @@ main = do
         xs = take numUnits rs
         ys = take numUnits $ drop numUnits rs
         units = fmap (\(x,y) -> Unit (x * wx) (y * wy) 1 1 False) $ zip xs ys
-        display = FullScreen (floor wx, floor wy)
+        display = InWindow "Collision Test" (floor wx, floor wy) (0,0)
         background = makeColor8 0 0 0 255
-        world = World units (makeKDT [posX,posY] units) (M.make2D 1000 1000 True) 0 0
+        world = World units (makeKDT [posX,posY] units) (M.make 1000 1000 True) 0 0
     playIO display background 10 world (toPicture wx wy) handleEvent stepWorld
 
 handleEvent :: Event -> World -> IO World
@@ -57,7 +59,7 @@ toPicture wx wy !(World units _ _ _ _) = return
 
 stepWorld :: b -> World -> IO World
 stepWorld _ !(w@(World units units_kdt matrix x y)) = return $
-    let bumped = PS.parMap PS.rseq (move2D 1 (\_ -> True) matrix units_kdt ((x/10 + 800)) ((y/10 + 600)) 1) units
+    let bumped = PS.parMap PS.rseq (move2D maxRadius (\_ -> True) matrix units_kdt ((x/10 + 800)) ((y/10 + 600)) 0.75) units
         kdt = makeKDT [posX,posY] bumped
     in
         World bumped kdt matrix x y

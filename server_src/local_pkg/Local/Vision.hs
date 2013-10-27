@@ -1,2 +1,2 @@
-module Vision where
+module Local.Vision where
 
