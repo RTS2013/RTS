@@ -3,26 +3,26 @@
 module Local.Matrices.Matrix2D where
 
 import Prelude hiding (read)
-import qualified Data.Vector.Mutable as M
-import qualified Data.Vector as V
+import qualified Data.Vector.Generic.Mutable as M
+import qualified Data.Vector.Generic as V
+import Control.Monad.Primitive (PrimState,PrimMonad)
 
-data IOMatrix a = IOMatrix Int Int (M.IOVector a)
-data Matrix a = Matrix Int Int (V.Vector a)
+data Matrix v = Matrix Int Int v
 
-make :: Int -> Int -> a -> IO (IOMatrix a)
-make x y a = M.replicate (x*y) a >>= return . IOMatrix x y
+make :: (PrimMonad m, M.MVector v a) => Int -> Int -> a -> m (Matrix (v (PrimState m) a))
+make x y a = M.replicate (x*y) a >>= return . Matrix x y
 
-read :: Int -> Int -> IOMatrix a -> IO (Maybe a)
-read x y (IOMatrix mx my vec) =
+read :: (PrimMonad m, M.MVector v a) => Int -> Int -> Matrix (v (PrimState m) a) -> m (Maybe a)
+read x y (Matrix mx my vec) =
 	if x >= 0 && y >= 0 && x < mx && y < my
 	then M.unsafeRead vec (y * mx + x) >>= return . Just
 	else return Nothing
 
-write :: Int -> Int -> a -> IOMatrix a -> IO ()
-write x y a (IOMatrix mx _ vec) = M.write vec (y * mx + x) a
+write :: (PrimMonad m, M.MVector v a) => Int -> Int -> a -> Matrix (v (PrimState m) a) -> m ()
+write x y a (Matrix mx _ vec) = M.write vec (y * mx + x) a
 
-modify :: Int -> Int -> (a -> a) -> IOMatrix a -> IO ()
+modify :: (PrimMonad m, M.MVector v a) => Int -> Int -> (a -> a) -> Matrix (v (PrimState m) a) -> m ()
 modify x y f m = read x y m >>= maybe (return ()) (\a -> write x y (f a) m)
 
-unsafeWith :: IOMatrix a -> (Matrix a -> b) -> IO b
-unsafeWith (IOMatrix x y v) f = V.unsafeFreeze v >>= return . f . Matrix x y
+unsafeWith :: (V.Vector v a, PrimMonad m) => Matrix (V.Mutable v (PrimState m) a) -> (Matrix (v a) -> b) -> m b
+unsafeWith (Matrix x y v) f = V.unsafeFreeze v >>= return . f . Matrix x y

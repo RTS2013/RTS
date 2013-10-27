@@ -4,8 +4,9 @@ import Data.Int (Int64)
 import Data.Word (Word8,Word16)
 import Local.KDT (KDT)
 import Data.Vector (Vector)
-import Local.MatricesIO (Matrix2D)
+import Local.Matrices.UnboxedMatrix2D (Matrix)
 import Data.Binary (Binary,get,put)
+import Data.Sequence (Seq)
 
 {-
 This is where we will put all of the data for the game. Having all of the data
@@ -24,12 +25,21 @@ data Actor = Actor
 	, actor_facing :: !Word8
 	, actor_radius :: !Word8
 	, actor_weight :: !Float
+	, actor_orders :: !(Seq Order)
 	}
+
+data Order 
+	= Move Float Float -- Ignore enemies on way to destination
+	| Assault Float Float -- Attack enemies on way to destination
+	| Attack Int64 -- Attack a specific enemy, ignoring all others
+	| Assist Int64 -- Follow and assist unit
+	| Hold Float Float -- Hold position and attack enemies in range
+	| Patrol Float Float Float Float -- Patrol between point A and point B
 
 data Team = Team 
 	{ team_id :: !Word8
 	, team_entities :: !(Vector Actor)
-	, team_vision :: !(Matrix2D Word16)
+	, team_vision :: !(Matrix Word16)
 	}
 
 data Player = Player

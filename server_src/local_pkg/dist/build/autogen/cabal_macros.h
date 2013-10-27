@@ -21,6 +21,13 @@
   (major1) == 4 && (major2) <  6 || \
   (major1) == 4 && (major2) == 6 && (minor) <= 0)
 
+/* package primitive-0.5.0.1 */
+#define VERSION_primitive "0.5.0.1"
+#define MIN_VERSION_primitive(major1,major2,minor) (\
+  (major1) <  0 || \
+  (major1) == 0 && (major2) <  5 || \
+  (major1) == 0 && (major2) == 5 && (minor) <= 0)
+
 /* package text-0.11.3.1 */
 #define VERSION_text "0.11.3.1"
 #define MIN_VERSION_text(major1,major2,minor) (\
