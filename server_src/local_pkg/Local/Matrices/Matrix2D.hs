@@ -1,6 +1,13 @@
 {-# LANGUAGE DoAndIfThenElse #-}
 
-module Local.Matrices.Matrix2D where
+module Local.Matrices.Matrix2D
+( Matrix(..)
+, make
+, read
+, write
+, modify
+, unsafeWith
+) where
 
 import Prelude hiding (read)
 import qualified Data.Vector.Generic.Mutable as M

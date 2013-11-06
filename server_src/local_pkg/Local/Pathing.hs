@@ -23,17 +23,14 @@ class (Move2D a n) => Move3D a n where
     getZ :: a -> n
     setZ :: n -> a -> n
 
-type Matrix tile = V.Vector (V.Vector tile)
-
 inSight :: 
-    (tile -> Bool) -> -- Is tile "open" predicate
-    Matrix tile -> -- Matrix with open/closed nodes
+    (Int -> Int -> Bool) -> -- Is tile "open" predicate
     Int -> -- Start x coordinate
     Int -> -- Start y coordinate
     Int -> -- End x coordinate
     Int -> -- End y coordinate
     Bool -- End node was visible by start node.
-inSight isOpen mtrx x0 y0 x1 y1 = rat (1 + dx + dy) x0 y0 err
+inSight isOpen x0 y0 x1 y1 = rat (1 + dx + dy) x0 y0 err
     where
     dx = abs $ x1 - x0
     dy = abs $ y1 - y0
@@ -41,73 +38,49 @@ inSight isOpen mtrx x0 y0 x1 y1 = rat (1 + dx + dy) x0 y0 err
     x_inc = if x1 > x0 then 1 else -1
     y_inc = if y1 > y0 then 1 else -1
     rat 0 _ _ _ = True
-    rat c x y e = case read x y mtrx of
-        Just ok -> 
-            if isOpen ok then
-                if x == x1 && y == y1 then 
-                    True 
-                else
-                if e == 0 then
-                    (not $ eitherOpen (x + x_inc) y x (y + y_inc)) ||
-                    rat (c-1) (x + x_inc) (y + y_inc) (e - dy + dx)
-                else
-                    if e > 0 then 
-                        rat (c-1) (x + x_inc) y (e - dy) 
-                    else 
-                        rat (c-1) x (y + y_inc) (e + dx)
+    rat c x y e =
+        if isOpen x y then
+            if x == x1 && y == y1 then 
+                True 
             else
-                False
-        Nothing -> False
-    eitherOpen x0 y0 x1 y1 = 
-        case read x0 y0 mtrx of
-        Just ok -> isOpen ok || 
-            case read x1 y1 mtrx of
-            Just ok -> isOpen ok
-            Nothing -> False
-        Nothing -> 
-            case read x1 y1 mtrx of
-            Just ok -> isOpen ok
-            Nothing -> False
+            if e == 0 then
+                (not $ eitherOpen (x + x_inc) y x (y + y_inc)) ||
+                rat (c-1) (x + x_inc) (y + y_inc) (e - dy + dx)
+            else
+                if e > 0 then 
+                    rat (c-1) (x + x_inc) y (e - dy) 
+                else 
+                    rat (c-1) x (y + y_inc) (e + dx)
+        else
+            False
+    eitherOpen x0 y0 x1 y1 = isOpen x0 y0 || isOpen x1 y1
 
-setCorners ::
-    (tile -> Bool) -> -- Is tile "open" predicate
-    Matrix tile -> -- Matrix with potential corners
-    ([(Int,Int)] -> tile -> tile) -> -- Assign list of corners to node
-    ([(Int,Int)], Matrix tile) -- (List of corners, Matrix with corners setup)
-setCorners isOpen mtrx addCorners = 
-    (corners, foldl (\m (x,y) -> modify x y 
-        (addCorners $ filter 
-            (\(x0,y0) -> if x0 == x && y0 == y 
-                         then False 
-                         else inSight isOpen mtrx x y x0 y0) corners) m) mtrx corners)
+getCorners ::
+    Int ->
+    Int ->
+    (Int -> Int -> Bool) -> -- Is tile "open" predicate
+    [(Int,Int)] -- List of corners
+getCorners w h isOpen = filter isCorner [(x,y) | x <- [0..w], y <- [0..h]]
   where
-    -- Extract all corner nodes from the matrix.
-    corners = 
-        V.ifoldl' (\ts y xv -> ts ++ 
-        V.ifoldl' (\ts x t -> if isCorner x y t then (x,y):ts else ts) [] xv) [] mtrx
-      where
-        -- Is the node at (x,y) a corner?
-        isCorner x y t = 
-            let f x y = maybe False isOpen $ read x y mtrx 
-                cn = isOpen t -- Checked node is open?
-                n  = f x (y + 1) -- Node above (North) is open?
-                ne = f (x + 1) (y + 1) -- So on and so forth.
-                e  = f (x + 1) y
-                se = f (x + 1) (y - 1)
-                s  = f x (y - 1)
-                sw = f (x - 1) (y - 1)
-                w  = f (x - 1) y
-                nw = f (x - 1) (y + 1)
-                nn = f x (y + 2)
-                ee = f (x + 2) y
-                ss = f x (y - 2)
-                ww = f (x - 2) y 
-            in
-            cn && (
-                    (not ne && n && e && (nn || ee)) ||
-                    (not se && s && e && (ss || ee)) ||
-                    (not sw && s && w && (ss || ww)) ||
-                    (not nw && n && w && (nn || ww))
+    isCorner (x,y) = 
+        let cn = isOpen x y -- Checked node is open?
+            n  = isOpen x (y + 1) -- Node above (North) is open?
+            ne = isOpen (x + 1) (y + 1) -- So on and so forth.
+            e  = isOpen (x + 1) y
+            se = isOpen (x + 1) (y - 1)
+            s  = isOpen x (y - 1)
+            sw = isOpen (x - 1) (y - 1)
+            w  = isOpen (x - 1) y
+            nw = isOpen (x - 1) (y + 1)
+            nn = isOpen x (y + 2)
+            ee = isOpen (x + 2) y
+            ss = isOpen x (y - 2)
+            ww = isOpen (x - 2) y 
+        in
+            cn && ( (not ne && n && e && (nn || ee)) 
+                  ||(not se && s && e && (ss || ee))
+                  ||(not sw && s && w && (ss || ww))
+                  ||(not nw && n && w && (nn || ww))
                   )
 
 {-
@@ -128,23 +101,23 @@ Here's the general high level steps of this function:
 -}
 {-# INLINE move2D #-}
 move2D :: (Eq entity, RealFloat n, Move2D n entity) =>
+    (Int -> Int -> Bool) -> -- Is tile "open" predicate
+    (n -> n -> n -> [entity]) -> -- Given an x, y, & radius, returns list of entities
+    (entity -> Int) ->
     n -> -- The largest radius of any and all entities
-    (tile -> Bool) -> -- Is tile "open" predicate
-    Matrix tile -> -- Matrix of tiles
-    K.KDT n entity -> -- The KD-Tree of units
     n -> -- X coordinate you want to move the entity to
     n -> -- Y coordinate you want to move the entity to
     n -> -- How far you want to move the entity
     entity -> -- Entity you want to move
     entity -- Newly positioned entity
-move2D maxRadius isOpen matrix kdt x y range entity =
+move2D isOpen inRange entityID maxRadius x y range entity =
     let ux = getX entity
         uy = getY entity
         ur = getRadius entity -- Entity Radius
         uw = getWeight entity -- Entity Weight
         -- Get all units in range of entity
         isInRange e = (getX e - ux)^2 + (getY e - uy)^2 <= (ur + getRadius e)^2
-        nearby = filter (\e -> e /= entity && isInRange e) $ K.inRange kdt [getX,getY] [ux,uy] $ ur + maxRadius
+        nearby = filter (\e -> e /= entity && isInRange e) $ inRange ux uy $ ur + maxRadius
         -- Count units in range
         len = length nearby
         -- Calculate offsets from nearby entities
@@ -170,8 +143,6 @@ move2D maxRadius isOpen matrix kdt x y range entity =
                 (ux + xo, uy + yo)
         -- Current tile X/Y
         (cx,cy) = (floor ux, floor uy) -- Current tile coordinates
-        -- Check if a tile in the matrix is open
-        f x y = maybe False isOpen $ read x y matrix
         -- Corrects an entity from moving through walls
         movit sx -- Shift check X coord (1 or 0)
               sy -- Shift check Y coord (1 or 0)
@@ -183,9 +154,9 @@ move2D maxRadius isOpen matrix kdt x y range entity =
               fy' -- Float Y addition/subtraction (should be opposite fy)
               ox -- Greater when ix is (+). Less when ix is (-).
               oy -- Greater when iy is (+). Less when iy is (-).
-              = if f cx (cy `iy` 1) then -- Y open
-                    if f (cx `ix` 1) cy then -- X open
-                        if f (cx `ix` 1) (cy `iy` 1) then -- Corner open
+              = if isOpen cx (cy `iy` 1) then -- Y open
+                    if isOpen (cx `ix` 1) cy then -- X open
+                        if isOpen (cx `ix` 1) (cy `iy` 1) then -- Corner open
                             setX nx $ setY ny entity
                         else -- Corner closed
                             let tx = fromIntegral $ cx + sx
@@ -205,7 +176,7 @@ move2D maxRadius isOpen matrix kdt x y range entity =
                         else
                             setX nx $ setY ny entity
                 else -- Y closed
-                    if f (cx `ix` 1) cy then -- X open
+                    if isOpen (cx `ix` 1) cy then -- X open
                         let ty = fromIntegral $ cy + sy in
                         if ny `fy` ur `oy` ty then -- Unit Y is close to wall?
                             -- Offset from wall by units radius
@@ -228,8 +199,7 @@ move2D maxRadius isOpen matrix kdt x y range entity =
                                 setX (tx `fx'` ur) $ setY ny entity
                             else
                                 setX nx $ setY ny entity
-    in setX nx $ setY ny entity
-    {-
+    in
         if ny >= uy then
             if nx >= ux then 
                 -- NE move
@@ -244,4 +214,3 @@ move2D maxRadius isOpen matrix kdt x y range entity =
             else 
                 -- SW move
                 movit 0 0 (-) (-) (-) (-) (+) (+) (<) (<)
-    -}
