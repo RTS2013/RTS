@@ -5,193 +5,224 @@ import Data.Word (Word8,Word16,Word64)
 import Local.KDT (KDT)
 import Data.Vector (Vector)
 import Local.Matrices.UnboxedMatrix2D (Matrix)
+import qualified Data.Vector.Unboxed as U (Vector)
 import Data.Binary (Binary,get,put,Get)
 import Data.Sequence (Seq)
 import Data.Map.Strict (Map)
 import Data.IntMap.Strict (IntMap)
 import Data.ByteString.Lazy (ByteString)
-
-{-
-This is where we will put all of the data for the game. Having all of the data
-in one place allows you to really understand the structure of the program much
-better than if it's scattered in multiple files. You'll be surprised at how much
-info you can fit into such a small space. Also having it all in this file makes
-it very easy to reference. import qualified Data as D
--}
+import System.Random (StdGen)
+import GHC.Conc.Sync (ThreadId)
+import Network.WebSockets (Connection)
 
 instance Eq Actor where
-	a == b = actor_id a == actor_id b
+    a == b = identity_id (actor_identity a) == identity_id (actor_identity b)
 
 instance Eq Team where
-	a == b = team_id a == team_id b
+    a == b = team_id a == team_id b
 
-type TeamID = Int
-type PlayerID = Int
-type ActorID = Word64
+toEntity :: Actor -> (Actor -> [(Word8,Word8)]) -> Entity
+toEntity a f = let
+    ident = actor_identity a
+    state = actor_state a
+    moveS = actor_moveState a 
+    normalizeAngle a = max 0 $ min 255 $ floor $ (a + (pi/2)) / 255 in
+    Entity { entity_id = identity_id ident
+           , entity_team = fromIntegral $ identity_team ident
+           , entity_x = moveState_x moveS
+           , entity_y = moveState_y moveS
+           , entity_z = moveState_z moveS
+           , entity_angle = normalizeAngle $ moveState_angle moveS
+           , entity_values = f a 
+           }
 
 data Actor = Actor
-	{ actor_id :: !ActorID
-	, actor_type :: !Word64
-	, actor_team :: !TeamID
-	, actor_movement :: !Movement
-	, actor_orders :: !(Seq Order)
-	, actor_values :: !(IntMap Float)
-	, actor_flags :: !(IntMap Bool)
-	, actor_counts :: !(IntMap Int)
-	, actor_world_effects :: !(IntMap (World -> Actor -> World))
-	, actor_team_effects :: !(IntMap (World -> Actor -> [(TeamID, Team -> Team)]))
-	, actor_actor_effects :: !(IntMap (World -> Actor -> [(TeamID, ActorID, Actor -> Actor)]))
-	, actor_self_effects :: !(IntMap (World -> Actor -> Actor))
-	}
+    { actor_identity  :: !Identity
+    , actor_moveState :: !MoveState
+    , actor_state     :: !ActorState
+    } 
 
-data Movement = Movement 
-	{ coord_x :: !Float 
-	, coord_y :: !Float 
-	, coord_z :: !Float 
-	, radius :: !Float 
-	, weight :: !Float 
-	, facing :: !Float 
-	, turn_rate :: !Float 
-	, speed_max :: !Float 
-	, speed_now :: !Float 
-	, acceleration :: !Float 
-	}
+-- An actors identity. What defines it as an actor.
+data Identity = Identity
+    { identity_id           :: !Int
+    , identity_type         :: !Int
+    , identity_team         :: !Int
+    -- Takes the world, the current actor, and returns a list of actions to take on the world
+    -- Use this as little as possible
+    , identity_worldEffects :: !(IntMap (World -> Actor -> World))
+    -- Takes the world, the current actor, and returns a list of actions to take on a team
+    -- The team is identified by its teamId
+    , identity_teamEffects  :: !(IntMap (World -> Actor -> [(Int, Team -> Team)]))
+    -- Takes the world, the current Actor, and returns a list of actions to take on other actors 
+    -- The actors are identified by their teamId & actorId
+    , identity_actorEffects :: !(IntMap (World -> Actor -> [(Int, Int, Actor -> Actor)]))
+    -- Takes the world, the current actor, and returns a new actor
+    -- Use this as often as you can
+    , identity_selfEffects  :: !(IntMap (World -> Actor -> Actor))
+    , identity_radius       :: !Float
+    , identity_weight       :: !Float 
+    , identity_turnRate     :: !Float 
+    , identity_speedMax     :: !Float 
+    , identity_acceleration :: !Float 
+    } 
+
+-- An actors current position and orientation in the world
+data MoveState = MoveState
+    { moveState_x     :: !Float
+    , moveState_y     :: !Float
+    , moveState_z     :: !Float
+    , moveState_angle :: !Float
+    , moveState_speed :: !Float
+    } 
+
+-- An actors current state
+data ActorState = ActorState
+    { actorState_random :: !StdGen           -- Every actor gets its own random generator
+    , actorState_orders :: !(Seq Order)      -- Every actor has a sequence of orders to perform
+    , actorState_values :: !(U.Vector Float) -- Every actor has arbitrary float values
+    , actorState_flags  :: !(U.Vector Bool)  -- Every actor has arbitrary bool values
+    , actorState_counts :: !(U.Vector Int)   -- Every actor has arbitrary int values
+    } 
 
 data Order 
-	= Standby -- Standing around doing nothing...
-	| Move Float Float -- Ignore enemies on way to destination
-	| Assault Float Float -- Attack enemies on way to destination
-	| Attack ActorID -- Attack a specific enemy, ignoring all others
-	| Assist ActorID -- Follow and assist unit
-	| Hold Float Float -- Hold position and attack enemies in range
-	| Patrol Float Float Float Float -- Patrol between point A and point B
+    = Standby -- Standing around doing nothing...
+    | Move Float Float -- Ignore enemies on way to destination
+    | Assault Float Float -- Attack enemies on way to destination
+    | Attack Int -- Attack a specific enemy, ignoring all others
+    | Assist Int -- Follow and assist unit
+    | Hold Float Float -- Hold position and attack enemies in range
+    | Patrol Float Float Float Float -- Patrol between point A and point B
 
 data Team = Team 
-	{ team_id :: !TeamID
-	, team_name :: String
-	, team_entities :: !(Map ActorID Actor)
-	, team_vision :: !(Matrix Word16)
-	}
+    { team_id :: !Int
+    , team_name :: String
+    , team_entities :: !(Map Int Actor)
+    , team_vision :: !(Matrix Word16)
+    , team_players :: ![Player]
+    }
 
 data Player = Player
-	{ player_id :: !PlayerID
-	, player_name :: String
-	}
+    { player_id :: !Int
+    , player_name :: String
+    }
 
 data World = World
-	{ world_teams :: !(Vector Team)
-	, world_kdt :: !(KDT Float Actor)
-	, world_graph :: !(Matrix Word16)
-	}
+    { world_teams :: !(Vector Team)
+    , world_kdt :: !(KDT Float Actor)
+    , world_graph :: !(Matrix Word16)
+    }
 
 data PlayerStatus
-	= Playing
-	| Observing
-	| Quit
+    = Playing
+    | Observing
+    | Quit
 
-data ServerState = ServerState
-	{ server_num_connections :: Int
-	, server_client_messages :: [ClientMessage]
-	}
+data Server = Server
+    { server_numConnections :: !Int
+    , server_clientMessages :: ![ClientMessage]
+    , server_clients :: ![(Int,ThreadId,Connection)]
+    }
 
 ---------------------------------
 -- DATA TO TRANSFER OVER WIRES --
 ---------------------------------
 data SFX = SFX
-	{ sfx_id :: !Word16
-	, sfx_x :: !Word16
-	, sfx_y :: !Word16
-	, sfx_z :: !Word16
-	}
+    { sfx_id :: !Word16
+    , sfx_x :: !Word16
+    , sfx_y :: !Word16
+    , sfx_z :: !Word16
+    }
 
 instance Binary SFX where
-	get = undefined
-	put a = do
-		put $ sfx_id a
-		put $ sfx_x a
-		put $ sfx_y a
-		put $ sfx_z a
+    get = undefined
+    put a = do
+        put $ sfx_id a
+        put $ sfx_x a
+        put $ sfx_y a
+        put $ sfx_z a
 
 data LineFX = LineFX
-	{ linefx_id :: !Word16
-	, linefx_xa :: !Word16
-	, linefx_ya :: !Word16
-	, linefx_za :: !Word16
-	, linefx_xb :: !Word16
-	, linefx_yb :: !Word16
-	, linefx_zb :: !Word16
-	}
+    { linefx_id :: !Word16
+    , linefx_xa :: !Word16
+    , linefx_ya :: !Word16
+    , linefx_za :: !Word16
+    , linefx_xb :: !Word16
+    , linefx_yb :: !Word16
+    , linefx_zb :: !Word16
+    }
 
 instance Binary LineFX where
-	get = undefined
-	put a = do
-		put $ linefx_id a
-		put $ linefx_xa a
-		put $ linefx_ya a
-		put $ linefx_za a
-		put $ linefx_xb a
-		put $ linefx_yb a
-		put $ linefx_zb a
+    get = undefined
+    put a = do
+        put $ linefx_id a
+        put $ linefx_xa a
+        put $ linefx_ya a
+        put $ linefx_za a
+        put $ linefx_xb a
+        put $ linefx_yb a
+        put $ linefx_zb a
 
 data Terrain = Terrain
-	{ terrain_id :: !Word16
-	, terrain_x :: !Word16
-	, terrain_y :: !Word16
-	, terrain_nwz :: !Word16
-	, terrain_nez :: !Word16
-	, terrain_swz :: !Word16
-	, terrain_sez :: !Word16
-	}
+    { terrain_id :: !Word16
+    , terrain_x :: !Word16
+    , terrain_y :: !Word16
+    , terrain_nwz :: !Word16
+    , terrain_nez :: !Word16
+    , terrain_swz :: !Word16
+    , terrain_sez :: !Word16
+    }
 
 instance Binary Terrain where
-	get = undefined
-	put a = do
-		put $ terrain_id a
-		put $ terrain_x a
-		put $ terrain_y a
-		put $ terrain_nwz a
-		put $ terrain_nez a
-		put $ terrain_swz a
-		put $ terrain_sez a
+    get = undefined
+    put a = do
+        put $ terrain_id a
+        put $ terrain_x a
+        put $ terrain_y a
+        put $ terrain_nwz a
+        put $ terrain_nez a
+        put $ terrain_swz a
+        put $ terrain_sez a
 
 data Entity = Entity
-	{ entity_id :: !Int64
-	, entity_team :: !Word8
-	, entity_x :: !Word16
-	, entity_y :: !Word16
-	, entity_z :: !Word16
-	, entity_facing :: !Word8
-	, entity_values :: ![(Word8,Word8)]
-	}
+    { entity_id :: !Int
+    , entity_team :: !Word8
+    , entity_x :: !Float
+    , entity_y :: !Float
+    , entity_z :: !Float
+    , entity_angle :: !Word8
+    , entity_values :: ![(Word8,Word8)]
+    }
 
 instance Binary Entity where
-	get = undefined
-	put a = do
-		put $ entity_id a
-		put $ entity_team a
-		put $ entity_x a
-		put $ entity_y a
-		put $ entity_z a
-		put $ entity_facing a
-		put $ entity_values a
-	
+    get = undefined
+    put a = do
+        put $ entity_id a
+        put $ entity_team a
+        put $ entity_x a
+        put $ entity_y a
+        put $ entity_z a
+        put $ entity_angle a
+        if null $ entity_values a 
+        then put (255 :: Word8)
+        else mapM_ put $ entity_values a
+
 data ClientMessage 
-	= MoveMessage 
-		PlayerID
-		Bool -- True = Add to commands, False = Replace commands
-		Float -- X coord
-		Float -- Y coord
-		[ActorID] -- List of actors to give command to
+    = MoveMessage 
+        Int -- Team Id
+        Bool -- True = Add to commands, False = Replace commands
+        Float -- X coord
+        Float -- Y coord
+        [Int] -- List of actors to give command to
 
 instance Binary ClientMessage where
-	put = undefined
-	get = do
-		t <- get :: Get Word8
-		case t of
-			0 -> do
-				pid <- get
-				b <- get
-				x <- get
-				y <- get
-				ids <- get
-				return $ MoveMessage pid b x y ids
+    put = undefined
+    get = do
+        t <- get :: Get Word8
+        case t of
+            0 -> do
+                pid <- get
+                b <- get
+                x <- get
+                y <- get
+                ids <- get
+                return $ MoveMessage pid b x y ids
