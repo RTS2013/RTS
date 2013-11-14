@@ -1,18 +1,62 @@
+{-# LANGUAGE TypeOperators #-}
+
 import Numeric.Noise.Perlin
-import System.Random
+import System.Random (randomIO,randomIO,randomRs,newStdGen,mkStdGen)
 import Graphics.Gloss
 import Graphics.Gloss.Data.Color (makeColor8)
+import qualified Data.Array.Repa as R
 
-main = do
-    let p = perlin 1 5 (1/8) (1/2)
-        m = map (noiseValue p) [(x,y,0) | x <- [0..99], y <- [0..99]]
-        n = rangeMap 50 [(-0.5,0),(0,100),(5000,190)] m
-        xs = map (\((x,y),z) -> (x, y, z)) $ zip [(x,y) | x <- [0..99], y <- [0..99]] n
-    display (InWindow "Perlin Haskell" (1000,1000) (0,0)) black $ pictures $ 
-        map (\(x,y,z) -> scale 10 10 $ translate (x - 50) (y - 50) $ color (makeColor8 z z z 255) $ rectangleSolid 1 1) xs
+type Seed = Int
 
-rangeMap :: (Ord a) => b -> [(a,b)] -> [a] -> [b]
-rangeMap def rs xs = map (\x -> 
+rangeMap :: (Ord a) => b -> [(a,b)] -> a -> b
+rangeMap def rs x = 
         let rs' = dropWhile (\(a,_) -> x > a) rs in
         if null rs' then def else snd (head rs')
-    ) xs
+
+main = do
+    heightSeed <- randomIO :: IO Int
+    treeSeed <- randomIO :: IO Int
+    let heightP = perlin heightSeed 16 (1/128) (1/2)
+        treeP = perlin treeSeed 16 (1/128) (1/2)
+        w = 512 :: Int
+        h = 512 :: Int
+        shape = (R.Z R.:. w R.:. h)
+    heightArray <- R.computeP $ R.fromFunction shape
+            (\(R.Z R.:.x R.:. y) -> ( fromIntegral x
+                                    , fromIntegral y
+                                    , rangeMap 255 [(-0.9,0),(0.25,130)] $ 
+                                      noiseValue heightP (fromIntegral x, fromIntegral y, 0)
+                                    )
+            ) :: IO (R.Array R.U R.DIM2 (Float,Float,Int))
+    let heightPic = R.map (\(x,y,z) -> scale 1 1 
+                                     $ translate (x - fromIntegral w / 2) (y - fromIntegral h / 2) 
+                                     $ color (makeColor8 z z z 255) 
+                                     $ rectangleSolid 1 1
+                    ) heightArray
+    let trees = randomPerlin heightSeed treeSeed (0,3) (w,h)
+        treePic = shapeMap (\x y z -> let fx = fromIntegral x
+                                          fy = fromIntegral y in
+                                     scale 1 1 
+                                   $ translate (fx - fromIntegral w / 2) (fy - fromIntegral h / 2) 
+                                   $ (if z>3.25 then color (makeColor8 0 255 0 255) else color (makeColor8 0 0 0 255))
+                                   $ rectangleSolid 1 1
+                    ) trees
+    return ()
+    -- display (FullScreen (1600, 1200)) black $ pictures $ R.toList pic
+    display (InWindow "Perlin Test" (1600, 1200) (0, 0)) black $ pictures $ R.toList treePic
+
+shapeMap f array = R.fromFunction (R.extent array) (\sh@(R.Z R.:.x R.:. y) -> f x y $ array R.! sh)
+
+randomPerlin :: Seed -- Perlin Seed
+           -> Seed -- Random Seed
+           -> (Double,Double) -- Random Range
+           -> (Int,Int) -- Matrix Width & Height
+           -> R.Array R.U R.DIM2 Double
+randomPerlin pSeed rSeed range (w,h) = R.fromListUnboxed shape zips
+    where
+    perl = perlin pSeed 16 (1/128) (1/2)
+    shape = (R.Z R.:. w R.:. h)
+    rnds = randomRs range $ mkStdGen rSeed
+    zips = zipWith (\(x,y) rnd -> rnd + noiseValue perl (fromIntegral x, fromIntegral y, 0)) 
+                       [(x,y) | x <- [0..w-1], y <- [0..h-1]]
+                       rnds 
