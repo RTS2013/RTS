@@ -9,17 +9,17 @@ import qualified Data.Array.Repa as R
 type Seed = Int
 
 rangeMap :: (Ord a) => b -> [(a,b)] -> a -> b
-rangeMap def rs x = 
-        let rs' = dropWhile (\(a,_) -> x > a) rs in
-        if null rs' then def else snd (head rs')
+rangeMap def rs x = case dropWhile (\(a,_) -> x > a) rs of
+        (_,b):_ -> b
+        _______ -> def
 
 main = do
     heightSeed <- randomIO :: IO Int
     treeSeed <- randomIO :: IO Int
-    let heightP = perlin heightSeed 16 (1/128) (1/2)
-        treeP = perlin treeSeed 16 (1/128) (1/2)
-        w = 512 :: Int
-        h = 512 :: Int
+    let heightP = perlin 0 16 (1/256) (1/2)
+        treeP = perlin 0 16 (1/128) (1/2)
+        w = 1024 :: Int
+        h = 1024 :: Int
         shape = (R.Z R.:. w R.:. h)
     heightArray <- R.computeP $ R.fromFunction shape
             (\(R.Z R.:.x R.:. y) -> ( fromIntegral x
@@ -41,9 +41,8 @@ main = do
                                    $ (if z>3.25 then color (makeColor8 0 255 0 255) else color (makeColor8 0 0 0 255))
                                    $ rectangleSolid 1 1
                     ) trees
-    return ()
-    -- display (FullScreen (1600, 1200)) black $ pictures $ R.toList pic
-    display (InWindow "Perlin Test" (1600, 1200) (0, 0)) black $ pictures $ R.toList treePic
+    display (FullScreen (1600, 1200)) black $ pictures $ R.toList heightPic
+    -- display (InWindow "Perlin Test" (1600, 1200) (0, 0)) black $ pictures $ R.toList treePic
 
 shapeMap f array = R.fromFunction (R.extent array) (\sh@(R.Z R.:.x R.:. y) -> f x y $ array R.! sh)
 
