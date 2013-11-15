@@ -1,4 +1,13 @@
-module GUI where
+module GUI 
+( makeButton
+, makeColorButton
+, button2Picture
+, Direction(..)
+, Button()
+, selectButton
+, flipDirection
+, arrange
+) where
 
 import Graphics.Gloss
 import Codec.BMP
@@ -96,44 +105,3 @@ arrange start direction (winWidth,winHeight) btns =
         yMorph Southeast = (-)
         yMorph Southwest = (-)
         yMorph _ = flip seq
-
-mainy = do
-    winDims <- getWindowSize
-    let renderButtons s d = pictures . map button2Picture . fst . arrange s d winDims
-        buttons = 
-            [ makeColorButton (150,150) red (\_ -> "Red")
-            , makeColorButton (125,125) blue (\_ -> "Blue")
-            , makeColorButton (100,100) yellow (\_ -> "Yellow")
-            , makeColorButton (75,75) green (\_ -> "Green")
-            ]
-    display (FullScreen winDims) black $ pictures
-        [ renderButtons West East buttons
-        , renderButtons East West $ reverse buttons
-        , renderButtons North South buttons
-        , renderButtons South North $ reverse buttons
-        , renderButtons Northeast South buttons
-        , renderButtons Northwest East buttons
-        , renderButtons Southeast West buttons
-        , renderButtons Southwest North buttons
-        ]
-
-main = do 
-    winDims <- getWindowSize
-    let renderButtons btns = pictures $ map button2Picture btns
-        buttons = fst $ arrange Northwest Southeast winDims
-            [ makeColorButton (64,64) red (\_ -> "Red")
-            , makeColorButton (64,64) blue (\_ -> "Blue")
-            , makeColorButton (64,64) yellow (\_ -> "Yellow")
-            , makeColorButton (64,64) green (\_ -> "Green")
-            ]
-    play (FullScreen winDims) 
-        black -- Background color
-        60 -- FPS
-        ("Orange",buttons) -- Starting world state
-        (\(txt,btns) -> pictures [color white $ text txt, renderButtons btns]) -- Render world state
-        eventHandler
-        (\_ world -> world)
-
--- LEFT CLICK
-eventHandler (EventKey (MouseButton LeftButton) Down _ (x,y)) world@(txt,btns) = maybe world (\f -> (f txt,btns)) $ selectButton x y btns
-eventHandler _ world = world
