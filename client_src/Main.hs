@@ -1,13 +1,18 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Main where
 
 import Graphics.Gloss.Interface.Pure.Game
-import GUI
 import Local.WindowSize
 import Graphics.Gloss
-import Network.BSD
 import Network.Socket hiding (send, sendTo, recv, recvFrom)
-import Network.Socket.ByteString
+import Network.Socket.ByteString.Lazy
+import qualified Data.ByteString.Lazy as B
 import Control.Concurrent.STM.TVar
+import Control.Monad (forever)
+import Data.Binary (decodeOrFail)
+import GUI
+import Data
 
 data UI = UI
 	{ ui_commands :: [Button World]
@@ -53,5 +58,15 @@ eventHandler _ world = world
 
 frameStateReceiver :: TVar FrameState -> IO ()
 frameStateReceiver tvar = do
-	sock <- socket (AF_INET6 serveraddr) Datagram defaultProtocol
-	return ()
+	let addrFamily = if isSupportedFamily AF_INET6 then AF_INET6 else AF_INET
+	addrInfo <- getAddrInfo (Just defaultHints) Nothing Nothing
+	case addrInfo of
+		[ ] -> putStrLn "You have no address apparently."
+		x:_ -> do
+			sock <- socket addrFamily Datagram defaultProtocol
+			bind sock (addrAddress x)
+			forever $ do
+				bytes <- recv sock 65536
+				case decodeOrFail bytes of
+					Left _ -> putStrLn "Somebody is trying to send you bad data."
+					Right (_,_,i :: Int) -> return ()

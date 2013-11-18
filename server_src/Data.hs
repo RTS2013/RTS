@@ -1,7 +1,7 @@
 module Data where
 
 import Data.Int (Int64)
-import Data.Word (Word8,Word16,Word64)
+import Data.Word (Word8,Word16)
 import Local.KDT (KDT)
 import Data.Vector (Vector)
 import Local.Matrices.UnboxedMatrix2D (Matrix)
@@ -14,6 +14,8 @@ import Data.ByteString.Lazy (ByteString)
 import System.Random (StdGen)
 import GHC.Conc.Sync (ThreadId)
 import Network.WebSockets (Connection)
+import Control.Monad (replicateM)
+import Network.Socket (Socket)
 
 instance Eq Actor where
     a == b = identity_id (actor_identity a) == identity_id (actor_identity b)
@@ -35,6 +37,26 @@ toEntity a f = let
            , entity_angle = normalizeAngle $ moveState_angle moveS
            , entity_values = f a 
            }
+
+data World = World
+    { world_teams :: !(Vector Team)
+    , world_kdt   :: !(KDT Float Actor)
+    , world_graph :: !(Matrix Word8)
+    }
+
+data Team = Team 
+    { team_id       :: !Int
+    , team_name     :: !String
+    , team_entities :: !(Map Int Actor)
+    , team_vision   :: !(Matrix Word16)
+    , team_players  :: ![Player]
+    }
+
+data Player = Player
+    { player_team :: !Int
+    , player_name :: !String
+    , player_sock :: !Socket
+    }
 
 data Actor = Actor
     { actor_identity  :: !Identity
@@ -86,31 +108,14 @@ data ActorState = ActorState
 
 data Order 
     = Standby -- Standing around doing nothing...
-    | Move Float Float -- Ignore enemies on way to destination
-    | Assault Float Float -- Attack enemies on way to destination
-    | Attack Int -- Attack a specific enemy, ignoring all others
-    | Assist Int -- Follow and assist unit
-    | Hold Float Float -- Hold position and attack enemies in range
-    | Patrol Float Float Float Float -- Patrol between point A and point B
-
-data Team = Team 
-    { team_id :: !Int
-    , team_name :: String
-    , team_entities :: !(Map Int Actor)
-    , team_vision :: !(Matrix Word16)
-    , team_players :: ![Player]
-    }
-
-data Player = Player
-    { player_id :: !Int
-    , player_name :: String
-    }
-
-data World = World
-    { world_teams :: !(Vector Team)
-    , world_kdt :: !(KDT Float Actor)
-    , world_graph :: !(Matrix Word16)
-    }
+    | Move {-# UNPACK #-} !Float {-# UNPACK #-} !Float -- Ignore enemies on way to destination
+    | Assault {-# UNPACK #-} !Float {-# UNPACK #-} !Float -- Attack enemies on way to destination
+    | Target {-# UNPACK #-} !Int -- Ignore everything else and go after unit
+    | Hold {-# UNPACK #-} !Float {-# UNPACK #-} !Float -- Hold position and attack enemies in range
+    | Patrol {-# UNPACK #-} !Float  -- Patrol between point A and point B
+             {-# UNPACK #-} !Float
+             {-# UNPACK #-} !Float
+             {-# UNPACK #-} !Float
 
 data PlayerStatus
     = Playing
@@ -120,7 +125,7 @@ data PlayerStatus
 data Server = Server
     { server_numConnections :: !Int
     , server_clientMessages :: ![ClientMessage]
-    , server_clients :: ![(Int,ThreadId,Connection)]
+    , server_clients        :: ![(Int,ThreadId,Connection)]
     }
 
 ---------------------------------
@@ -128,13 +133,18 @@ data Server = Server
 ---------------------------------
 data SFX = SFX
     { sfx_id :: !Word16
-    , sfx_x :: !Word16
-    , sfx_y :: !Word16
-    , sfx_z :: !Word16
+    , sfx_x  :: !Word16
+    , sfx_y  :: !Word16
+    , sfx_z  :: !Word16
     }
 
 instance Binary SFX where
-    get = undefined
+    get = do
+        sfx_id <- get
+        sfx_x <- get
+        sfx_y <- get
+        sfx_z <- get
+        return $ SFX sfx_id sfx_x sfx_y sfx_z
     put a = do
         put $ sfx_id a
         put $ sfx_x a
@@ -152,7 +162,15 @@ data LineFX = LineFX
     }
 
 instance Binary LineFX where
-    get = undefined
+    get = do
+        linefx_id <- get
+        linefx_xa <- get
+        linefx_ya <- get
+        linefx_za <- get
+        linefx_xb <- get
+        linefx_yb <- get
+        linefx_zb <- get
+        return $ LineFX linefx_id linefx_xa linefx_ya linefx_za linefx_xb linefx_yb linefx_zb
     put a = do
         put $ linefx_id a
         put $ linefx_xa a
@@ -163,9 +181,9 @@ instance Binary LineFX where
         put $ linefx_zb a
 
 data Terrain = Terrain
-    { terrain_id :: !Word16
-    , terrain_x :: !Word16
-    , terrain_y :: !Word16
+    { terrain_id  :: !Word16
+    , terrain_x   :: !Word16
+    , terrain_y   :: !Word16
     , terrain_nwz :: !Word16
     , terrain_nez :: !Word16
     , terrain_swz :: !Word16
@@ -173,34 +191,51 @@ data Terrain = Terrain
     }
 
 instance Binary Terrain where
-    get = undefined
+    get = do
+        terrain_id  <- get
+        terrain_x   <- get
+        terrain_y   <- get
+        terrain_nwz <- get
+        terrain_nez <- get
+        terrain_swz <- get
+        terrain_sez <- get
+        return $ Terrain terrain_id terrain_x terrain_y terrain_nwz terrain_nez terrain_swz terrain_sez
     put a = do
-        put $ terrain_id a
-        put $ terrain_x a
-        put $ terrain_y a
+        put $ terrain_id  a
+        put $ terrain_x   a
+        put $ terrain_y   a
         put $ terrain_nwz a
         put $ terrain_nez a
         put $ terrain_swz a
         put $ terrain_sez a
 
 data Entity = Entity
-    { entity_id :: !Int
-    , entity_team :: !Word8
-    , entity_x :: !Float
-    , entity_y :: !Float
-    , entity_z :: !Float
-    , entity_angle :: !Word8
+    { entity_id     :: !Int
+    , entity_team   :: !Word8
+    , entity_x      :: !Float
+    , entity_y      :: !Float
+    , entity_z      :: !Float
+    , entity_angle  :: !Word8
     , entity_values :: ![(Word8,Word8)]
     }
 
 instance Binary Entity where
-    get = undefined
+    get = do
+        entity_id     <- get
+        entity_team   <- get
+        entity_x      <- get
+        entity_y      <- get
+        entity_z      <- get
+        entity_angle  <- get
+        count         <- get :: Get Word8
+        entity_values <- replicateM (fromIntegral count) get
+        return $ Entity entity_id entity_team entity_x entity_y entity_z entity_angle entity_values
     put a = do
-        put $ entity_id a
-        put $ entity_team a
-        put $ entity_x a
-        put $ entity_y a
-        put $ entity_z a
+        put $ entity_id    a
+        put $ entity_team  a
+        put $ entity_x     a
+        put $ entity_y     a
+        put $ entity_z     a
         put $ entity_angle a
         if null $ entity_values a 
         then put (255 :: Word8)
@@ -215,7 +250,12 @@ data ClientMessage
         [Int] -- List of actors to give command to
 
 instance Binary ClientMessage where
-    put = undefined
+    put (MoveMessage team_id shift x y xs) = do
+        put team_id
+        put shift
+        put x
+        put y
+        put xs
     get = do
         t <- get :: Get Word8
         case t of
