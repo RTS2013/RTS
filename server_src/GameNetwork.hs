@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables, OverloadedStrings #-}
 
-module GameNetwork (tcpGameServer,PlayerConnection) where
+module GameNetwork (tcpGameServer) where
 
 import qualified Data.Vector.Unboxed as V
 import qualified Data.ByteString.Lazy as B
@@ -16,29 +16,31 @@ import Control.Monad.STM (atomically)
 import System.Timeout (timeout)
 import Data
 
-type Name = String
 type TeamId = Int
-data HelloMessage = HelloMessage Name TeamId
+type Name = String
+type Secret = String
+data HelloMessage = HelloMessage TeamId Name Secret
 
 instance Binary HelloMessage where
     get = do
-        name <- get
-        team <- get
-        return $ HelloMessage name team
+        team   <- get
+        name   <- get
+        secret <- get
+        return $ HelloMessage team name secret
     put = undefined
 
-data PlayerConnection = PlayerConnection Name PlayerStatus Socket Socket SockAddr
 data ServerState = ServerState 
     { serverState_teamCounts :: (V.Vector Int)
-    , serverState_playerCons :: [PlayerConnection]
+    , serverState_players :: [Player]
     } 
 
-tcpGameServer :: V.Vector Int -> IO [PlayerConnection]
+tcpGameServer :: V.Vector Int -> IO [Player]
 tcpGameServer teamCounts = withSocketsDo $ do
     sync <- newEmptyMVar
     -- let addrFamily = if isSupportedFamily AF_INET6 then AF_INET6 else AF_INET
     localAddr <- fmap head $ getAddrInfo (Just (defaultHints {addrFlags = [AI_PASSIVE]})) 
-                                         Nothing (Just "3000")
+                                         Nothing 
+                                         (Just "3000")
     sock <- socket (addrFamily localAddr) Stream defaultProtocol
     bind sock (addrAddress localAddr)
     serverStateVar <- newTVarIO $ ServerState teamCounts []
@@ -47,15 +49,13 @@ tcpGameServer teamCounts = withSocketsDo $ do
     -- Accept a single player
     let acceptPlayer :: (Socket,SockAddr) -> ThreadId -> IO ()
         acceptPlayer (sockTCP,addr) acceptLoop = do
-            -- putStrLn $ "Binding TCP socket to " ++ show addr
-            -- bind sockTCP addr
             -- Try to validate player. Give up in 5 seconds.
             putStrLn "Validating connection"
             accepted <- timeout 5000000 $ do
                 msg <- recv sockTCP 512
                 case decodeOrFail msg of
                     Left _ -> putStrLn "Somebody didn't have a multi-pass"
-                    Right (_,_, HelloMessage name team) -> do
+                    Right (_,_, HelloMessage team name secret) -> do
                         -- Get next connection
                         putStrLn "Making UDP socket"
                         sockUDP <- socket (addrFamily localAddr) Datagram defaultProtocol
@@ -72,7 +72,7 @@ tcpGameServer teamCounts = withSocketsDo $ do
                                     if count > 0 
                                     then writeTVar serverStateVar (ServerState 
                                         (V.modify (\v -> M.write v team (count-1)) teamCounts)
-                                        (PlayerConnection name Playing sockTCP sockUDP addr : playerList))
+                                        (Player team name secret Playing sockTCP sockUDP : playerList))
                                         >> return True
                                     else return False
                         if not slotExisted
@@ -83,7 +83,7 @@ tcpGameServer teamCounts = withSocketsDo $ do
                             then return ()
                             else do
                                 putStrLn "Starting game..."
-                                atomically (readTVar serverStateVar) >>= putMVar sync . serverState_playerCons
+                                atomically (readTVar serverStateVar) >>= putMVar sync . serverState_players
                                 killThread acceptLoop
             case accepted of
                 Just __ -> return ()

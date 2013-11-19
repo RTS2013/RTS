@@ -55,7 +55,10 @@ data Team = Team
 data Player = Player
     { player_team :: !Int
     , player_name :: !String
-    , player_sock :: !Socket
+    , player_secret :: !String
+    , player_status :: !PlayerStatus
+    , player_udpSock :: !Socket
+    , player_tcpSock :: !Socket
     }
 
 data Actor = Actor
