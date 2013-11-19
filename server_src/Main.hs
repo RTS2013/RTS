@@ -1,7 +1,7 @@
 module Main where
 
 import qualified Data.Vector.Unboxed as V (fromList)
-import Data.Binary (decodeOrFail)
+import Data.Binary (decodeOrFail,encode)
 import Data.Binary.Get (ByteOffset)
 import Data.ByteString.Lazy (ByteString)
 import qualified Data.ByteString.Char8 as B (ByteString)
@@ -13,7 +13,6 @@ import System.Timeout (timeout)
 import Control.Concurrent.MVar (newEmptyMVar,takeMVar)
 import Network.Info (getNetworkInterfaces,mac)
 import Network.Socket hiding (send, sendTo, recv, recvFrom)
-import Network.Socket.ByteString (send)
 import Network.Socket.ByteString.Lazy
 import Control.Concurrent.STM.TVar 
     ( TVar
@@ -53,8 +52,15 @@ test :: IO ()
 test = withSocketsDo $ do 
     putStrLn "Enter Server Address"
     serverAddress <- getLine
+    putStrLn "Enter Name"
+    name <- getLine
+    putStrLn "Enter Team #"
+    team <- getLine >>= return . read
+    putStrLn "Enter Secret"
+    secret <- getLine
     addrinfos <- getAddrInfo Nothing (Just serverAddress) (Just "3000")
     let serveraddr = head addrinfos
     sock <- socket (addrFamily serveraddr) Stream defaultProtocol
     connect sock (addrAddress serveraddr)
+    send sock $ encode $ HelloMessage team name secret
     sClose sock

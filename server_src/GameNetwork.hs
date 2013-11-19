@@ -16,19 +16,6 @@ import Control.Monad.STM (atomically)
 import System.Timeout (timeout)
 import Data
 
-type TeamId = Int
-type Name = String
-type Secret = String
-data HelloMessage = HelloMessage TeamId Name Secret
-
-instance Binary HelloMessage where
-    get = do
-        team   <- get
-        name   <- get
-        secret <- get
-        return $ HelloMessage team name secret
-    put = undefined
-
 data ServerState = ServerState 
     { serverState_teamCounts :: (V.Vector Int)
     , serverState_players :: [Player]
@@ -59,8 +46,6 @@ tcpGameServer teamCounts = withSocketsDo $ do
                         -- Get next connection
                         putStrLn "Making UDP socket"
                         sockUDP <- socket (addrFamily localAddr) Datagram defaultProtocol
-                        putStrLn $ "Binding UDP socket to " ++ show (addrAddress localAddr)
-                        bind sockUDP (addrAddress localAddr)
                         putStrLn $ "Connecting UDP socket to " ++ show addr
                         connect sockUDP addr
                         putStrLn $ "Checking for team slots"
@@ -83,7 +68,8 @@ tcpGameServer teamCounts = withSocketsDo $ do
                             then return ()
                             else do
                                 putStrLn "Starting game..."
-                                atomically (readTVar serverStateVar) >>= putMVar sync . serverState_players
+                                atomically (readTVar serverStateVar) 
+									>>= putMVar sync . serverState_players
                                 killThread acceptLoop
             case accepted of
                 Just __ -> return ()
