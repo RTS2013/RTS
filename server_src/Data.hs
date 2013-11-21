@@ -49,7 +49,7 @@ data Team = Team
     , team_entities :: !(Map Int Actor)
     , team_vision   :: !(U.Matrix Word16)
     , team_players  :: ![Player]
-    }
+    } 
 
 data Player = Player
     { player_team    :: {-# UNPACK #-} !Int
