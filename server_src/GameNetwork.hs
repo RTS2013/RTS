@@ -1,13 +1,12 @@
 {-# LANGUAGE ScopedTypeVariables, OverloadedStrings #-}
 
-module GameNetwork (tcpGameServer) where
+module GameNetwork (gameServer) where
 
 import qualified Data.Vector.Unboxed as V
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Vector.Unboxed.Mutable as M
 import Network.Socket hiding (send, sendTo, recv, recvFrom)
-import Network.Socket.ByteString (send)
-import Network.Socket.ByteString.Lazy
+import Network.Socket.ByteString.Lazy (recv)
 import Data.Binary (decodeOrFail,Binary,get,put,Get)
 import Control.Concurrent.STM.TVar
 import Control.Concurrent (forkIO,killThread,myThreadId,ThreadId)
@@ -21,8 +20,8 @@ data ServerState = ServerState
     , serverState_players :: [Player]
     } 
 
-tcpGameServer :: V.Vector Int -> IO [Player]
-tcpGameServer teamCounts = withSocketsDo $ do
+gameServer :: V.Vector Int -> IO [Player]
+gameServer teamCounts = withSocketsDo $ do
     sync <- newEmptyMVar
     -- let addrFamily = if isSupportedFamily AF_INET6 then AF_INET6 else AF_INET
     localAddr <- fmap head $ getAddrInfo (Just (defaultHints {addrFlags = [AI_PASSIVE]})) 
@@ -37,18 +36,14 @@ tcpGameServer teamCounts = withSocketsDo $ do
     let acceptPlayer :: (Socket,SockAddr) -> ThreadId -> IO ()
         acceptPlayer (sockTCP,addr) acceptLoop = do
             -- Try to validate player. Give up in 5 seconds.
-            putStrLn "Validating connection"
             accepted <- timeout 5000000 $ do
                 msg <- recv sockTCP 512
                 case decodeOrFail msg of
                     Left _ -> putStrLn "Somebody didn't have a multi-pass"
                     Right (_,_, HelloMessage team name secret) -> do
                         -- Get next connection
-                        putStrLn "Making UDP socket"
                         sockUDP <- socket (addrFamily localAddr) Datagram defaultProtocol
-                        putStrLn $ "Connecting UDP socket to " ++ show addr
                         connect sockUDP addr
-                        putStrLn $ "Checking for team slots"
                         slotExisted <- atomically $ do
                             (ServerState teamCounts playerList) <- readTVar serverStateVar
                             case teamCounts V.!? team of
@@ -64,8 +59,9 @@ tcpGameServer teamCounts = withSocketsDo $ do
                         then putStrLn $ name ++ " couldn't join team " ++ show team
                         else do 
                             putStrLn $ name ++ " joined team " ++ show team 
-                            if V.foldl (+) 0 teamCounts /= 0
-                            then return ()
+                            ServerState vec _ <- atomically $ readTVar serverStateVar
+                            if V.foldl (+) 0 vec /= 0
+                            then putStrLn $ show (V.foldl (+) 0 vec) ++ " player(s) left to join"
                             else do
                                 putStrLn "Starting game..."
                                 atomically (readTVar serverStateVar) 

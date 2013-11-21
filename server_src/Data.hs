@@ -1,21 +1,18 @@
 module Data where
 
-import Data.Int (Int64)
-import Data.Word (Word8,Word16)
-import Local.KDT (KDT)
-import Data.Vector (Vector)
-import Local.Matrices.UnboxedMatrix2D (Matrix)
 import qualified Data.Vector.Unboxed as U (Vector)
-import Data.Binary (Binary,get,put,Get)
+import qualified Local.Matrices.UnboxedMatrix2D as U (Matrix)
+import Data.Word (Word8,Word16)
+import Data.Vector (Vector)
+import Data.Binary (Binary,Get,get,put)
 import Data.Sequence (Seq)
 import Data.Map.Strict (Map)
 import Data.IntMap.Strict (IntMap)
 import Data.ByteString.Lazy (ByteString)
 import System.Random (StdGen)
-import GHC.Conc.Sync (ThreadId)
-import Network.WebSockets (Connection)
-import Control.Monad (replicateM)
 import Network.Socket (Socket)
+import Control.Monad (replicateM)
+import Local.KDT (KDT)
 
 instance Eq Actor where
     a == b = identity_id (actor_identity a) == identity_id (actor_identity b)
@@ -23,6 +20,7 @@ instance Eq Actor where
 instance Eq Team where
     a == b = team_id a == team_id b
 
+{-
 toEntity :: Actor -> (Actor -> [(Word8,Word8)]) -> Entity
 toEntity a f = let
     ident = actor_identity a
@@ -37,29 +35,30 @@ toEntity a f = let
            , entity_angle = normalizeAngle $ moveState_angle moveS
            , entity_values = f a 
            }
+-}
 
 data World = World
     { world_teams :: !(Vector Team)
     , world_kdt   :: !(KDT Float Actor)
-    , world_graph :: !(Matrix Word8)
+    , world_graph :: !(U.Matrix Word8)
     }
 
 data Team = Team 
-    { team_id       :: !Int
+    { team_id       :: {-# UNPACK #-} !Int
     , team_name     :: !String
     , team_entities :: !(Map Int Actor)
-    , team_vision   :: !(Matrix Word16)
+    , team_vision   :: !(U.Matrix Word16)
     , team_players  :: ![Player]
     }
 
 data Player = Player
-    { player_team :: !Int
-    , player_name :: !String
-    , player_secret :: !String
-    , player_status :: !PlayerStatus
+    { player_team    :: {-# UNPACK #-} !Int
+    , player_name    :: !String
+    , player_secret  :: !String
+    , player_status  :: !PlayerStatus
     , player_udpSock :: !Socket
     , player_tcpSock :: !Socket
-    }
+    } 
 
 data Actor = Actor
     { actor_identity  :: !Identity
@@ -67,37 +66,32 @@ data Actor = Actor
     , actor_state     :: !ActorState
     } 
 
+data Effect
+    = ActorEffect {-# UNPACK #-} !Int {-# UNPACK #-} !Int !(Actor -> Actor)
+    | TeamEffect {-# UNPACK #-} !Int !(Team -> Team)
+    | WorldEffect !(World -> World)
+
 -- An actors identity. What defines it as an actor.
 data Identity = Identity
-    { identity_id           :: !Int
-    , identity_type         :: !Int
-    , identity_team         :: !Int
-    -- Takes the world, the current actor, and returns a list of actions to take on the world
-    -- Use this as little as possible
-    , identity_worldEffects :: !(IntMap (World -> Actor -> World))
-    -- Takes the world, the current actor, and returns a list of actions to take on a team
-    -- The team is identified by its teamId
-    , identity_teamEffects  :: !(IntMap (World -> Actor -> [(Int, Team -> Team)]))
-    -- Takes the world, the current Actor, and returns a list of actions to take on other actors 
-    -- The actors are identified by their teamId & actorId
-    , identity_actorEffects :: !(IntMap (World -> Actor -> [(Int, Int, Actor -> Actor)]))
-    -- Takes the world, the current actor, and returns a new actor
-    -- Use this as often as you can
+    { identity_id           :: {-# UNPACK #-} !Int 
+    , identity_type         :: {-# UNPACK #-} !Int 
+    , identity_team         :: {-# UNPACK #-} !Int 
+    , identity_radius       :: {-# UNPACK #-} !Float 
+    , identity_weight       :: {-# UNPACK #-} !Float 
+    , identity_turnRate     :: {-# UNPACK #-} !Float 
+    , identity_speedMax     :: {-# UNPACK #-} !Float 
+    , identity_acceleration :: {-# UNPACK #-} !Float 
     , identity_selfEffects  :: !(IntMap (World -> Actor -> Actor))
-    , identity_radius       :: !Float
-    , identity_weight       :: !Float 
-    , identity_turnRate     :: !Float 
-    , identity_speedMax     :: !Float 
-    , identity_acceleration :: !Float 
+    , identity_effects      :: !(IntMap (World -> Actor -> [Effect]))
     } 
 
 -- An actors current position and orientation in the world
 data MoveState = MoveState
-    { moveState_x     :: !Float
-    , moveState_y     :: !Float
-    , moveState_z     :: !Float
-    , moveState_angle :: !Float
-    , moveState_speed :: !Float
+    { moveState_x     :: {-# UNPACK #-} !Float
+    , moveState_y     :: {-# UNPACK #-} !Float
+    , moveState_z     :: {-# UNPACK #-} !Float
+    , moveState_angle :: {-# UNPACK #-} !Float
+    , moveState_speed :: {-# UNPACK #-} !Float
     } 
 
 -- An actors current state
@@ -110,35 +104,32 @@ data ActorState = ActorState
     } 
 
 data Order 
-    = Standby -- Standing around doing nothing...
-    | Move {-# UNPACK #-} !Float {-# UNPACK #-} !Float -- Ignore enemies on way to destination
-    | Assault {-# UNPACK #-} !Float {-# UNPACK #-} !Float -- Attack enemies on way to destination
-    | Target {-# UNPACK #-} !Int -- Ignore everything else and go after unit
-    | Hold {-# UNPACK #-} !Float {-# UNPACK #-} !Float -- Hold position and attack enemies in range
-    | Patrol {-# UNPACK #-} !Float  -- Patrol between point A and point B
-             {-# UNPACK #-} !Float
-             {-# UNPACK #-} !Float
-             {-# UNPACK #-} !Float
+    = Standby
+    | Move    {-# UNPACK #-} !Float 
+              {-# UNPACK #-} !Float
+    | Assault {-# UNPACK #-} !Float 
+              {-# UNPACK #-} !Float
+    | Target  {-# UNPACK #-} !Int
+    | Hold    {-# UNPACK #-} !Float 
+              {-# UNPACK #-} !Float
+    | Patrol  {-# UNPACK #-} !Float
+              {-# UNPACK #-} !Float
+              {-# UNPACK #-} !Float
+              {-# UNPACK #-} !Float
 
 data PlayerStatus
     = Playing
     | Observing
     | Quit
 
-data Server = Server
-    { server_numConnections :: !Int
-    , server_clientMessages :: ![ClientMessage]
-    , server_clients        :: ![(Int,ThreadId,Connection)]
-    }
-
 ---------------------------------
 -- DATA TO TRANSFER OVER WIRES --
 ---------------------------------
 data SFX = SFX
-    { sfx_id :: !Word16
-    , sfx_x  :: !Word16
-    , sfx_y  :: !Word16
-    , sfx_z  :: !Word16
+    { sfx_id :: {-# UNPACK #-} !Word16
+    , sfx_x  :: {-# UNPACK #-} !Word16
+    , sfx_y  :: {-# UNPACK #-} !Word16
+    , sfx_z  :: {-# UNPACK #-} !Word16
     }
 
 instance Binary SFX where
@@ -155,13 +146,13 @@ instance Binary SFX where
         put $ sfx_z a
 
 data LineFX = LineFX
-    { linefx_id :: !Word16
-    , linefx_xa :: !Word16
-    , linefx_ya :: !Word16
-    , linefx_za :: !Word16
-    , linefx_xb :: !Word16
-    , linefx_yb :: !Word16
-    , linefx_zb :: !Word16
+    { linefx_id :: {-# UNPACK #-} !Word16
+    , linefx_xa :: {-# UNPACK #-} !Word16
+    , linefx_ya :: {-# UNPACK #-} !Word16
+    , linefx_za :: {-# UNPACK #-} !Word16
+    , linefx_xb :: {-# UNPACK #-} !Word16
+    , linefx_yb :: {-# UNPACK #-} !Word16
+    , linefx_zb :: {-# UNPACK #-} !Word16
     }
 
 instance Binary LineFX where
@@ -184,13 +175,13 @@ instance Binary LineFX where
         put $ linefx_zb a
 
 data Terrain = Terrain
-    { terrain_id  :: !Word16
-    , terrain_x   :: !Word16
-    , terrain_y   :: !Word16
-    , terrain_nwz :: !Word16
-    , terrain_nez :: !Word16
-    , terrain_swz :: !Word16
-    , terrain_sez :: !Word16
+    { terrain_id  :: {-# UNPACK #-} !Word16
+    , terrain_x   :: {-# UNPACK #-} !Word16
+    , terrain_y   :: {-# UNPACK #-} !Word16
+    , terrain_nwz :: {-# UNPACK #-} !Word16
+    , terrain_nez :: {-# UNPACK #-} !Word16
+    , terrain_swz :: {-# UNPACK #-} !Word16
+    , terrain_sez :: {-# UNPACK #-} !Word16
     }
 
 instance Binary Terrain where
@@ -213,44 +204,44 @@ instance Binary Terrain where
         put $ terrain_sez a
 
 data Entity = Entity
-    { entity_id     :: !Int
-    , entity_team   :: !Word8
-    , entity_x      :: !Float
-    , entity_y      :: !Float
-    , entity_z      :: !Float
-    , entity_angle  :: !Word8
+    { entity_id     :: {-# UNPACK #-} !Int
+    , entity_team   :: {-# UNPACK #-} !Word8
+    , entity_angle  :: {-# UNPACK #-} !Word8
+    , entity_x      :: {-# UNPACK #-} !Word16
+    , entity_y      :: {-# UNPACK #-} !Word16
+    , entity_z      :: {-# UNPACK #-} !Word16
     , entity_values :: ![(Word8,Word8)]
-    }
+    } 
 
 instance Binary Entity where
     get = do
         entity_id     <- get
+        entity_angle  <- get
         entity_team   <- get
         entity_x      <- get
         entity_y      <- get
         entity_z      <- get
-        entity_angle  <- get
         count         <- get :: Get Word8
         entity_values <- replicateM (fromIntegral count) get
         return $ Entity entity_id entity_team entity_x entity_y entity_z entity_angle entity_values
     put a = do
         put $ entity_id    a
         put $ entity_team  a
+        put $ entity_angle a
         put $ entity_x     a
         put $ entity_y     a
         put $ entity_z     a
-        put $ entity_angle a
         if null $ entity_values a 
         then put (255 :: Word8)
         else mapM_ put $ entity_values a
 
 data ClientMessage 
     = MoveMessage 
-        Int -- Team Id
-        Bool -- True = Add to commands, False = Replace commands
-        Float -- X coord
-        Float -- Y coord
-        [Int] -- List of actors to give command to
+        {-# UNPACK #-} !Int -- Team Id
+                       !Bool -- True = Add to commands, False = Replace commands
+        {-# UNPACK #-} !Float -- X coord
+        {-# UNPACK #-} !Float -- Y coord
+                       ![Int] -- List of actors to give command to
 
 instance Binary ClientMessage where
     put (MoveMessage team_id shift x y xs) = do
@@ -270,10 +261,7 @@ instance Binary ClientMessage where
                 ids <- get
                 return $ MoveMessage pid b x y ids
                 
-type TeamId = Int
-type Name = String
-type Secret = String
-data HelloMessage = HelloMessage TeamId Name Secret
+data HelloMessage = HelloMessage Int String String
 
 instance Binary HelloMessage where
     get = do
@@ -282,6 +270,6 @@ instance Binary HelloMessage where
         secret <- get
         return $ HelloMessage team name secret
     put (HelloMessage team name secret) = do
-		put team
-		put name
-		put secret
+        put team
+        put name
+        put secret

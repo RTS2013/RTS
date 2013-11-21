@@ -27,7 +27,7 @@ data World = World
 
 data FrameState = FrameState
 
-mainy = do 
+main = do 
     winDims <- getWindowSize
     let renderButtons btns = pictures $ map button2Picture btns
         buttons = fst $ arrange Northwest East winDims
@@ -40,12 +40,12 @@ mainy = do
         black -- Background color
         60 -- FPS
         (World (UI buttons () []) ()) -- Starting world state
-        (\world -> pictures []) -- Render world state
+        renderWorld
         eventHandler
         (\_ world -> world)
 
 renderWorld :: World -> Picture
-renderWorld world = undefined
+renderWorld = pictures . map button2Picture . ui_commands . world_ui
 
 -- LEFT CLICK
 eventHandler (EventKey (MouseButton LeftButton) Down _ (x,y)) world = 
@@ -55,18 +55,3 @@ eventHandler (EventKey (MouseButton LeftButton) Down _ (x,y)) world =
 eventHandler (EventMotion (x,y)) world = world
 -- EVERYTHING ELSE
 eventHandler _ world = world
-
-frameStateReceiver :: TVar FrameState -> IO ()
-frameStateReceiver tvar = do
-	let addrFamily = if isSupportedFamily AF_INET6 then AF_INET6 else AF_INET
-	addrInfo <- getAddrInfo (Just defaultHints) Nothing Nothing
-	case addrInfo of
-		[ ] -> putStrLn "You have no address apparently."
-		x:_ -> do
-			sock <- socket addrFamily Datagram defaultProtocol
-			bind sock (addrAddress x)
-			forever $ do
-				bytes <- recv sock 65536
-				case decodeOrFail bytes of
-					Left _ -> putStrLn "Somebody is trying to send you bad data."
-					Right (_,_,i :: Int) -> return ()

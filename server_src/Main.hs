@@ -1,19 +1,21 @@
 module Main where
 
 import qualified Data.Vector.Unboxed as V (fromList)
+import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString as B
+import Network.Socket.ByteString.Lazy (recv)
+import Network.Socket.ByteString (send)
+import Network.Socket hiding (send, recv)
 import Data.Binary (decodeOrFail,encode)
 import Data.Binary.Get (ByteOffset)
-import Data.ByteString.Lazy (ByteString)
-import qualified Data.ByteString.Char8 as B (ByteString)
 import Control.Monad.STM (atomically)
 import Control.Concurrent (forkIO, threadDelay, myThreadId)
 import GHC.Conc.Sync (ThreadId)
 import System.Environment (getArgs)
 import System.Timeout (timeout)
-import Control.Concurrent.MVar (newEmptyMVar,takeMVar)
-import Network.Info (getNetworkInterfaces,mac)
-import Network.Socket hiding (send, sendTo, recv, recvFrom)
-import Network.Socket.ByteString.Lazy
+import Control.Concurrent.MVar (newEmptyMVar,takeMVar,putMVar)
+
+
 import Control.Concurrent.STM.TVar 
     ( TVar
     , modifyTVar
@@ -28,14 +30,13 @@ import Data.Time.Clock
     , picosecondsToDiffTime )
 -- Local code
 import Data
-import GameNetwork
+import GameNetwork (gameServer)
 
 main = do 
-    getNetworkInterfaces >>= print . mac . head
-    -- numPlayers <- fmap (read . head) getArgs :: IO Int
-    -- teamCounts <- fmap read getLine
-    let teamCounts = [1]
-    playerCons <- tcpGameServer $ V.fromList teamCounts
+    -- teamCounts <- fmap read getArgs
+    putStrLn "Enter the number of players per team (ex. [1,3,2] )"
+    teamCounts <- fmap read getLine
+    players <- gameServer $ V.fromList teamCounts
     -- Start main loop
     getCurrentTime >>= loop 10 1
 
@@ -47,20 +48,3 @@ loop fps steps time = do
         (steps * 1000000 `div` fps) - 
         ceiling (diffUTCTime timeNow time * fromInteger 1000000)
     loop fps (steps + 1) time 
-
-test :: IO ()
-test = withSocketsDo $ do 
-    putStrLn "Enter Server Address"
-    serverAddress <- getLine
-    putStrLn "Enter Name"
-    name <- getLine
-    putStrLn "Enter Team #"
-    team <- getLine >>= return . read
-    putStrLn "Enter Secret"
-    secret <- getLine
-    addrinfos <- getAddrInfo Nothing (Just serverAddress) (Just "3000")
-    let serveraddr = head addrinfos
-    sock <- socket (addrFamily serveraddr) Stream defaultProtocol
-    connect sock (addrAddress serveraddr)
-    send sock $ encode $ HelloMessage team name secret
-    sClose sock

@@ -139,3 +139,16 @@ instance Binary ClientMessage where
                 y <- get
                 ids <- get
                 return $ MoveMessage pid b x y ids
+
+data HelloMessage = HelloMessage Int String String
+
+instance Binary HelloMessage where
+    get = do
+        team   <- get
+        name   <- get
+        secret <- get
+        return $ HelloMessage team name secret
+    put (HelloMessage team name secret) = do
+        put team
+        put name
+        put secret

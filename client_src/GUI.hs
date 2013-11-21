@@ -7,7 +7,7 @@ module GUI
 , selectButton
 , flipDirection
 , arrange
-) where
+) where 
 
 import Graphics.Gloss
 import Codec.BMP
