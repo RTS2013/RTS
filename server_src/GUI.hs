@@ -57,19 +57,19 @@ data Direction
     | Southeast
     | Southwest
 
-flipDirection :: Direction -> Direction
-flipDirection North = South
-flipDirection South = North
-flipDirection East = West
-flipDirection West = East
-flipDirection Northeast = Southwest
-flipDirection Northwest = Southeast
-flipDirection Southeast = Northwest
-flipDirection Southwest = Northeast
+flipDirection :: Direction -> Direction 
+flipDirection North = South 
+flipDirection South = North 
+flipDirection East = West 
+flipDirection West = East 
+flipDirection Northeast = Southwest 
+flipDirection Northwest = Southeast 
+flipDirection Southeast = Northwest 
+flipDirection Southwest = Northeast 
 
-arrange :: Direction -- Start location
-        -> Direction -- Align direction
-        -> (Int,Int) -- Window size
+arrange :: Direction -- Start location 
+        -> Direction -- Align direction 
+        -> (Int,Int) -- Window size 
         -> [Button a] 
         -> ([Button a],(Float,Float))
 arrange start direction (winWidth,winHeight) btns = 

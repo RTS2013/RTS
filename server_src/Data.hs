@@ -1,7 +1,11 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module Data where
 
+import qualified Data.List as L
 import qualified Data.Vector.Unboxed as U (Vector)
 import qualified Local.Matrices.UnboxedMatrix2D as U (Matrix)
+import Control.Applicative ((<$>),(<*>))
 import Data.Word (Word8,Word16)
 import Data.Vector (Vector)
 import Data.Binary (Binary,Get,get,put)
@@ -11,8 +15,8 @@ import Data.IntMap.Strict (IntMap)
 import Data.ByteString.Lazy (ByteString)
 import System.Random (StdGen)
 import Network.Socket (Socket)
-import Control.Monad (replicateM)
 import Local.KDT (KDT)
+import Local.Pathing (Move2D(..))
 
 instance Eq Actor where
     a == b = identity_id (actor_identity a) == identity_id (actor_identity b)
@@ -20,28 +24,28 @@ instance Eq Actor where
 instance Eq Team where
     a == b = team_id a == team_id b
 
-{-
-toEntity :: Actor -> (Actor -> [(Word8,Word8)]) -> Entity
-toEntity a f = let
+toEntity :: (Int,Int,Int) -> Actor -> (Actor -> [(Word8,Word8)]) -> Entity
+toEntity (mx,my,mz) a f = let
     ident = actor_identity a
     state = actor_state a
     moveS = actor_moveState a 
-    normalizeAngle a = max 0 $ min 255 $ floor $ (a + (pi/2)) / 255 in
+    normalizeCoord x = floor $ fromIntegral (maxBound :: Word16) / x
+    normalizeAngle a = floor $ (255 / (pi*2)) * (if a < 0 then pi*2 - a else a) in
     Entity { entity_id = identity_id ident
+           , entity_anim = actorState_animId state
            , entity_team = fromIntegral $ identity_team ident
-           , entity_x = moveState_x moveS
-           , entity_y = moveState_y moveS
-           , entity_z = moveState_z moveS
+           , entity_x = normalizeCoord $ moveState_x moveS
+           , entity_y = normalizeCoord $ moveState_y moveS
+           , entity_z = normalizeCoord $ moveState_z moveS
            , entity_angle = normalizeAngle $ moveState_angle moveS
            , entity_values = f a 
-           }
--}
+           } 
 
 data World = World
     { world_teams :: !(Vector Team)
     , world_kdt   :: !(KDT Float Actor)
     , world_graph :: !(U.Matrix Word8)
-    }
+    } 
 
 data Team = Team 
     { team_id       :: {-# UNPACK #-} !Int
@@ -66,10 +70,13 @@ data Actor = Actor
     , actor_state     :: !ActorState
     } 
 
-data Effect
-    = ActorEffect {-# UNPACK #-} !Int {-# UNPACK #-} !Int !(Actor -> Actor)
-    | TeamEffect {-# UNPACK #-} !Int !(Team -> Team)
-    | WorldEffect !(World -> World)
+instance Move2D Float Actor where
+    getWeight a = identity_weight $ actor_identity a
+    getRadius a = identity_radius $ actor_identity a
+    getX a = moveState_x $ actor_moveState a
+    getY a = moveState_y $ actor_moveState a
+    setX x a = a {actor_moveState = (actor_moveState a) {moveState_x = x}}
+    setY y a = a {actor_moveState = (actor_moveState a) {moveState_y = y}}
 
 -- An actors identity. What defines it as an actor.
 data Identity = Identity
@@ -81,7 +88,7 @@ data Identity = Identity
     , identity_turnRate     :: {-# UNPACK #-} !Float 
     , identity_speedMax     :: {-# UNPACK #-} !Float 
     , identity_acceleration :: {-# UNPACK #-} !Float 
-    , identity_selfEffects  :: !(IntMap (World -> Actor -> Actor))
+    , identity_selfEffects  :: !(IntMap (World -> Actor -> Maybe Actor))
     , identity_effects      :: !(IntMap (World -> Actor -> [Effect]))
     } 
 
@@ -96,12 +103,18 @@ data MoveState = MoveState
 
 -- An actors current state
 data ActorState = ActorState
-    { actorState_random :: !StdGen           -- Every actor gets its own random generator
+    { actorState_animId :: {-# UNPACK #-} !Word8
+    , actorState_random :: !StdGen           -- Every actor gets its own random generator
     , actorState_orders :: !(Seq Order)      -- Every actor has a sequence of orders to perform
     , actorState_values :: !(U.Vector Float) -- Every actor has arbitrary float values
     , actorState_flags  :: !(U.Vector Bool)  -- Every actor has arbitrary bool values
     , actorState_counts :: !(U.Vector Int)   -- Every actor has arbitrary int values
     } 
+
+data Effect
+    = ActorEffect {-# UNPACK #-} !Int {-# UNPACK #-} !Int !(Actor -> Actor)
+    | TeamEffect {-# UNPACK #-} !Int !(Team -> Team)
+    | WorldEffect !(World -> World)
 
 data Order 
     = Standby
@@ -120,7 +133,19 @@ data Order
 data PlayerStatus
     = Playing
     | Observing
-    | Quit
+    | Disconnected
+
+data ViewStatus
+    = Visible
+    | Discovered
+    | Undiscovered
+
+data Node = Node
+    { node_isPath  :: Bool
+    , node_height  :: {-# UNPACK #-} !Word8
+    , node_visual  :: {-# UNPACK #-} !Word8
+    , node_corners :: U.Vector (Int,Int)
+    } 
 
 ---------------------------------
 -- DATA TO TRANSFER OVER WIRES --
@@ -133,12 +158,7 @@ data SFX = SFX
     }
 
 instance Binary SFX where
-    get = do
-        sfx_id <- get
-        sfx_x <- get
-        sfx_y <- get
-        sfx_z <- get
-        return $ SFX sfx_id sfx_x sfx_y sfx_z
+    get = SFX <$> get <*> get <*> get <*> get
     put a = do
         put $ sfx_id a
         put $ sfx_x a
@@ -156,15 +176,7 @@ data LineFX = LineFX
     }
 
 instance Binary LineFX where
-    get = do
-        linefx_id <- get
-        linefx_xa <- get
-        linefx_ya <- get
-        linefx_za <- get
-        linefx_xb <- get
-        linefx_yb <- get
-        linefx_zb <- get
-        return $ LineFX linefx_id linefx_xa linefx_ya linefx_za linefx_xb linefx_yb linefx_zb
+    get = LineFX <$> get <*> get <*> get <*> get <*> get <*> get <*> get 
     put a = do
         put $ linefx_id a
         put $ linefx_xa a
@@ -185,15 +197,7 @@ data Terrain = Terrain
     }
 
 instance Binary Terrain where
-    get = do
-        terrain_id  <- get
-        terrain_x   <- get
-        terrain_y   <- get
-        terrain_nwz <- get
-        terrain_nez <- get
-        terrain_swz <- get
-        terrain_sez <- get
-        return $ Terrain terrain_id terrain_x terrain_y terrain_nwz terrain_nez terrain_swz terrain_sez
+    get = Terrain <$> get <*> get <*> get <*> get <*> get <*> get <*> get 
     put a = do
         put $ terrain_id  a
         put $ terrain_x   a
@@ -206,6 +210,7 @@ instance Binary Terrain where
 data Entity = Entity
     { entity_id     :: {-# UNPACK #-} !Int
     , entity_team   :: {-# UNPACK #-} !Word8
+    , entity_anim   :: {-# UNPACK #-} !Word8
     , entity_angle  :: {-# UNPACK #-} !Word8
     , entity_x      :: {-# UNPACK #-} !Word16
     , entity_y      :: {-# UNPACK #-} !Word16
@@ -214,19 +219,12 @@ data Entity = Entity
     } 
 
 instance Binary Entity where
-    get = do
-        entity_id     <- get
-        entity_angle  <- get
-        entity_team   <- get
-        entity_x      <- get
-        entity_y      <- get
-        entity_z      <- get
-        count         <- get :: Get Word8
-        entity_values <- replicateM (fromIntegral count) get
-        return $ Entity entity_id entity_team entity_x entity_y entity_z entity_angle entity_values
+    get = Entity <$> get <*> get <*> get <*> get <*> get <*> get <*> get <*> 
+        ((get :: Get Word8) >>= \c -> genericReplicateM c get)
     put a = do
         put $ entity_id    a
         put $ entity_team  a
+        put $ entity_anim  a
         put $ entity_angle a
         put $ entity_x     a
         put $ entity_y     a
@@ -235,41 +233,53 @@ instance Binary Entity where
         then put (255 :: Word8)
         else mapM_ put $ entity_values a
 
-data ClientMessage 
-    = MoveMessage 
+data ActorMessage = ActorMessage 
         {-# UNPACK #-} !Int -- Team Id
+                       !Int -- Type Id
                        !Bool -- True = Add to commands, False = Replace commands
         {-# UNPACK #-} !Float -- X coord
         {-# UNPACK #-} !Float -- Y coord
                        ![Int] -- List of actors to give command to
 
-instance Binary ClientMessage where
-    put (MoveMessage team_id shift x y xs) = do
-        put team_id
+instance Binary ActorMessage where
+    get = ActorMessage <$> get <*> get <*> get <*> get <*> get <*> get
+    put (ActorMessage teamId typeId shift x y xs) = do
+        put teamId
+        put typeId
         put shift
         put x
         put y
         put xs
-    get = do
-        t <- get :: Get Word8
-        case t of
-            0 -> do
-                pid <- get
-                b <- get
-                x <- get
-                y <- get
-                ids <- get
-                return $ MoveMessage pid b x y ids
                 
 data HelloMessage = HelloMessage Int String String
 
 instance Binary HelloMessage where
-    get = do
-        team   <- get
-        name   <- get
-        secret <- get
-        return $ HelloMessage team name secret
+    get = HelloMessage <$> get <*> get <*> get
     put (HelloMessage team name secret) = do
         put team
         put name
         put secret
+
+genericReplicateM :: (Integral i, Monad m) => i -> m a -> m [a]
+genericReplicateM 0 m = return []
+genericReplicateM n m = do
+    x <- m
+    xs <- genericReplicateM (n-1) m
+    return $ x:xs
+
+data ClientDatagram 
+    = EntityDatagram  [Entity]
+    | LineFXDatagram  [LineFX]
+    | SFXDatagram     [SFX]
+    | TerrainDatagram [Terrain]
+
+instance Binary ClientDatagram where
+    get = (get :: Get Word8) >>= \t -> case t of
+        0 -> EntityDatagram  <$> ((get :: Get Word8) >>= \c -> genericReplicateM c get) 
+        1 -> LineFXDatagram  <$> ((get :: Get Word8) >>= \c -> genericReplicateM c get) 
+        2 -> SFXDatagram     <$> ((get :: Get Word8) >>= \c -> genericReplicateM c get) 
+        3 -> TerrainDatagram <$> ((get :: Get Word8) >>= \c -> genericReplicateM c get) 
+    put (EntityDatagram  xs) = put (L.genericLength xs :: Word8) >> mapM_ put xs 
+    put (LineFXDatagram  xs) = put (L.genericLength xs :: Word8) >> mapM_ put xs 
+    put (SFXDatagram     xs) = put (L.genericLength xs :: Word8) >> mapM_ put xs 
+    put (TerrainDatagram xs) = put (L.genericLength xs :: Word8) >> mapM_ put xs 

@@ -2,15 +2,15 @@
 
 module Main where
 
-import Graphics.Gloss.Interface.Pure.Game
-import Local.WindowSize
-import Graphics.Gloss
+import qualified Data.ByteString.Lazy as B
 import Network.Socket hiding (send, sendTo, recv, recvFrom)
 import Network.Socket.ByteString.Lazy
-import qualified Data.ByteString.Lazy as B
+import Graphics.Gloss.Interface.Pure.Game
+import Graphics.Gloss
 import Control.Concurrent.STM.TVar
 import Control.Monad (forever)
 import Data.Binary (decodeOrFail)
+import Local.WindowSize
 import GUI
 import Data
 

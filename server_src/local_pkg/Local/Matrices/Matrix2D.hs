@@ -7,29 +7,43 @@ module Local.Matrices.Matrix2D
 , write
 , modify
 , unsafeWith
+, (!?)
 ) where
 
 import Prelude hiding (read)
-import qualified Data.Vector.Generic.Mutable as M
-import qualified Data.Vector.Generic as V
+import qualified Data.Vector.Mutable as M
+import qualified Data.Vector as V
 import Control.Monad.Primitive (PrimState,PrimMonad)
+import Control.DeepSeq (deepseq,NFData)
 
-data Matrix v = Matrix Int Int v
+data Matrix v = Matrix !Int !Int !v
 
-make :: (PrimMonad m, M.MVector v a) => Int -> Int -> a -> m (Matrix (v (PrimState m) a))
+make :: PrimMonad m => Int -> Int -> a -> m (Matrix (V.MVector (PrimState m) a))
 make x y a = M.replicate (x*y) a >>= return . Matrix x y
 
-read :: (PrimMonad m, M.MVector v a) => Int -> Int -> Matrix (v (PrimState m) a) -> m (Maybe a)
+read :: PrimMonad m => Int -> Int -> Matrix (V.MVector (PrimState m) a) -> m (Maybe a)
 read x y (Matrix mx my vec) =
-	if x >= 0 && y >= 0 && x < mx && y < my
-	then M.unsafeRead vec (y * mx + x) >>= return . Just
-	else return Nothing
+    if x >= 0 && y >= 0 && x < mx && y < my
+    then M.unsafeRead vec (y * mx + x) >>= return . Just
+    else return Nothing
 
-write :: (PrimMonad m, M.MVector v a) => Int -> Int -> a -> Matrix (v (PrimState m) a) -> m ()
+write :: PrimMonad m => Int -> Int -> a -> Matrix (V.MVector (PrimState m) a) -> m ()
 write x y a (Matrix mx _ vec) = M.write vec (y * mx + x) a
 
-modify :: (PrimMonad m, M.MVector v a) => Int -> Int -> (a -> a) -> Matrix (v (PrimState m) a) -> m ()
+modify :: PrimMonad m => Int -> Int -> (a -> a) -> Matrix (V.MVector (PrimState m) a) -> m ()
 modify x y f m = read x y m >>= maybe (return ()) (\a -> write x y (f a) m)
 
-unsafeWith :: (V.Vector v a, PrimMonad m) => Matrix (V.Mutable v (PrimState m) a) -> (Matrix (v a) -> b) -> m b
-unsafeWith (Matrix x y v) f = V.unsafeFreeze v >>= return . f . Matrix x y
+unsafeWith :: (PrimMonad m, NFData b) => Matrix (V.MVector (PrimState m) a) -> (Matrix (V.Vector a) -> b) -> m b
+unsafeWith (Matrix x y v) f = V.unsafeFreeze v >>= return . f . Matrix x y >>= (\b -> b `deepseq` return b)
+
+(!?) :: Matrix (V.Vector a) -> (Int,Int) -> Maybe a
+(!?) (Matrix w _ v) (x,y) = v V.!? (w * y + x)
+
+main = do
+    m <- make 1028 1028 (0 :: Int)
+    write 5 0 1 m
+    b <- unsafeWith m (\(Matrix _ _ v) -> v V.! 5)
+    write 5 0 2 m
+    c <- unsafeWith m (\(Matrix _ _ v) -> v V.! 5)
+    print b
+    print c
