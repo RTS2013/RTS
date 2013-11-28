@@ -1,18 +1,22 @@
-{-# LANGUAGE ScopedTypeVariables, OverloadedStrings #-}
-
-module GameNetwork (gameServer) where
+module GameNetwork 
+( gameServer
+, send512Datagram
+) where
 
 import qualified Data.Vector.Unboxed as V
 import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString as SB
 import qualified Data.Vector.Unboxed.Mutable as M
 import Network.Socket hiding (send, sendTo, recv, recvFrom)
 import Network.Socket.ByteString.Lazy (recv)
-import Data.Binary (decodeOrFail,Binary,get,put,Get)
+import Network.Socket.ByteString (sendMany)
+import Data.Binary (decodeOrFail,Binary,get,put,Get,encode)
 import Control.Concurrent.STM.TVar
 import Control.Concurrent (forkIO,killThread,myThreadId,ThreadId)
 import Control.Concurrent.MVar (putMVar,takeMVar,newEmptyMVar)
 import Control.Monad.STM (atomically)
 import System.Timeout (timeout)
+import Data.Word (Word8)
 import Data
 
 data ServerState = ServerState 
@@ -27,14 +31,18 @@ gameServer teamCounts = withSocketsDo $ do
     localAddr <- fmap head $ getAddrInfo (Just (defaultHints {addrFlags = [AI_PASSIVE]})) 
                                          Nothing 
                                          (Just "3000")
+    
     sock <- socket (addrFamily localAddr) Stream defaultProtocol
     bind sock (addrAddress localAddr)
     serverStateVar <- newTVarIO $ ServerState teamCounts []
+
     -- Only accept as many connections as there are potential players
     listen sock $ V.foldl (+) 0 teamCounts
+
     -- Accept a single player
     let acceptPlayer :: (Socket,SockAddr) -> ThreadId -> IO ()
         acceptPlayer (sockTCP,addr) acceptLoop = do
+
             -- Try to validate player. Give up in 5 seconds.
             accepted <- timeout 5000000 $ do
                 msg <- recv sockTCP 512
@@ -70,6 +78,7 @@ gameServer teamCounts = withSocketsDo $ do
             case accepted of
                 Just __ -> return ()
                 Nothing -> return ()
+
         -- Loop of accepting new players
         acceptPlayers :: IO ()
         acceptPlayers = do
@@ -80,3 +89,19 @@ gameServer teamCounts = withSocketsDo $ do
             acceptPlayers
     forkIO acceptPlayers
     takeMVar sync
+
+send512Datagram :: Binary a => Word8 -> Socket -> [a] -> IO ()
+send512Datagram header sock xs = sendGram sock $ map (B.toStrict . encode) xs
+    where
+
+    split512 :: Int -> ([SB.ByteString],[SB.ByteString],Word8) -> ([SB.ByteString],[SB.ByteString],Word8)
+    split512 n (x:xs,ys,c) = let len = SB.length x + n in
+        if len <= 512 then split512 len (xs,x:ys,c+1) else (x:xs,ys,c)
+    split512 _ other = other
+
+    sendGram :: Socket -> [SB.ByteString] -> IO ()
+    sendGram sock ents = do
+        let (leftOvers,gram,c) = split512 0 (ents,[],0)
+        if null gram
+        then return ()
+        else sendMany sock (SB.pack [header,c] : gram) >> sendGram sock leftOvers

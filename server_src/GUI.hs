@@ -14,25 +14,25 @@ import Codec.BMP
 import Local.WindowSize
 import Graphics.Gloss.Interface.Pure.Game
 
-data Button a = Button
+data Button = Button
     { btn_pos :: (Float,Float)
     , btn_dim :: (Float,Float)
     , btn_pic :: Picture
-    , btn_fun :: (a -> a)
-    } 
+    , btn_name :: String
+    } deriving (Eq,Show)
 
-makeButton :: BMP -> (a -> a) -> Button a
+makeButton :: BMP -> String -> Button
 makeButton bmp = Button (0,0) (fromIntegral x, fromIntegral y) (bitmapOfBMP bmp)
     where (x,y) = bmpDimensions bmp
 
-makeColorButton :: (Float,Float) -> Color -> (a -> a) -> Button a
+makeColorButton :: (Float,Float) -> Color -> String -> Button
 makeColorButton (w,h) c = Button (0,0) (w,h) (color c $ rectangleSolid w h)
 
-selectButton :: Float -> Float -> [Button a] -> Maybe (a -> a)
+selectButton :: Float -> Float -> [Button] -> Maybe String
 selectButton x y btns = 
     case dropWhile (not . p) btns of
         [   ] -> Nothing
-        btn:_ -> Just $ btn_fun btn
+        btn:_ -> Just $ btn_name btn
     where
         p btn = let (bx,by) = btn_pos btn
                     (w,h) = btn_dim btn
@@ -42,7 +42,7 @@ selectButton x y btns =
                 y >= by - hh &&
                 y <= by + hh
 
-button2Picture :: Button a -> Picture
+button2Picture :: Button -> Picture
 button2Picture btn = translate x y $ btn_pic btn
     where
     (x,y) = btn_pos btn
@@ -70,8 +70,8 @@ flipDirection Southwest = Northeast
 arrange :: Direction -- Start location 
         -> Direction -- Align direction 
         -> (Int,Int) -- Window size 
-        -> [Button a] 
-        -> ([Button a],(Float,Float))
+        -> [Button] 
+        -> ([Button],(Float,Float))
 arrange start direction (winWidth,winHeight) btns = 
     let (pics,dims) = 
             foldl (\(pics,(xAcc,yAcc)) btn -> 

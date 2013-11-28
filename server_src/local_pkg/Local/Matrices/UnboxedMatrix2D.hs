@@ -1,7 +1,7 @@
 {-# LANGUAGE DoAndIfThenElse #-}
 
 module Local.Matrices.UnboxedMatrix2D
-( Matrix(..)
+( Matrix()
 , make
 , read
 , write
