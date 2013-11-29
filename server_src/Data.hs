@@ -6,6 +6,7 @@ import qualified Data.List as L
 import qualified Data.Vector.Unboxed.Mutable as MUV
 import qualified Data.Vector.Unboxed as UV (Vector)
 import qualified Local.Matrices.UnboxedMatrix2D as UM (Matrix)
+import Control.Concurrent (ThreadId)
 import Control.Applicative ((<$>),(<*>))
 import Control.Monad.Primitive (PrimState)
 import Data.Word (Word8,Word16)
@@ -44,9 +45,10 @@ data Player = Player
     { player_team    :: {-# UNPACK #-} !Int
     , player_name    :: !String
     , player_secret  :: !String
-    , player_status  :: !PlayerStatus
     , player_udpSock :: !Socket
     , player_tcpSock :: !Socket
+    , player_status  :: !PlayerStatus
+    , player_thread  :: !ThreadId
     } 
 
 data Actor = Actor
@@ -108,12 +110,14 @@ data Order
     | Assault {-# UNPACK #-} !Float 
               {-# UNPACK #-} !Float
     | Target  {-# UNPACK #-} !Int
+              {-# UNPACK #-} !Int
     | Hold    {-# UNPACK #-} !Float 
               {-# UNPACK #-} !Float
     | Patrol  {-# UNPACK #-} !Float
               {-# UNPACK #-} !Float
               {-# UNPACK #-} !Float
               {-# UNPACK #-} !Float
+    | Invoke  {-# UNPACK #-} !Int
 
 data PlayerStatus
     = Playing
@@ -162,13 +166,15 @@ instance Binary SFX where
 
 data TargetFX = TargetFX
     { targetfx_id :: {-# UNPACK #-} !Word16
+    , targetfx_teamId :: {-# UNPACK #-} !Int
     , targetfx_actorId :: {-# UNPACK #-} !Int
     }
 
 instance Binary TargetFX where
-    get = TargetFX <$> get <*> get
+    get = TargetFX <$> get <*> get <*> get
     put a = do
         put $ targetfx_id a
+        put $ targetfx_teamId a
         put $ targetfx_actorId a
 
 -- 14 Bytes
@@ -271,12 +277,14 @@ instance Binary HelloMessage where
         put name
         put secret
 
+-- Datagram sent to clients from server
 data ClientDatagram 
     = EntityDatagram  [Entity]
     | LineFXDatagram  [LineFX]
     | SFXDatagram     [SFX]
     | TerrainDatagram [Terrain]
     | TargetDatagram  [TargetFX]
+    | MessageDatagram Bool String String
 
 instance Binary ClientDatagram where 
     get = getWord8 >>= \t -> case t of
@@ -285,11 +293,13 @@ instance Binary ClientDatagram where
         2 -> SFXDatagram     <$> (getWord8 >>= \c -> genericReplicateM c get) 
         3 -> TerrainDatagram <$> (getWord8 >>= \c -> genericReplicateM c get) 
         4 -> TargetDatagram  <$> (getWord8 >>= \c -> genericReplicateM c get) 
+        5 -> MessageDatagram <$> get <*> get <*> get
     put (EntityDatagram  xs) = putWord8 0 >> put (L.genericLength xs :: Word8) >> mapM_ put xs 
     put (LineFXDatagram  xs) = putWord8 1 >> put (L.genericLength xs :: Word8) >> mapM_ put xs 
     put (SFXDatagram     xs) = putWord8 2 >> put (L.genericLength xs :: Word8) >> mapM_ put xs 
     put (TerrainDatagram xs) = putWord8 3 >> put (L.genericLength xs :: Word8) >> mapM_ put xs 
     put (TargetDatagram  xs) = putWord8 4 >> put (L.genericLength xs :: Word8) >> mapM_ put xs 
+    put (MessageDatagram teamOnly name msg) = put teamOnly >> put name >> put msg
 
 genericReplicateM :: (Integral i, Monad m) => i -> m a -> m [a]
 genericReplicateM 0 m = return []
