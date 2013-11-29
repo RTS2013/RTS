@@ -30,3 +30,9 @@ connectToServer = withSocketsDo $ do
     connect udpSock (addrAddress serverAddr)
     putStrLn "Connected to server"
     return (tcpSock,udpSock)
+
+main = do
+    (tcp,udp) <- connectToServer
+    close tcp
+    close udp
+    putStrLn "Closed stuff"
