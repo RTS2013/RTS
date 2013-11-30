@@ -56,6 +56,7 @@ loop fps f world = getCurrentTime >>= actualLoop 1 world
 stepGame :: World -> IO World
 stepGame w = do 
     -- Setup KDT
+<<<<<<< HEAD
     let w1 = w { world_kdt = KDT.makePar [moveState_x . actor_moveState, moveState_y . actor_moveState] . 
               concat . V.toList . V.map (IM.elems . team_entities) $ world_teams w }
     -- Gather effects
@@ -80,6 +81,32 @@ stepGame w = do
                 }) $ world_teams w4
             }
     return w5
+=======
+    let w = w { world_kdt = KDT.makePar [moveState_x . actor_moveState, moveState_y . actor_moveState] . 
+              concat . V.toList . V.map (IM.elems . team_entities) $ world_teams w }
+    -- Gather effects
+    let (worldEffects,teamEffects,actorEffects) = sortEffects (V.length $ world_teams w) $ concat 
+                        $ map (\t -> collectEffects w (team_entities t)) $ V.toList (world_teams w)
+    -- Apply world effects
+    let w = applyWorldEffects w worldEffects
+    -- Apply team effects
+    let w = w {
+                world_teams = V.imap (\i t -> applyTeamEffects t (teamEffects V.! i)) (world_teams w)
+            }
+    -- Apply actor effects
+    let w = w {
+                world_teams = V.imap (\i t -> t {
+                    team_entities = applyActorEffects (team_entities t) $ actorEffects V.! i
+                }) $ world_teams w
+            }
+    -- Apply self effects
+    let w = w {
+                world_teams = V.imap (\i t -> t {
+                    team_entities = parMapIntMap (applySelfEffects w) $ team_entities t
+                }) $ world_teams w
+            }
+    return w
+>>>>>>> 58ea5d7e616c4d4d62451392d1032a9949f816f7
 
 -- Helper functions for stepGame 
 {-# SPECIALIZE parMapIntMap :: (Actor -> Actor) -> IM.IntMap Actor -> IM.IntMap Actor #-}

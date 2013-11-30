@@ -46,7 +46,11 @@ connectPlayers teamsVar playersVar messagesVar = forkIO $ withSocketsDo $ do
         connectPlayer (sockTCP,playerAddress) playerThread = do
             sockUDP <- socket (addrFamily serverAddress) Datagram defaultProtocol
             -- Timeout after 5 seconds
+<<<<<<< HEAD
             accepted <- timeout 500000 $ do
+=======
+            accepted <- timeout 500 $! do
+>>>>>>> 58ea5d7e616c4d4d62451392d1032a9949f816f7
                 -- Get hello message from potential player
                 helloMessage <- recv sockTCP 512
                 -- Verify hello message
@@ -54,8 +58,12 @@ connectPlayers teamsVar playersVar messagesVar = forkIO $ withSocketsDo $ do
                     -- Bad hello message
                     Left _ -> close sockTCP >> putStrLn (show playerAddress ++ " sent a bad hello message.")
                     -- Good hello message
+<<<<<<< HEAD
                     Right (_,_,HelloMessage team longName secret) -> do
                         let name = take 20 longName
+=======
+                    Right (_,_,HelloMessage team name secret) -> do
+>>>>>>> 58ea5d7e616c4d4d62451392d1032a9949f816f7
                         let player = Player team name secret sockTCP sockUDP Playing playerThread
                         -- Did the player get on the desired team?
                         joinedTeam <- atomically $ do
@@ -73,6 +81,7 @@ connectPlayers teamsVar playersVar messagesVar = forkIO $ withSocketsDo $ do
                         if joinedTeam
                         then do
                             connect sockUDP playerAddress 
+<<<<<<< HEAD
                             putStrLn $ name ++ " has joined team " ++ show team ++ "."
                             acceptMessages player messagesVar
                         else do
@@ -80,6 +89,16 @@ connectPlayers teamsVar playersVar messagesVar = forkIO $ withSocketsDo $ do
                             close sockTCP >> close sockUDP
             case accepted of
                 Nothing -> do
+=======
+                            putStrLn ""
+                            acceptMessages player messagesVar
+                        else do
+                            putStrLn $ show playerAddress ++ " failed to join a team."
+                            close sockTCP >> close sockUDP
+            case accepted of
+                Nothing -> do
+                    putStrLn $ show playerAddress ++ " timed out."
+>>>>>>> 58ea5d7e616c4d4d62451392d1032a9949f816f7
                     close sockTCP >> close sockUDP
                 Just __ -> return ()
 
@@ -87,6 +106,10 @@ connectPlayers teamsVar playersVar messagesVar = forkIO $ withSocketsDo $ do
         connectPlayers :: IO ()
         connectPlayers = do
             connection <- accept sock
+<<<<<<< HEAD
+=======
+            putStrLn $ show (snd connection) ++ " connected to server."
+>>>>>>> 58ea5d7e616c4d4d62451392d1032a9949f816f7
             myThreadId >>= forkIO . connectPlayer connection
             connectPlayers
     connectPlayers
@@ -117,7 +140,11 @@ serverCommand :: TVar (V.Vector Int) -> TVar [Player] -> TVar [ClientMessage] ->
 serverCommand teamsVar playersVar messagesVar = do
     command <- getLine
     case command of
+<<<<<<< HEAD
         ".start" -> clean >> return ()
+=======
+        ".start" -> return ()
+>>>>>>> 58ea5d7e616c4d4d62451392d1032a9949f816f7
         ".list" -> do
             clean
             players <- atomically $ readTVar playersVar
@@ -126,7 +153,11 @@ serverCommand teamsVar playersVar messagesVar = do
                 putStrLn "There are no players..."
                 loop
             else do
+<<<<<<< HEAD
             mapM_ (\p -> putStrLn $ "Team " ++ show (player_team p) ++ ": " ++ player_name p) players
+=======
+            mapM_ (putStrLn . player_name) players
+>>>>>>> 58ea5d7e616c4d4d62451392d1032a9949f816f7
             loop
         -- Kick player
         ('.':'k':'i':'c':'k':' ':name) -> do
