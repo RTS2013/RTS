@@ -1,18 +1,19 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Local.Pathing where
+module Local.Pathing
+( Move2D(..)
+, Move3D(..)
+, inSight
+, getCorners
+, move2D
+) where
 
-import Prelude hiding (read)
-import Local.Matrices.Sliced.Matrix2D
-import qualified Local.KDT as K
-import qualified Data.Vector as V
+import Data.Graph.AStar (aStar)
 
 -- Class of data that can utilize the move function.
 class Move2D n a where
     getWeight :: a -> n
-    setWeight :: n -> a -> a
     getRadius :: a -> n
-    setRadius :: n -> a -> a
     getX :: a -> n
     setX :: n -> a -> a
     getY :: a -> n
@@ -56,8 +57,8 @@ inSight isOpen x0 y0 x1 y1 = rat (1 + dx + dy) x0 y0 err
     eitherOpen x0 y0 x1 y1 = isOpen x0 y0 || isOpen x1 y1
 
 getCorners ::
-    Int ->
-    Int ->
+    Int -> -- Width of map
+    Int -> -- Height of map
     (Int -> Int -> Bool) -> -- Is tile "open" predicate
     [(Int,Int)] -- List of corners
 getCorners w h isOpen = filter isCorner [(x,y) | x <- [0..w], y <- [0..h]]
@@ -76,7 +77,7 @@ getCorners w h isOpen = filter isCorner [(x,y) | x <- [0..w], y <- [0..h]]
             ee = isOpen (x + 2) y
             ss = isOpen x (y - 2)
             ww = isOpen (x - 2) y 
-        in
+        in 
             cn && ( (not ne && n && e && (nn || ee)) 
                   ||(not se && s && e && (ss || ee))
                   ||(not sw && s && w && (ss || ww))
@@ -103,14 +104,14 @@ Here's the general high level steps of this function:
 move2D :: (Eq entity, RealFloat n, Move2D n entity) =>
     (Int -> Int -> Bool) -> -- Is tile "open" predicate
     (n -> n -> n -> [entity]) -> -- Given an x, y, & radius, returns list of entities
-    (entity -> Int) ->
+    (entity -> Int) -> -- Get entity Id
     n -> -- The largest radius of any and all entities
     n -> -- X coordinate you want to move the entity to
     n -> -- Y coordinate you want to move the entity to
     n -> -- How far you want to move the entity
     entity -> -- Entity you want to move
     entity -- Newly positioned entity
-move2D isOpen inRange entityID maxRadius x y range entity =
+move2D isOpen inRange entityId maxRadius x y range entity =
     let ux = getX entity
         uy = getY entity
         ur = getRadius entity -- Entity Radius
@@ -203,14 +204,14 @@ move2D isOpen inRange entityID maxRadius x y range entity =
         if ny >= uy then
             if nx >= ux then 
                 -- NE move
-                movit 1 1 (+) (+) (+) (+) (-) (-) (>) (>)
+                movit 1 1 (+) (+) (+) (+) (-) (-) (>) (>) 
             else 
                 -- NW move
-                movit 0 1 (-) (+) (-) (+) (+) (-) (<) (>)
+                movit 0 1 (-) (+) (-) (+) (+) (-) (<) (>) 
         else
             if nx >= ux then 
                 -- SE move
-                movit 1 0 (+) (-) (+) (-) (-) (+) (>) (<)
+                movit 1 0 (+) (-) (+) (-) (-) (+) (>) (<) 
             else 
                 -- SW move
-                movit 0 0 (-) (-) (-) (-) (+) (+) (<) (<)
+                movit 0 0 (-) (-) (-) (-) (+) (+) (<) (<) 

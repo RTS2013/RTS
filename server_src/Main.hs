@@ -1,25 +1,46 @@
 module Main where
 
-import qualified Data.Vector.Unboxed as V (fromList)
+import qualified Local.Matrices.UnboxedMatrix2D as M
+import qualified Data.Vector.Mutable as MV
+import qualified Data.Vector.Unboxed as UV
+import qualified Data.Vector         as V
+import qualified Data.IntMap.Strict  as IM
+import qualified Data.Sequence       as S
+import qualified Local.KDT           as KDT
+import Control.Concurrent.STM.TVar
+import Control.Parallel.Strategies (parMap,rdeepseq)
+import Control.Monad.ST (runST)
+import Control.Monad.Primitive (PrimState)
+import Control.DeepSeq (NFData)
+import Data.Word (Word8,Word16)
 import Control.Concurrent (threadDelay)
 import System.Environment (getArgs)
+import RTSNetwork (connectPlayers,serverCommand)
+import Control.Monad.Par (runPar,spawn,get)
+import Data.Traversable (traverse)
 import Data.Time.Clock 
     ( UTCTime
     , NominalDiffTime
     , diffUTCTime
     , getCurrentTime
     , picosecondsToDiffTime )
--- Local code
 import Data
-import GameNetwork (gameServer)
 
+{-
 main = do 
-    -- teamCounts <- fmap (read . (!! 0)) getArgs
-    putStrLn "Enter the number of players per team (ex. [1,3,2] )"
-    teamCounts <- fmap read getLine
-    players <- gameServer $ V.fromList teamCounts
+    teamCounts <- fmap (read . (!! 0)) getArgs
+    players <- gameServer $ UV.fromList teamCounts
+    msgVar <- newTVarIO 
+    mapM_ 
+
+    m <- M.make 1024 1024 (0 :: Word16)
+    let units = undefined
+    let teams = V.fromList $ map (\n -> Team n IM.empty m []) [0..(length teamCounts - 1)]
+    let world = World teams KDT.empty m
     -- Start main loop
-    loop 10 stepGame ()
+    loop 10 stepGame world
+    return () 
+-}
 
 loop :: Integer -> (a -> IO a) -> a -> IO ()
 loop fps f world = getCurrentTime >>= actualLoop 1 world
@@ -32,5 +53,100 @@ loop fps f world = getCurrentTime >>= actualLoop 1 world
             ceiling (diffUTCTime timeNow time * fromInteger 1000000)
         actualLoop (steps + 1) newWorld time 
 
-stepGame :: a -> IO a
-stepGame world = undefined
+stepGame :: World -> IO World
+stepGame w = do 
+    -- Setup KDT
+    let w1 = w { world_kdt = KDT.makePar [moveState_x . actor_moveState, moveState_y . actor_moveState] . 
+              concat . V.toList . V.map (IM.elems . team_entities) $ world_teams w }
+    -- Gather effects
+    let (worldEffects,teamEffects,actorEffects) = sortEffects (V.length $ world_teams w) $ concat 
+                        $ map (\t -> collectEffects w1 (team_entities t)) $ V.toList (world_teams w1)
+    -- Apply world effects
+    let w2 = applyWorldEffects w1 worldEffects
+    -- Apply team effects
+    let w3 = w2 {
+                world_teams = V.imap (\i t -> applyTeamEffects t (teamEffects V.! i)) (world_teams w2)
+            }
+    -- Apply actor effects
+    let w4 = w3 {
+                world_teams = V.imap (\i t -> t {
+                    team_entities = applyActorEffects (team_entities t) $ actorEffects V.! i
+                }) $ world_teams w3
+            }
+    -- Apply self effects
+    let w5 = w4 {
+                world_teams = V.imap (\i t -> t {
+                    team_entities = parMapIntMap (applySelfEffects w4) $ team_entities t
+                }) $ world_teams w4
+            }
+    return w5
+
+-- Helper functions for stepGame 
+{-# SPECIALIZE parMapIntMap :: (Actor -> Actor) -> IM.IntMap Actor -> IM.IntMap Actor #-}
+parMapIntMap :: (NFData b) => (a -> b) -> IM.IntMap a -> IM.IntMap b
+parMapIntMap f im = runPar $ traverse (\a -> spawn (return $ f a)) im >>= traverse get
+
+applySelfEffects :: World -> Actor -> Actor
+applySelfEffects w a = IM.foldl (\a f -> f w a) a (identity_selfEffects $ actor_identity a)
+
+collectEffects :: World -> IM.IntMap Actor -> [Effect]
+collectEffects w im = concat $ parMap rdeepseq 
+    (\a -> concat $ map (\f -> f w a) (IM.elems $ identity_effects $ actor_identity a)) $ IM.elems im
+
+-- Puts list of effects into their own categories distributed to each team (except world effects)
+sortEffects :: Int -> [Effect] -> ([World -> World], V.Vector [Team -> Team], V.Vector [(Int, Actor -> Maybe Actor)])
+sortEffects numTeams = teamEffects
+    where
+    teamEffects xs = runST $ do
+        team <- MV.replicate numTeams []
+        act <- MV.replicate numTeams []
+        sortCons xs [] team act
+    sortCons ((ActorEffect t i f):xs) world team act = do (modif act t ((i,f):)) >> sortCons xs world team act
+    sortCons ((TeamEffect t f):xs) world team act = do (modif team t (f:)) >> sortCons xs world team act
+    sortCons ((WorldEffect f):xs) world team act = sortCons xs (f:world) team act 
+    sortCons _ world team act = do 
+        frozenTeam <- V.unsafeFreeze team 
+        frozenAct  <- V.unsafeFreeze act
+        return (world,frozenTeam,frozenAct)
+    modif v i f = MV.read v i >>= MV.write v i . f
+
+applyWorldEffects :: World -> [World -> World] -> World
+applyWorldEffects w xs = foldr (\f w -> f w) w xs
+
+applyTeamEffects :: Team -> [Team -> Team] -> Team
+applyTeamEffects w xs = foldr (\f w -> f w) w xs
+
+applyActorEffects :: IM.IntMap Actor -> [(Int, Actor -> Maybe Actor)] -> IM.IntMap Actor
+applyActorEffects im xs = foldr (\(i,f) im -> IM.update f i im) im xs 
+
+handleClientMessage :: ClientMessage -> IO [Effect]
+handleClientMessage (ActorMessage team 0 shift x y actors) = do
+    return $ map (\actId -> ActorEffect team actId addMove) actors
+    where
+    addMove :: Actor -> Maybe Actor
+    addMove a = 
+        let actState = (actor_state a)
+            orders   = actorState_orders actState in
+        Just $
+        if shift
+        then a {actor_state = actState {actorState_orders = orders S.|> Move x y}} 
+        else a {actor_state = actState {actorState_orders = S.singleton $ Move x y}} 
+
+handleAllClientMessages :: [ClientMessage] -> IO [Effect]
+handleAllClientMessages msgs = 
+    foldr (
+        \msg xs -> xs >>= 
+        \xs -> handleClientMessage msg >>= 
+        \ys -> return $ ys ++ xs
+    ) (return []) msgs 
+
+main = do
+    -- teams <- fmap (read . (!! 0)) getArgs
+    putStrLn "Enter players per team (Ex.  [1,3,2]  )."
+    teams        <- fmap (UV.fromList . (read :: String -> [Int])) getLine
+    teamsVar     <- newTVarIO teams
+    playersVar   <- newTVarIO []
+    messagesVar  <- newTVarIO []
+    serverThread <- connectPlayers teamsVar playersVar messagesVar
+    putStrLn "Type '.start' to start the game. Type '.?' for more commands."
+    serverCommand teamsVar playersVar messagesVar
