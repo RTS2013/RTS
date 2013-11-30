@@ -90,25 +90,3 @@ inRange kdt fs ns r = filter rangeFilter $ searchKDT kdt leftRightChecks
         addLists (x:xs) (y:ys) = x:y:addLists xs ys
         addLists xs [] = xs
         addLists [] ys = ys
-
-{-# INLINE inRange #-}
-inRange :: (Floating n, Ord n) => KDT n a -> [a -> n] -> [n] -> n -> [a]
-inRange kdt fs ns r = filter rangeFilter $ searchKDT kdt leftRightChecks
-    where
-    fns = zip fs ns
-    rangeFilter a = sum (map (\(f,n) -> (f a-n)^2) fns) <= r^(length ns)
-    leftRightChecks = map (\n v -> (n - r <= v, n + r >= v)) ns
-    searchKDT :: (Floating n, Ord n) => KDT n a -> [n -> (Bool,Bool)] -> [a]
-    searchKDT kdt fs = search kdt $ cycle fs
-        where
-        search :: (Floating n, Ord n) => KDT n a -> [n -> (Bool,Bool)] -> [a]
-        search (Fork n a b) (f:fs) = case f n of
-            (True,True) -> search a fs `addLists` search b fs
-            (True,False) -> search a fs
-            (False,True) -> search b fs
-            (False,False) -> []
-        search (Leaf xs) _ = xs
-        addLists :: [a] -> [a] -> [a]
-        addLists (x:xs) (y:ys) = x:y:addLists xs ys
-        addLists xs [] = xs
-        addLists [] ys = ys
