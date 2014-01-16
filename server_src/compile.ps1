@@ -1,4 +1,6 @@
-cd local_pkg
-./configure.ps1
+$name=$args[0]
+
+ghc -threaded -O2 -Wall -odir build -hidir build $name
+cd build
+rm -Recurse *
 cd ..
-ghc Main.hs -o build/RTS -threaded -odir build -hidir build -O2 -Wall
