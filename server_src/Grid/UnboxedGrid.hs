@@ -1,5 +1,4 @@
-
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, Trustworthy #-}
 
 module Grid.UnboxedGrid
 ( MGrid
@@ -41,7 +40,8 @@ modify !c !f !m = let xp = read c m >>= maybe (return ()) (\a -> write c (f a) m
 	xp `seq` xp
 
 unsafeWith :: (V.Unbox a, NFData b) => MGrid a -> (Grid a -> b) -> IO b
-unsafeWith (MGrid !x !y !v) !f = V.unsafeFreeze v >>= return . f . Grid x y
+unsafeWith (MGrid !x !y !v) !f = let xp = V.unsafeFreeze v >>= return . f . Grid x y in
+	xp `seq` xp
 
 (!?) :: (M.Unbox a) => Grid a -> (Int,Int) -> Maybe a
 (!?) (Grid !w !h !v) (!x,!y) = 

@@ -1,7 +1,7 @@
 $name=$args[0]
 
-ghc -threaded -O2 -Wall -o build/RTS -odir build -hidir build --make -main-is $name $name
+ghc -threaded -O2 -Wall -o build/RTS -odir build -hidir build -XSafe --make -main-is $name $name
 cd build
 ./RTS.exe
-rm *
+rm -Recurse *
 cd ..
