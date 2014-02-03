@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric, FlexibleContexts #-}
+
 module Movement 
 ( Moves(..)
 , Point(..)
@@ -7,9 +9,16 @@ module Movement
 , move2D
 ) where
 
+import Data.Binary (Binary,get,put)
+import Data.Word (Word32,Word64)
+import Data.Array.ST (newArray, readArray, MArray, STUArray)
+import Data.Array.Unsafe (castSTUArray)
+import GHC.ST (runST, ST)
+
+{-
 import Data.Graph.AStar (aStar)
 
-{- aStar :: (Ord a, Ord c, Num c) =>
+ aStar :: (Ord a, Ord c, Num c) =>
          (a -> Set a)     -- ^ The graph we are searching through, given as a function from vertices
                           -- to their neighbours.
          -> (a -> a -> c) -- ^ Distance function between neighbouring vertices of the graph. This will
@@ -20,14 +29,11 @@ import Data.Graph.AStar (aStar)
          -> (a -> Bool)   -- ^ The goal, specified as a boolean predicate on vertices.
          -> a             -- ^ The vertex to start searching from.
          -> Maybe [a]     -- ^ An optimal path, if any path exists. This excludes the starting vertex.
-
 -}
 
-data Point = Point 
-    { xCoord, yCoord, zCoord :: {-# UNPACK #-} !Float } 
-    
-data Bulk = Bulk
-    { radius, weight :: {-# UNPACK #-} !Float }
+data Point = Point { xCoord, yCoord, zCoord :: {-# UNPACK #-} !Float } 
+
+data Bulk = Bulk { radius, weight, facing :: {-# UNPACK #-} !Float }
 
 class Moves a where
     getMoveIdentity :: a -> Bulk
@@ -232,3 +238,18 @@ move2D isOpen inRange maxRadius x y range entity =
             else 
                 -- SW move
                 movit 0 0 (-) (-) (-) (-) (+) (+) (<) (<) 
+
+floatToWord :: Float -> Word32
+floatToWord x = runST (cast x)
+
+{-# INLINE cast #-}
+cast :: (MArray (STUArray s) a (ST s),
+         MArray (STUArray s) b (ST s)) => a -> ST s b
+cast x = newArray (0 :: Word64, 0) x >>= castSTUArray >>= flip readArray 0
+
+instance Binary Point where
+    get = undefined
+    put (Point x y z) = do
+        put $ floatToWord x
+        put $ floatToWord y
+        put $ floatToWord z

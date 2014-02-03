@@ -1,13 +1,12 @@
-module Main where
+module Grid.Main where
 
-import UnboxedGrid
+import qualified Grid.UnboxedGrid as G
 
 main = do
-	grid <- make (1000,1000) (0 :: Int)
-	a <- read (2,2) grid
-	sequence $ replicate 1000000 $ do
-		modify (2,2) (+1) grid
-	b <- read (2,2) grid
+	grid <- G.make (1000,1000) (0 :: Int)
+	a <- G.read (2,2) grid
+	sequence $ replicate 1000000 $ G.modify (2,2) (+1) grid
+	b <- G.read (2,2) grid
 	print a
 	print b
 	return ()

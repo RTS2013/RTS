@@ -1,42 +1,46 @@
-{-
-Library for connecting players to teams.
--}
+{- Library for connecting players to teams. -}
 
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
-module GoodTimes 
-( GoodTimes()
-, Player()
-, startGoodTimes
-, endGoodTimes
+module Party
+( Party()
+, Player(playerTeam,playerName)
+, openDoors
+, closeDoors
 , getMessages
 , idlePlayers
 , removePlayer
 , switchTeam
-) where
+, sendToPlayers
+) where 
 
-import           Data.Monoid ((<>))
-import           Control.Concurrent.STM
+import           Control.Concurrent.STM 
 import           Control.Applicative    ((<$>),(<*>))
 import           Control.Concurrent     (ThreadId,forkIO,killThread,myThreadId)
 import           Control.Monad          (forever)
 import           Data.List              (partition)
+import           Data.Monoid            ((<>))
 import           Data.Time.Clock        (UTCTime,diffUTCTime,getCurrentTime)
-import           Data.Binary            (Binary,get,put,decodeOrFail)
+import           Data.Binary            (Binary,get,put,decodeOrFail,encode)
 import           Data.Text.Binary       ()
-import qualified Data.Text                  as T
-import qualified Data.Text.IO               as TIO
-import qualified Data.Vector                as V
-import qualified Network.WebSockets         as W
+import qualified Data.Text            as T
+import qualified Data.Text.IO         as TIO
+import qualified Data.Vector          as V
+import qualified Network.WebSockets   as W
+import qualified Data.ByteString.Lazy as BS
 
 type Name = T.Text
 
 type Secret = T.Text
 
+type TeamID = Int
+
+type Slots = V.Vector Int
+
 data ClientMessage a = ClientMessage Name Secret a
 
 data Player = Player
-    { playerTeam    :: {-# UNPACK #-} !Int
+    { playerTeam    :: {-# UNPACK #-} !TeamID
     , playerThread  :: {-# UNPACK #-} !ThreadId
     , playerName    :: !Name
     , playerSecret  :: !Secret
@@ -48,22 +52,22 @@ instance (Binary a) => Binary (ClientMessage a) where
         get = ClientMessage <$> get <*> get <*> get
         put = undefined
 
-data GoodTimes a = GoodTimes
+data Party a = Party
     { serverThread  :: ThreadId
     , playersTVar   :: TVar [Player]
-    , messagesTVar  :: TVar [a]
-    , teamSlotsTVar :: TVar (V.Vector Int)
+    , messagesTVar  :: TVar [(Player,a)]
+    , teamSlotsTVar :: TVar Slots
     } 
 
-startGoodTimes :: forall a. (Binary a) => [Int] -> IO (GoodTimes a)
-startGoodTimes xs = do
+openDoors :: forall a. (Binary a) => Int -> [Int] -> IO (Party a)
+openDoors port xs = do
         teamSlotsVar  <- newTVarIO $ V.fromList xs
         playersVar    <- newTVarIO []
         messagesVar   <- newTVarIO []
-        serversThread <- forkIO $ W.runServer "0.0.0.0" 9160 $ tryConnect teamSlotsVar playersVar messagesVar
-        return $ GoodTimes serversThread playersVar messagesVar teamSlotsVar
+        serversThread <- forkIO $ W.runServer "0.0.0.0" port $ tryConnect teamSlotsVar playersVar messagesVar
+        return $ Party serversThread playersVar messagesVar teamSlotsVar
     where 
-        tryConnect :: TVar (V.Vector Int) -> TVar [Player] -> TVar [a] -> W.PendingConnection -> IO ()
+        tryConnect :: TVar Slots -> TVar [Player] -> TVar [(Player,a)] -> W.PendingConnection -> IO ()
         tryConnect teamSlotsVar playersVar messagesVar pendingConn = do
             conn <- W.acceptRequest pendingConn
             msg <- W.receiveDataMessage conn
@@ -76,7 +80,7 @@ startGoodTimes xs = do
                         myTime <- getCurrentTime
                         -- Attempt to join team
                         joinedTeam <- atomically $ do
-                            let writeInPlayer :: (Int, V.Vector Int) -> STM Player
+                            let writeInPlayer :: (TeamID, Slots) -> STM Player
                                 writeInPlayer (team,newSlots) = do
                                     writeTVar teamSlotsVar newSlots
                                     let player = Player team myThread name secret conn myTime
@@ -85,13 +89,17 @@ startGoodTimes xs = do
                                     return player
                             -- Attempt to add player to first available team
                             attemptedJoin <- getFirstSlot `fmap` readTVar teamSlotsVar
-                            maybe (return Nothing) (\aj -> writeInPlayer aj >>= return . Just) attemptedJoin
+                            maybe (return Nothing) (fmap Just . writeInPlayer) attemptedJoin
                         case joinedTeam of
                             Nothing -> TIO.putStrLn $ name <> " failed to join a team."
                             Just player -> do
-                                TIO.putStrLn $ playerName player <> " has joined team " <> (T.pack . show) (playerTeam player) <> "."
-                                acceptMessages player messagesVar
-        acceptMessages :: Player -> TVar [a] -> IO ()
+                                TIO.putStrLn $ playerName player 
+                                            <> " has joined team " 
+                                            <> (T.pack . show) (playerTeam player) 
+                                            <> "."
+                                forever $ acceptMessages player messagesVar
+
+        acceptMessages :: Player -> TVar [(Player,a)] -> IO ()
         acceptMessages player messagesVar = forever $ do
             datagram <- W.receiveDataMessage (playerConn player)
             case datagram of
@@ -100,9 +108,10 @@ startGoodTimes xs = do
                     Left _ -> TIO.putStrLn "Somebodies data wasn't encoded properly."
                     Right (_,_,ClientMessage name secret (msg :: a)) -> do
                         if name == playerName player && secret == playerSecret player
-                        then atomically $ readTVar messagesVar >>= writeTVar messagesVar . (msg:)
+                        then atomically $ readTVar messagesVar >>= writeTVar messagesVar . ((player, msg):)
                         else TIO.putStrLn "Somebodies name or secret was wrong."
-        getFirstSlot :: V.Vector Int -> Maybe (Int, V.Vector Int)
+
+        getFirstSlot :: Slots -> Maybe (TeamID, Slots)
         getFirstSlot v = subF 0 
             where
             subF i = flip (maybe Nothing) (v V.!? i) $ 
@@ -110,25 +119,24 @@ startGoodTimes xs = do
                               then Just (i,v V.// [(i,n - 1)]) 
                               else subF (i + 1)
 
-endGoodTimes :: GoodTimes a -> IO ()
-endGoodTimes = killThread . serverThread
+closeDoors :: Party a -> IO ()
+closeDoors = killThread . serverThread
 
-
-getMessages :: GoodTimes a -> IO [a]
+getMessages :: Party a -> IO [(Player,a)]
 getMessages gt = atomically $ do
     let msgsVar = messagesTVar gt
     msgs <- readTVar msgsVar
     writeTVar msgsVar []
     return msgs
 
-idlePlayers :: Rational -> GoodTimes a -> IO [Player]
+idlePlayers :: Rational -> Party a -> IO [Player]
 idlePlayers duration gt = do
     let playersVar = playersTVar gt
     timeNow <- getCurrentTime
     atomically $ readTVar playersVar >>= 
         return . filter (\player -> toRational (diffUTCTime timeNow $ playerLastMsg player) > duration)
 
-removePlayer :: GoodTimes a -> Player -> IO ()
+removePlayer :: Party a -> Player -> IO ()
 removePlayer gt player = do
     badPlayers <- atomically $ do
         let playersVar = playersTVar gt
@@ -145,8 +153,8 @@ removePlayer gt player = do
         return badPlayers
     mapM_ (killThread . playerThread) badPlayers
 
-switchTeam :: GoodTimes a -> Int -> Player -> IO Bool
-switchTeam gt team player = atomically $ do
+switchTeam :: Party a -> Player -> TeamID -> IO Bool
+switchTeam gt player team = atomically $ do
     let teamSlotsVar = teamSlotsTVar gt
     teamSlots <- readTVar teamSlotsVar
     case teamSlots V.!? team of
@@ -158,8 +166,25 @@ switchTeam gt team player = atomically $ do
             let playersVar = playersTVar gt
             players <- readTVar playersVar
             writeTVar playersVar $ map  
-                (\p -> if playerName p == playerName player
+                (\p -> if playerName p == playerName player && playerSecret p == playerSecret player
                        then player {playerTeam=team} 
                        else p
                 ) players
             return True
+
+sendToPlayers :: (Binary a) => BS.ByteString -> [a] -> [Player] -> IO ()
+sendToPlayers header list players = do
+    let choppy = chopList BS.empty $ map encode list
+    mapM_ (\p -> mapM_ (sendMsg $ playerConn p) choppy) players
+    
+    where
+    packetSize = 2048 - BS.length header
+
+    chopList :: BS.ByteString -> [BS.ByteString] -> [BS.ByteString]
+    chopList bs (x:xs) = if   BS.length x + BS.length bs > packetSize
+                         then BS.append header bs : chopList BS.empty (x:xs)
+                         else chopList (BS.append x bs) xs
+    chopList bs ______ = [bs]
+
+    sendMsg :: W.Connection -> BS.ByteString -> IO ()
+    sendMsg conn = W.send conn . W.DataMessage . W.Binary

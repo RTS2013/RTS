@@ -1,78 +1,108 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE Trustworthy, DeriveGeneric #-}
+{-# LANGUAGE Trustworthy, DeriveGeneric, OverloadedStrings, FlexibleContexts #-}
 
 module Data where
 
+import Data.Text (Text)
+import Data.Int (Int64)
 import Data.List (genericLength)
-import Control.Applicative ((<$>),(<*>))
-import GHC.Generics (Generic)
-import Data.Binary (Binary,get,put,getWord8)
-import Data.Vector (Vector)
+import Data.Binary (Binary,get,put)
 import Data.Text.Binary ()
-import Data.Word (Word8,Word16)
-import Data.IntMap.Strict (IntMap)
+import Data.Word (Word8,Word16,Word64)
+import Data.HashTable.IO (BasicHashTable)
 import Data.Sequence (Seq)
+import Data.Array.ST (newArray,readArray,MArray,STUArray)
+import Data.Array.Unsafe (castSTUArray)
+import GHC.Generics (Generic)
+import GHC.ST (runST,ST)
 import Grid.UnboxedGrid (MGrid,MGrid)
-import GoodTimes (Player)
+import RIO.Prelude (ReadOnly,ReadWrite,RIO)
+import Party (Party,Player)
 import Movement (Point(..),Bulk(..))
-import RIO.RIO (RIO())
+
+defaultGame :: [Player] -> Game gameS teamS unitS tileS
+defaultGame = undefined
+
+type Change gameS teamS unitS tileS =
+    Game gameS teamS unitS tileS -> RIO ReadWrite (Game gameS teamS unitS tileS)
+
+type Behavior gameS teamS unitS tileS behaving = 
+    behaving gameS teamS unitS tileS -> 
+    RIO ReadOnly (Change gameS teamS unitS tileS)
 
 data Game gameS teamS unitS tileS = Game
     { gameState     :: !gameS
-    , gameTeams     :: !(Vector (Team gameS teamS unitS tileS))
     , gameTiles     :: !(MGrid tileS)
-    , gameBehaviors :: !(IntMap (Behavior gameS teamS unitS tileS Game))
+    , gameStep      :: !Int64
+    , gameParty     :: !(Party ControlMessage)
+    , gameTeams     :: !(BasicHashTable Int (Team gameS teamS unitS tileS))
+    , gameBehaviors :: !(BasicHashTable Int (Behavior gameS teamS unitS tileS Game))
     } 
-
-type Behavior gameS teamS unitS tileS behaving = 
-    behaving gameS teamS unitS tileS -> RIO (Game gameS teamS unitS tileS -> Game gameS teamS unitS tileS)
 
 data Team gameS teamS unitS tileS = Team
     { teamState      :: !teamS
-    , teamUnits      :: !(IntMap (Unit gameS teamS unitS tileS))
-    , teamPlayers    :: !(Vector Player)
+    , teamPlayers    :: ![Player]
     , teamVision     :: !(MGrid Int)
-    , teamPathing    :: !(MGrid Int)
-    , teamBehaviors  :: !(IntMap (Behavior gameS teamS unitS tileS Team))
     , teamSpawnCount :: {-# UNPACK #-} !Int -- Incremented with each new unit
+    , teamUnits      :: !(BasicHashTable Int (Unit gameS teamS unitS tileS))
+    , teamBehaviors  :: !(BasicHashTable Int (Behavior gameS teamS unitS tileS Team))
+    , teamValues     :: !(Team gameS teamS unitS tileS -> [(Word8,Word16)])
     } 
 
 data Unit gameS teamS unitS tileS = Unit
     { unitState     :: !unitS
     , unitID        :: {-# UNPACK #-} !Int 
-    , unitTeam      :: {-# UNPACK #-} !Int 
-    , unitType      :: {-# UNPACK #-} !Int 
-    , unitAnim      :: {-# UNPACK #-} !Int 
+    , unitTeam      :: {-# UNPACK #-} !Int
+    , unitType      :: {-# UNPACK #-} !Int
+    , unitAnim      :: {-# UNPACK #-} !Int
     , unitPoint     :: !Point
     , unitBulk      :: !Bulk
     , unitOrders    :: !(Seq Order)
-    , unitBehaviors :: !(IntMap (Behavior gameS teamS unitS tileS Unit))
-    , unitValues    :: !(Unit gameS teamS unitS tileS -> [(Word8,Word8)])
+    , unitBehaviors :: !(BasicHashTable Int (Behavior gameS teamS unitS tileS Unit))
+    , unitValues    :: !(Unit gameS teamS unitS tileS -> [(Word8,Word16)])
     } 
-
-data UID = UID {uid, teamID :: {-# UNPACK #-} !Int}
-
-data Order 
-    = Standby
-    | Move    !Point
-    | Assault !Point
-    | Target  !UID
-    | Hold    !Point
-    | Patrol  !Point !Point 
-    | Invoke {-# UNPACK #-} !Int !Point
 
 ----------------------------------------------------------------------------
 --                       # DATA SENT OVER WIRE #                          --
 ----------------------------------------------------------------------------
 
--- Datagram sent to clients from server
+data ControlMessage
+    = OrderMsg Orders
+    | TeamMsg
+    | PlayerMsg
+    | AllMsg
+    deriving (Generic)
+
+data Orders = Orders !Bool [Int] !Order deriving (Generic)
+
+data Order 
+    = Standby
+    | Move    !Point
+    | Assault !Point
+    | Target  {-# UNPACK #-} !Word8 {-# UNPACK #-} !Int
+    | Hold    !Point
+    | Patrol  !Point !Point 
+    | Invoke {-# UNPACK #-} !Word16 {- Ability ID -}
+    | InvokeAt {-# UNPACK #-} !Word16 {- Ability ID -} !Point
+    | InvokeOn 
+    {-# UNPACK #-} !Word16 -- Ability ID
+    {-# UNPACK #-} !Word8  -- Team ID
+    {-# UNPACK #-} !Int -- Unit ID
+    deriving (Generic)
+
+data GameFrame gameS teamS unitS tileS = GameFrame {-# UNPACK #-} !Int64 !(ClientDatagram gameS teamS unitS tileS) deriving (Generic)
+
+-- Datagram sent to client
 data ClientDatagram gameS teamS unitS tileS
-    = EntityDatagram  [Unit gameS teamS unitS tileS]
-    | TerrainDatagram [Terrain]
-    | LineFXDatagram  [LineFX]
-    | SFXDatagram     [SFX]
-    | TargetDatagram  [TargetFX]
-    | MessageDatagram Bool String String
+    = UnitDatagram     ![Unit gameS teamS unitS tileS]
+    | TeamDatagram     ![(Word8,Word16)]
+    | TerrainDatagram  ![Terrain]
+    | LineFXDatagram   ![LineFX]
+    | SFXDatagram      ![SFX]
+    | TargetFXDatagram ![TargetFX]
+    | MessageDatagram  !Text
+    deriving (Generic)
+
 
 instance Binary (Unit gameS teamS unitS tileS) where
     get = undefined
@@ -103,7 +133,6 @@ data Terrain = Terrain
     , terrainZ  :: {-# UNPACK #-} !Word16
     } deriving (Generic)
 
-instance Binary Terrain
 
 data SFX = SFX
     { sfxId :: {-# UNPACK #-} !Word16
@@ -112,15 +141,13 @@ data SFX = SFX
     , sfxZ  :: {-# UNPACK #-} !Word16
     } deriving (Generic)
 
-instance Binary SFX
 
 data TargetFX = TargetFX
     { targetfxId   :: {-# UNPACK #-} !Word16
-    , targetfxUID  :: !Int
-    , targetfxteam :: !Word8
+    , targetfxUID  :: {-# UNPACK #-} !Int
+    , targetfxteam :: {-# UNPACK #-} !Word8
     } deriving (Generic)
 
-instance Binary TargetFX
 
 data LineFX = LineFX
     { linefxId :: {-# UNPACK #-} !Word16
@@ -132,17 +159,30 @@ data LineFX = LineFX
     , linefxZB :: {-# UNPACK #-} !Word16
     } deriving (Generic)
 
+
+wordToFloat :: Int -> Float
+wordToFloat x = runST (cast x)
+
+floatToWord :: Float -> Int
+floatToWord x = runST (cast x)
+
+wordToDouble :: Word64 -> Double
+wordToDouble x = runST (cast x)
+
+doubleToWord :: Double -> Word64
+doubleToWord x = runST (cast x)
+
+{-# INLINE cast #-}
+cast :: (MArray (STUArray s) a (ST s),
+         MArray (STUArray s) b (ST s)) => a -> ST s b
+cast x = newArray (0 :: Word64, 0) x >>= castSTUArray >>= flip readArray 0
+
+instance Binary ControlMessage
+instance Binary Orders
+instance Binary Order
+instance Binary (GameFrame gameS teamS unitS tileS)
+instance Binary (ClientDatagram gameS teamS unitS tileS)
+instance Binary Terrain
+instance Binary SFX
+instance Binary TargetFX
 instance Binary LineFX
-
-data ClientMessage 
-    = ActorMessage  !Bool -- True = Add to commands, False = Replace commands
-     {-# UNPACK #-} !Int -- Type Id
-     {-# UNPACK #-} !Float -- X coord
-                    !Float -- Y coord
-                    ![Int] -- List of actors to give command to
-    | Invalid
-
-instance Binary ClientMessage where
-    get = getWord8 >>= \t -> case t of
-        _ -> ActorMessage <$> get <*> get <*> get <*> get <*> get
-    put = undefined
