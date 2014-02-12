@@ -3,40 +3,45 @@
 
 module Data where
 
+import Data.IORef (IORef)
 import Data.Text (Text)
-import Data.Int (Int64)
+import Data.Int (Int32)
 import Data.List (genericLength)
 import Data.Binary (Binary,get,put)
 import Data.Text.Binary ()
-import Data.Word (Word8,Word16,Word64)
+import Data.Word (Word8,Word16,Word32,Word64)
 import Data.HashTable.IO (BasicHashTable)
+import Data.IntMap (IntMap)
 import Data.Sequence (Seq)
 import Data.Array.ST (newArray,readArray,MArray,STUArray)
 import Data.Array.Unsafe (castSTUArray)
 import GHC.Generics (Generic)
 import GHC.ST (runST,ST)
-import Grid.UnboxedGrid (MGrid,MGrid)
+import Grid.UnboxedGrid (MGrid)
 import RIO.Prelude (ReadOnly,ReadWrite,RIO)
 import Party (Party,Player)
-import Movement (Point(..),Bulk(..))
+import Movement (Point(..))
 
 defaultGame :: [Player] -> Game gameS teamS unitS tileS
 defaultGame = undefined
 
+type HashTable a = BasicHashTable Int a
+
 type Change gameS teamS unitS tileS =
-    Game gameS teamS unitS tileS -> RIO ReadWrite (Game gameS teamS unitS tileS)
+    Game gameS teamS unitS tileS -> RIO ReadWrite ()
 
 type Behavior gameS teamS unitS tileS behaving = 
     behaving gameS teamS unitS tileS -> 
     RIO ReadOnly (Change gameS teamS unitS tileS)
 
-data Game gameS teamS unitS tileS = Game
-    { gameState     :: !gameS
+data Game gameS teamS unitS tileS = Game 
+    { gameState     :: !(IORef gameS)
     , gameTiles     :: !(MGrid tileS)
-    , gameStep      :: !Int64
+    , gameTime      :: !(IORef Double)
     , gameParty     :: !(Party ControlMessage)
-    , gameTeams     :: !(BasicHashTable Int (Team gameS teamS unitS tileS))
-    , gameBehaviors :: !(BasicHashTable Int (Behavior gameS teamS unitS tileS Game))
+    , gameTeams     :: !(HashTable (Team gameS teamS unitS tileS))
+    , gameValues    :: !(IORef (Game gameS teamS unitS tileS -> [(Word8,Word16)]))
+    , gameBehaviors :: !(IORef (IntMap (Behavior gameS teamS unitS tileS Game)))
     } 
 
 data Team gameS teamS unitS tileS = Team
@@ -44,23 +49,57 @@ data Team gameS teamS unitS tileS = Team
     , teamPlayers    :: ![Player]
     , teamVision     :: !(MGrid Int)
     , teamSpawnCount :: {-# UNPACK #-} !Int -- Incremented with each new unit
-    , teamUnits      :: !(BasicHashTable Int (Unit gameS teamS unitS tileS))
-    , teamBehaviors  :: !(BasicHashTable Int (Behavior gameS teamS unitS tileS Team))
+    , teamUnits      :: !(HashTable (Unit gameS teamS unitS tileS))
     , teamValues     :: !(Team gameS teamS unitS tileS -> [(Word8,Word16)])
+    , teamBehaviors  :: !(IntMap (Behavior gameS teamS unitS tileS Team))
     } 
 
 data Unit gameS teamS unitS tileS = Unit
-    { unitState     :: !unitS
-    , unitID        :: {-# UNPACK #-} !Int 
-    , unitTeam      :: {-# UNPACK #-} !Int
-    , unitType      :: {-# UNPACK #-} !Int
-    , unitAnim      :: {-# UNPACK #-} !Int
-    , unitPoint     :: !Point
-    , unitBulk      :: !Bulk
-    , unitOrders    :: !(Seq Order)
-    , unitBehaviors :: !(BasicHashTable Int (Behavior gameS teamS unitS tileS Unit))
-    , unitValues    :: !(Unit gameS teamS unitS tileS -> [(Word8,Word16)])
+    { unitState        :: !unitS
+    , unitID           :: {-# UNPACK #-} !Int
+    , unitTeam         :: {-# UNPACK #-} !Int
+    , unitType         :: {-# UNPACK #-} !Int
+    , unitAnimation    :: {-# UNPACK #-} !Int
+    , unitOrders       :: !(Seq Order)
+    , unitMoveState    :: !MoveState
+    , unitValues       :: !(Unit gameS teamS unitS tileS -> [(Word8,Word16)])
+    , unitBehaviors    :: !(IntMap (Behavior gameS teamS unitS tileS Unit))
     } 
+
+data MoveState = MoveState
+    { positionX :: {-# UNPACK #-} !Float
+    , positionY :: {-# UNPACK #-} !Float
+    , positionZ :: {-# UNPACK #-} !Float
+    , angle     :: {-# UNPACK #-} !Float
+    , speed     :: {-# UNPACK #-} !Float
+    , angleRate :: {-# UNPACK #-} !Float
+    , speedMax  :: {-# UNPACK #-} !Float
+    , speedRate :: {-# UNPACK #-} !Float
+    , weight    :: {-# UNPACK #-} !Float
+    , radius    :: {-# UNPACK #-} !Float
+    } 
+
+instance Binary (Unit gameS teamS unitS tileS) where
+    get = undefined
+    put u = do
+        put (fromIntegral $ unitID u        :: Int32)
+        put (fromIntegral $ unitTeam u      :: Word8)
+        put (fromIntegral $ unitAnimation u :: Word8)
+        put (fromIntegral $ unitType u      :: Word16)
+        let xyz = unitMoveState u
+        put (coordTo16 $ positionX xyz :: Word16)
+        put (coordTo16 $ positionY xyz :: Word16)
+        put (coordTo16 $ positionZ xyz :: Word16)
+        put (faceTo8 $ angle xyz :: Word8)
+        let vals = (unitValues u) u
+        put (genericLength vals :: Word8) -- Length of list
+        mapM_ put vals                    -- (Key,Val) Pairs
+        where
+        faceTo8 :: Float -> Word8
+        faceTo8 a | a < 0 = floor $ (2*pi + a) / (2*pi) * 256
+                  | True  = floor $ a / (2*pi) * 256
+        coordTo16 :: Float -> Word16
+        coordTo16 a = floor $ a * 64
 
 ----------------------------------------------------------------------------
 --                       # DATA SENT OVER WIRE #                          --
@@ -90,7 +129,13 @@ data Order
     {-# UNPACK #-} !Int -- Unit ID
     deriving (Generic)
 
-data GameFrame gameS teamS unitS tileS = GameFrame {-# UNPACK #-} !Int64 !(ClientDatagram gameS teamS unitS tileS) deriving (Generic)
+data GameFrame gameS teamS unitS tileS = GameFrame {-# UNPACK #-} !Double !(ClientDatagram gameS teamS unitS tileS) 
+
+instance Binary (GameFrame gameS teamS unitS tileS) where
+    get = undefined
+    put (GameFrame delta gram) = do
+        put $ doubleToWord delta
+        put gram
 
 -- Datagram sent to client
 data ClientDatagram gameS teamS unitS tileS
@@ -102,29 +147,6 @@ data ClientDatagram gameS teamS unitS tileS
     | TargetFXDatagram ![TargetFX]
     | MessageDatagram  !Text
     deriving (Generic)
-
-
-instance Binary (Unit gameS teamS unitS tileS) where
-    get = undefined
-    put u = do
-        put (unitID u :: Int)
-        put (fromIntegral $ unitTeam u :: Word8)
-        put (fromIntegral $ unitAnim u :: Word8)
-        put (fromIntegral $ unitType u :: Word16)
-        let xyz = unitPoint u
-        put (coordTo16 $ xCoord xyz :: Word16)
-        put (coordTo16 $ yCoord xyz :: Word16)
-        put (coordTo16 $ zCoord xyz :: Word16)
-        put (faceTo8 $ facing $ unitBulk u :: Word8)
-        let vals = (unitValues u) u
-        put (genericLength vals :: Word8) -- Length of list
-        mapM_ put vals                    -- (Key,Val) Pairs
-        where
-        faceTo8 :: Float -> Word8
-        faceTo8 a | a < 0 = floor $ (2*pi + a) / (2*pi) * 256
-                  | True  = floor $ a / (2*pi) * 256
-        coordTo16 :: Float -> Word16
-        coordTo16 a = floor $ a * 64
 
 data Terrain = Terrain
     { terrainId :: {-# UNPACK #-} !Word16
@@ -160,10 +182,10 @@ data LineFX = LineFX
     } deriving (Generic)
 
 
-wordToFloat :: Int -> Float
+wordToFloat :: Word32 -> Float
 wordToFloat x = runST (cast x)
 
-floatToWord :: Float -> Int
+floatToWord :: Float -> Word32
 floatToWord x = runST (cast x)
 
 wordToDouble :: Word64 -> Double
@@ -180,7 +202,6 @@ cast x = newArray (0 :: Word64, 0) x >>= castSTUArray >>= flip readArray 0
 instance Binary ControlMessage
 instance Binary Orders
 instance Binary Order
-instance Binary (GameFrame gameS teamS unitS tileS)
 instance Binary (ClientDatagram gameS teamS unitS tileS)
 instance Binary Terrain
 instance Binary SFX

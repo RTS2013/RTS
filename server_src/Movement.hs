@@ -5,7 +5,9 @@ module Movement
 , Point(..)
 , Bulk(..)
 , inSight
+, inSightM
 , getCorners
+, getCornersM
 , move2D
 ) where
 
@@ -14,6 +16,7 @@ import Data.Word (Word32,Word64)
 import Data.Array.ST (newArray, readArray, MArray, STUArray)
 import Data.Array.Unsafe (castSTUArray)
 import GHC.ST (runST, ST)
+import Control.Monad (filterM)
 
 {-
 import Data.Graph.AStar (aStar)
@@ -31,14 +34,14 @@ import Data.Graph.AStar (aStar)
          -> Maybe [a]     -- ^ An optimal path, if any path exists. This excludes the starting vertex.
 -}
 
-data Point = Point { xCoord, yCoord, zCoord :: {-# UNPACK #-} !Float } 
+data Point = Point { _X, _Y, _Z :: {-# UNPACK #-} !Float } 
 
-data Bulk = Bulk { radius, weight, facing :: {-# UNPACK #-} !Float }
+data Bulk = Bulk { radius, weight :: {-# UNPACK #-} !Float }
 
 class Moves a where
-    getMoveIdentity :: a -> Bulk
-    getMoveState    :: a -> Point
-    setMoveState    :: a -> Point -> a
+    getMoveStats :: a -> Bulk
+    getMoveState :: a -> Point
+    setMoveState :: a -> Point -> a
 
 inSight :: 
     (Int -> Int -> Bool) -> -- Is tile "open" predicate
@@ -72,6 +75,43 @@ inSight isOpen x0 y0 x1 y1 = rat (1 + dx + dy) x0 y0 err
             False
     eitherOpen x0' y0' x1' y1' = isOpen x0' y0' || isOpen x1' y1'
 
+inSightM :: (Monad m) =>
+    (Int -> Int -> m Bool) -> -- Is tile "open" predicate
+    Int -> -- Start x coordinate
+    Int -> -- Start y coordinate
+    Int -> -- End x coordinate
+    Int -> -- End y coordinate
+    m Bool -- End node was visible by start node.
+inSightM isOpen x0 y0 x1 y1 = rat (1 + dx + dy) x0 y0 err
+    where
+    dx = abs $ x1 - x0
+    dy = abs $ y1 - y0
+    err = dx - dy
+    x_inc = if x1 > x0 then 1 else -1
+    y_inc = if y1 > y0 then 1 else -1
+    rat 0 _ _ _ = return True
+    rat c x y e = do
+        aOpen <- isOpen x y
+        if aOpen then
+            if x == x1 && y == y1 then 
+                return True 
+            else
+            if e == 0 then do
+                bOpen <- eitherOpen (x + x_inc) y x (y + y_inc)
+                cOpen <- rat (c-1) (x + x_inc) (y + y_inc) (e - dy + dx)
+                return $ not bOpen || cOpen
+            else
+                if e > 0 then 
+                    rat (c-1) (x + x_inc) y (e - dy) 
+                else 
+                    rat (c-1) x (y + y_inc) (e + dx)
+        else
+            return False
+    eitherOpen x0' y0' x1' y1' = do
+        a <- isOpen x0' y0' 
+        b <- isOpen x1' y1'
+        return $ a || b
+
 getCorners :: 
     Int -> -- Width of map
     Int -> -- Height of map
@@ -94,6 +134,34 @@ getCorners width height isOpen = filter isCorner [(x,y) | x <- [0..width], y <- 
             ss = isOpen x (y - 2)
             ww = isOpen (x - 2) y 
         in 
+            cn && ( (not ne && n && e && (nn || ee)) 
+                  ||(not se && s && e && (ss || ee))
+                  ||(not sw && s && w && (ss || ww))
+                  ||(not nw && n && w && (nn || ww))
+                  )
+
+getCornersM :: (Monad m) =>
+    Int -> -- Width of map
+    Int -> -- Height of map
+    (Int -> Int -> m Bool) -> -- Is tile "open" predicate
+    m [(Int,Int)] -- List of corners
+getCornersM width height isOpen = filterM isCorner [(x,y) | x <- [0..width], y <- [0..height]]
+  where
+    isCorner (x,y) = do
+        cn <- isOpen x y -- Checked node is open?
+        n  <- isOpen x (y + 1) -- Node above (North) is open?
+        ne <- isOpen (x + 1) (y + 1) -- So on and so forth.
+        e  <- isOpen (x + 1) y
+        se <- isOpen (x + 1) (y - 1)
+        s  <- isOpen x (y - 1)
+        sw <- isOpen (x - 1) (y - 1)
+        w  <- isOpen (x - 1) y
+        nw <- isOpen (x - 1) (y + 1)
+        nn <- isOpen x (y + 2)
+        ee <- isOpen (x + 2) y
+        ss <- isOpen x (y - 2)
+        ww <- isOpen (x - 2) y 
+        return $
             cn && ( (not ne && n && e && (nn || ee)) 
                   ||(not se && s && e && (ss || ee))
                   ||(not sw && s && w && (ss || ww))
@@ -128,17 +196,17 @@ move2D :: (Eq entity, Moves entity) =>
     entity -- Newly positioned entity
 move2D isOpen inRange maxRadius x y range entity = 
     let moveState = getMoveState entity
-        moveIdnt  = getMoveIdentity entity
-        ux        = xCoord moveState
-        uy        = yCoord moveState
+        moveIdnt  = getMoveStats entity
+        ux        = _X moveState
+        uy        = _Y moveState
         ur        = radius moveIdnt
         uw        = weight moveIdnt
-        getX      = xCoord . getMoveState
-        getY      = yCoord . getMoveState
-        getRadius = radius . getMoveIdentity
-        getWeight = weight . getMoveIdentity
-        setX vx m  = m { xCoord = vx}
-        setY vy m  = m { yCoord = vy}
+        getX      = _X . getMoveState
+        getY      = _Y . getMoveState
+        getRadius = radius . getMoveStats
+        getWeight = weight . getMoveStats
+        setX vx m  = m { _X = vx}
+        setY vy m  = m { _Y = vy}
         -- Get all units in range of entity
         isInRange e = (getX e - ux)^(2 :: Int) + (getY e - uy)^(2 :: Int) <= (ur + getRadius e)^(2 :: Int)
         nearby = filter (\e -> e /= entity && isInRange e) $ inRange ux uy $ ur + maxRadius

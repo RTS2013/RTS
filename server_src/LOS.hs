@@ -31,11 +31,11 @@ subtractVision grid isOpen start xs = fieldOfVisionM isOpen start xs >>= mapM_ (
 
 
 ring :: Int -> [(Int,Int)]
-ring r' = nub $ map (\n -> (floor $ cos (n * slice) * r
-	                     , floor $ sin (n * slice) * r
-	                     )
-                  ) 
-                  [0..fromIntegral rays - 1]
+ring r' = nub $ map (\n -> ( floor $ cos (n * slice) * r
+	                       , floor $ sin (n * slice) * r
+	                       )
+                    ) 
+                    [0..fromIntegral rays - 1]
 	where
 	r = fromIntegral r' :: Double
 	cir = 2 * pi * r
@@ -93,7 +93,7 @@ inSightM isOpen start@(x0,y0) (x1,y1) = fmap (start:) $ rat (1 + dx + dy) x0 y0 
     rat 0 _ _ _ = return []
     rat c x y e =
         ifM (isOpen x y) 
-        ThenM (
+        thenM (
             if x == x1 && y == y1 
             then return [(x,y)]
             else eitherOpen (x + x_inc) y x (y + y_inc) >>= \p -> 
@@ -103,7 +103,7 @@ inSightM isOpen start@(x0,y0) (x1,y1) = fmap (start:) $ rat (1 + dx + dy) x0 y0 
 	                  then fmap ((x,y):) $ rat (c - 1) (x + x_inc) y (e - dy) 
 	                  else fmap ((x,y):) $ rat (c - 1) x (y + y_inc) (e + dx)
         )
-        ElseM (
+        elseM (
             return []
         )
     eitherOpen x0' y0' x1' y1' = do
@@ -121,6 +121,7 @@ ifM p _ a _ b = do
 	result <- p
 	if result then a else b
 
-
+thenM = ThenM
+elseM = ElseM
 data ThenM = ThenM
 data ElseM = ElseM

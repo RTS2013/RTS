@@ -1,12 +1,7 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE GADTs #-}
-
 module KDT (KDT,make,makePar,inRange,empty) where
 import GHC.Conc.Sync (par,pseq)
 
-data KDT n a where
-    Fork :: !n -> !(KDT n a) -> !(KDT n a) -> KDT n a
-    Leaf :: ![a] -> KDT n a
+data KDT n a = Fork !n !(KDT n a) !(KDT n a) | Leaf ![a]
 
 instance (Show n, Show a) => Show (KDT n a) where
     show = toStr 4
@@ -83,13 +78,9 @@ inRange kdt fs ns r = filter rangeFilter $ searchKDT kdt leftRightChecks
         where
         search :: (Floating n, Ord n) => KDT n a -> [n -> (Bool,Bool)] -> [a]
         search (Fork n a b) (f:fs') = case f n of
-            (True,True) -> search a fs' `addLists` search b fs'
+            (True,True) -> search a fs' ++ search b fs'
             (True,False) -> search a fs'
             (False,True) -> search b fs'
             (False,False) -> []
         search (Leaf xs) _ = xs
         search _ _ = []
-        addLists :: [a] -> [a] -> [a]
-        addLists (x:xs) (y:ys) = x:y:addLists xs ys
-        addLists xs [] = xs
-        addLists [] ys = ys
