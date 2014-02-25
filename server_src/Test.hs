@@ -1,13 +1,29 @@
-{-# LANGUAGE FlexibleContexts, DeriveGeneric #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE FlexibleContexts, DeriveGeneric, OverloadedStrings #-}
 
-import Movement
-import Data.Binary (encode,decode,Put,Get,Binary)
+module Test where
+
+import Data.Binary (Binary)
 import Data.Word
 import GHC.Generics (Generic)
-import qualified Data.ByteString.Lazy as BS
 import Data.Array.ST (newArray, readArray, MArray, STUArray)
 import Data.Array.Unsafe (castSTUArray)
 import GHC.ST (runST, ST)
+import Party
+
+main :: IO ()
+main = do
+    putStrLn "Waiting for connections..."
+    _ <- openDoors 4444 [5] :: IO (Party ())
+    let doForever = getLine >>= \s -> if s == "exit" then return () else putStrLn s >> doForever
+    doForever
+
+{-
+main = do
+    print $ (decode $ encode False :: Word8)
+    print $ BS.length $ encode $ OrderMessage True 0 0 0 [0]
+    print $ BS.length $ BS.fromChunks $ [encodeUtf8 "a",encodeUtf8 "b"]
+-}
 
 wordToFloat :: Word32 -> Float
 wordToFloat x = runST (cast x)
@@ -26,10 +42,6 @@ cast :: (MArray (STUArray s) a (ST s),
          MArray (STUArray s) b (ST s)) => a -> ST s b
 cast x = newArray (0 :: Int, 0) x >>= castSTUArray >>= flip readArray 0
 
-main = do
-	print $ (decode $ encode False :: Word8)
-	print $ BS.length $ encode $ OrderMessage True 0 0 0 [0]
-
 data ClientMessage 
     = OrderMessage  
                    !Bool  -- True = Add to commands, False = Replace commands
@@ -39,7 +51,5 @@ data ClientMessage
                    ![Word64] -- List of actors to give command to
     | Invalid
     deriving (Generic)
-
-    1 + 1 + 8 + 4 + 4 + 8 + 8
 
 instance Binary ClientMessage

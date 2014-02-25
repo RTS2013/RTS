@@ -41,8 +41,8 @@ main = do
                                    $ (if z>3.25 then color (makeColor8 0 255 0 255) else color (makeColor8 0 0 0 255))
                                    $ rectangleSolid 1 1
                     ) trees
-    -- display (FullScreen (1600, 1200)) black $ pictures $ R.toList heightPic
-    display (InWindow "Perlin Test" (1600, 1200) (0, 0)) black $ pictures $ R.toList treePic
+    display (FullScreen (1600, 1200)) black $ pictures $ R.toList heightPic
+    -- display (InWindow "Perlin Test" (1600, 1200) (0, 0)) black $ pictures $ R.toList treePic
 
 shapeMap f array = R.fromFunction (R.extent array) (\sh@(R.Z R.:.x R.:. y) -> f x y $ array R.! sh)
 

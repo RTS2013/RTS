@@ -26,6 +26,7 @@ addVision grid isOpen start xs = do
 				      else G.write xy (val + 1) grid >> return discovered
 		  ) [] fov
 
+
 subtractVision :: G.MGrid Int -> (Int -> Int -> RIO ReadWrite Bool) -> (Int,Int) -> [(Int,Int)] -> RIO ReadWrite ()
 subtractVision grid isOpen start xs = fieldOfVisionM isOpen start xs >>= mapM_ (\xy -> G.modify xy (\a -> a - 1) grid)
 

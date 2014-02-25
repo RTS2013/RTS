@@ -1,5 +1,5 @@
 {- Library for connecting players to teams. -}
-
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
 module Party
@@ -14,20 +14,24 @@ module Party
 , sendToPlayers
 ) where 
 
+import           Control.Applicative    ((<*>),(<$>))
 import           Control.Concurrent.STM 
-import           Control.Applicative    ((<$>),(<*>))
 import           Control.Concurrent     (ThreadId,forkIO,killThread,myThreadId)
 import           Control.Monad          (forever)
 import           Data.List              (partition)
 import           Data.Monoid            ((<>))
 import           Data.Time.Clock        (UTCTime,diffUTCTime,getCurrentTime)
-import           Data.Binary            (Binary,get,put,decodeOrFail,encode)
-import           Data.Text.Binary       ()
+import           Data.Binary            (Binary,Get,get,put,decodeOrFail,encode)
+import           Data.Binary.Get        (getByteString)
+import           Data.Binary.Put        (putByteString)
+import           Data.Word              (Word32)
+import           Data.Text.Encoding     (decodeUtf8,encodeUtf8)
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as TIO
 import qualified Data.Vector          as V
 import qualified Network.WebSockets   as W
 import qualified Data.ByteString.Lazy as BS
+import qualified Data.ByteString      as SB
 
 type Name = T.Text
 
@@ -49,8 +53,12 @@ data Player = Player
     }
 
 instance (Binary a) => Binary (ClientMessage a) where
-        get = ClientMessage <$> get <*> get <*> get
-        put = undefined
+    put = undefined
+    get = ClientMessage <$> get <*> get <*> get
+
+instance Binary T.Text where
+    put a = let bs = encodeUtf8 a in (put $ (fromIntegral $ SB.length bs :: Word32)) >> putByteString bs
+    get = (get :: Get Word32) >>= getByteString . fromIntegral >>= return . decodeUtf8
 
 data Party a = Party
     { serverThread  :: ThreadId
@@ -69,6 +77,7 @@ openDoors port xs = do
     where 
         tryConnect :: TVar Slots -> TVar [Player] -> TVar [(Player,a)] -> W.PendingConnection -> IO ()
         tryConnect teamSlotsVar playersVar messagesVar pendingConn = do
+            putStrLn "Attempted connection."
             conn <- W.acceptRequest pendingConn
             msg <- W.receiveDataMessage conn
             case msg of
@@ -96,7 +105,8 @@ openDoors port xs = do
                                 TIO.putStrLn $ playerName player 
                                             <> " has joined team " 
                                             <> (T.pack . show) (playerTeam player) 
-                                            <> "."
+                                            <> " with secret: "
+                                            <> playerSecret player
                                 forever $ acceptMessages player messagesVar
 
         acceptMessages :: Player -> TVar [(Player,a)] -> IO ()
