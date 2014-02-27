@@ -10,7 +10,11 @@ import Data.Time.Clock (diffUTCTime,getCurrentTime)
 import RIO.RIO
 import Data
 import Party
+import SayHi
 
+main = sayHi
+
+{-}
 loop :: Int64 -> (a -> IO a) -> a -> IO ()
 loop fps f game' = getCurrentTime >>= actualLoop 1 game'
     where
@@ -29,20 +33,20 @@ stepGame g = do
     gameBehavings <- fmap (map snd) $ HT.toList $ gameBehaviors game
     gameChanges   <- parallel $ map (toIO . ($game)) gameBehavings
     teams         <- fmap (map snd) $ HT.toList $ gameTeams game
-    teamChanges   <- fmap concat $ parallel $ map teamCs teams
+    teamCs        <- fmap concat $ parallel $ map teamChanges teams
     units         <- fmap concat $ sequence $ map (fmap (map snd) . HT.toList . teamUnits) teams
-    unitChanges   <- fmap concat $ parallel $ map unitCs units
+    unitCs        <- fmap concat $ parallel $ map unitChanges units
     game2         <- toIO $ foldM (flip ($)) game  $ unitChanges
     game3         <- toIO $ foldM (flip ($)) game2 $ teamChanges
     toIO $ foldM (flip ($)) game3 $ gameChanges
 
-unitCs :: Unit gameS teamS unitS tileS -> IO [Change gameS teamS unitS tileS]
-unitCs u = do
+unitChanges :: Unit gameS teamS unitS tileS -> IO [Change gameS teamS unitS tileS]
+unitChanges u = do
     behaviors <- fmap (map snd) $ HT.toList $ unitBehaviors u
     sequence $ map (\b -> toIO $ b u) behaviors
 
-teamCs :: Team gameS teamS unitS tileS -> IO [Change gameS teamS unitS tileS]
-teamCs t = do
+teamChanges :: Team gameS teamS unitS tileS -> IO [Change gameS teamS unitS tileS]
+teamChanges t = do
     behaviors <- fmap (map snd) $ HT.toList $ teamBehaviors t
     sequence $ map (\b -> toIO $ b t) behaviors
 
@@ -65,3 +69,4 @@ applyControlMessage game (player, OrderMsg (Orders shift ids order)) = do
     teams = gameTeams game
     teamID = playerTeam player
 applyControlMessage _ _ = return ()
+-}

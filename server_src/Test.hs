@@ -11,12 +11,14 @@ import Data.Array.Unsafe (castSTUArray)
 import GHC.ST (runST, ST)
 import Party
 
+{-
 main :: IO ()
 main = do
     putStrLn "Waiting for connections..."
     _ <- openDoors 4444 [5] :: IO (Party ())
     let doForever = getLine >>= \s -> if s == "exit" then return () else putStrLn s >> doForever
     doForever
+-}
 
 {-
 main = do

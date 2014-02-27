@@ -6,14 +6,21 @@
 <script src="Chef.js"></script>
 <script src="Cereal.js"></script>
 <script>
+var game = new Game(0,'Zach','Kittens',new Array());
 var chef = new Chef();
 chef.putString('Yo Name Fool');
 chef.putString('Yo Secret Fool');
 chef.trim();
-var connection = new WebSocket('ws://192.168.1.116:4444');
-connection.onopen = function(){
+var conn = new WebSocket('ws://192.168.1.116:4444');
+conn.onopen = function(){
    console.log('Connection open!');
-   connection.send(chef.ab);
+   conn.send(chef.ab);
+}
+conn.onmessage = function (event) {
+    game.getGameInfo(new Cereal(new DataView(event.data)));
+    game.units.forEach(function(u) {
+        console.log(u.unitTeam + ":" + u.unitID + " x:" + u.newX + " y:" + u.newY);
+    });
 }
 </script>
 </body>

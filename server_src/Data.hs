@@ -35,7 +35,8 @@ type Behavior gameS teamS unitS tileS behaving =
     RIO ReadOnly (Change gameS teamS unitS tileS)
 
 data Game gameS teamS unitS tileS = Game 
-    { gameState     :: !(IORef gameS)
+    { gameStep      :: {-# UNPACK #-} !Double
+    , gameState     :: !(IORef gameS)
     , gameTiles     :: !(MGrid tileS)
     , gameTime      :: !(IORef Double)
     , gameParty     :: !(Party ControlMessage)
@@ -102,17 +103,17 @@ instance Binary (Unit gameS teamS unitS tileS) where
         coordTo16 a = floor $ a * 64
 
 ----------------------------------------------------------------------------
---                       # DATA SENT OVER WIRE #                          --
+--             # DATA SENT OVER WIRE FROM CLIENT TO SERVER #              --
 ----------------------------------------------------------------------------
 
 data ControlMessage
     = OrderMsg Orders
-    | TeamMsg
-    | PlayerMsg
-    | AllMsg
+    | TeamMsg -- TODO IMPLEMENT
+    | PlayerMsg -- TODO IMPLEMENT
+    | AllMsg -- TODO IMPLEMENT
     deriving (Generic)
 
-data Orders = Orders !Bool [Int] !Order deriving (Generic)
+data Orders = Orders !Bool ![Int] !Order deriving (Generic)
 
 data Order 
     = Standby
@@ -129,13 +130,29 @@ data Order
     {-# UNPACK #-} !Int -- Unit ID
     deriving (Generic)
 
-data GameFrame gameS teamS unitS tileS = GameFrame {-# UNPACK #-} !Double !(ClientDatagram gameS teamS unitS tileS) 
+----------------------------------------------------------------------------
+--             # DATA SENT OVER WIRE FROM SERVER TO CLIENT #              --
+----------------------------------------------------------------------------
 
 instance Binary (GameFrame gameS teamS unitS tileS) where
     get = undefined
     put (GameFrame delta gram) = do
         put $ doubleToWord delta
         put gram
+
+data GameFrame gameS teamS unitS tileS = GameFrame {-# UNPACK #-} !Double !(ClientDatagram gameS teamS unitS tileS) 
+
+instance Binary (ClientDatagram gameS teamS unitS tileS) where
+    get = undefined
+    put (UnitDatagram xs) = do
+        put (fromIntegral $ length xs :: Word8)
+        mapM_ put xs
+    put (TeamDatagram xs) = do
+        put (fromIntegral $ length xs :: Word8)
+        mapM_ put xs
+    put (TerrainDatagram xs) = do
+        put (fromIntegral $ length xs :: Word8)
+        mapM_ put xs
 
 -- Datagram sent to client
 data ClientDatagram gameS teamS unitS tileS
@@ -149,7 +166,7 @@ data ClientDatagram gameS teamS unitS tileS
     deriving (Generic)
 
 data Terrain = Terrain
-    { terrainId :: {-# UNPACK #-} !Word16
+    { terrainID :: {-# UNPACK #-} !Word16
     , terrainX  :: {-# UNPACK #-} !Word16
     , terrainY  :: {-# UNPACK #-} !Word16
     , terrainZ  :: {-# UNPACK #-} !Word16
@@ -157,7 +174,7 @@ data Terrain = Terrain
 
 
 data SFX = SFX
-    { sfxId :: {-# UNPACK #-} !Word16
+    { sfxID :: {-# UNPACK #-} !Word16
     , sfxX  :: {-# UNPACK #-} !Word16
     , sfxY  :: {-# UNPACK #-} !Word16
     , sfxZ  :: {-# UNPACK #-} !Word16
@@ -165,14 +182,14 @@ data SFX = SFX
 
 
 data TargetFX = TargetFX
-    { targetfxId   :: {-# UNPACK #-} !Word16
-    , targetfxUID  :: {-# UNPACK #-} !Int
+    { targetfxID   :: {-# UNPACK #-} !Word16
+    , targetfxUID  :: {-# UNPACK #-} !Int32
     , targetfxteam :: {-# UNPACK #-} !Word8
     } deriving (Generic)
 
 
 data LineFX = LineFX
-    { linefxId :: {-# UNPACK #-} !Word16
+    { linefxID :: {-# UNPACK #-} !Word16
     , linefxXA :: {-# UNPACK #-} !Word16
     , linefxYA :: {-# UNPACK #-} !Word16
     , linefxZA :: {-# UNPACK #-} !Word16
@@ -199,10 +216,6 @@ cast :: (MArray (STUArray s) a (ST s),
          MArray (STUArray s) b (ST s)) => a -> ST s b
 cast x = newArray (0 :: Word64, 0) x >>= castSTUArray >>= flip readArray 0
 
-instance Binary ControlMessage
-instance Binary Orders
-instance Binary Order
-instance Binary (ClientDatagram gameS teamS unitS tileS)
 instance Binary Terrain
 instance Binary SFX
 instance Binary TargetFX

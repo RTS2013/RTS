@@ -14,7 +14,7 @@ function Chef() {
             this.ab = newAB;
         }
     }
-
+    
     this.trim = function (spaceNeeded) {
         var newAB = new ArrayBuffer(this.offset);
         var newDV = new DataView(newAB);
