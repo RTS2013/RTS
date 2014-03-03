@@ -8,7 +8,6 @@ import Data.Text (Text)
 import Data.Int (Int32)
 import Data.List (genericLength)
 import Data.Binary (Binary,get,put)
-import Data.Text.Binary ()
 import Data.Word (Word8,Word16,Word32,Word64)
 import Data.HashTable.IO (BasicHashTable)
 import Data.IntMap (IntMap)
@@ -18,38 +17,32 @@ import Data.Array.Unsafe (castSTUArray)
 import GHC.Generics (Generic)
 import GHC.ST (runST,ST)
 import Grid.UnboxedGrid (MGrid)
-import RIO.Prelude (ReadOnly,ReadWrite,RIO)
+import RIO.Privileges (ReadOnly,ReadWrite,RIO)
 import Party (Party,Player)
 import Movement (Point(..))
 
-defaultGame :: [Player] -> Game gameS teamS unitS tileS
-defaultGame = undefined
-
+type Ref = IORef
 type HashTable a = BasicHashTable Int a
-
-type Change gameS teamS unitS tileS =
-    Game gameS teamS unitS tileS -> RIO ReadWrite ()
 
 type Behavior gameS teamS unitS tileS behaving = 
     behaving gameS teamS unitS tileS -> 
-    RIO ReadOnly (Change gameS teamS unitS tileS)
+    RIO ReadOnly (RIO ReadWrite ())
 
 data Game gameS teamS unitS tileS = Game 
-    { gameStep      :: {-# UNPACK #-} !Double
-    , gameState     :: !(IORef gameS)
+    { gameStep      :: !(Ref Double)
+    , gameState     :: !(Ref gameS)
     , gameTiles     :: !(MGrid tileS)
-    , gameTime      :: !(IORef Double)
     , gameParty     :: !(Party ControlMessage)
     , gameTeams     :: !(HashTable (Team gameS teamS unitS tileS))
-    , gameValues    :: !(IORef (Game gameS teamS unitS tileS -> [(Word8,Word16)]))
-    , gameBehaviors :: !(IORef (IntMap (Behavior gameS teamS unitS tileS Game)))
+    , gameValues    :: !(Ref (Game gameS teamS unitS tileS -> [(Word8,Word16)]))
+    , gameBehaviors :: !(Ref (IntMap (Behavior gameS teamS unitS tileS Game)))
     } 
 
 data Team gameS teamS unitS tileS = Team
-    { teamState      :: !teamS
+    { teamState      :: !(Ref teamS)
     , teamPlayers    :: ![Player]
     , teamVision     :: !(MGrid Int)
-    , teamSpawnCount :: {-# UNPACK #-} !Int -- Incremented with each new unit
+    , teamSpawnCount :: !(Ref Int) -- Incremented with each new unit
     , teamUnits      :: !(HashTable (Unit gameS teamS unitS tileS))
     , teamValues     :: !(Team gameS teamS unitS tileS -> [(Word8,Word16)])
     , teamBehaviors  :: !(IntMap (Behavior gameS teamS unitS tileS Team))
@@ -80,6 +73,45 @@ data MoveState = MoveState
     , radius    :: {-# UNPACK #-} !Float
     } 
 
+----------------------------------------------------------------------------
+--             # DATA SENT OVER WIRE FROM CLIENT TO SERVER #              --
+----------------------------------------------------------------------------
+
+data ControlMessage
+    = OrderMsg Orders
+    | TeamMsg -- TODO IMPLEMENT
+    | PlayerMsg -- TODO IMPLEMENT
+    | AllMsg -- TODO IMPLEMENT
+    | Ready -- TODO IMPLEMENT
+    deriving (Generic)
+
+instance Binary ControlMessage
+
+data Orders = Orders !Bool ![Int] !Order
+    deriving (Generic)
+
+data Order 
+    = Standby
+    | Move    !Point
+    | Assault !Point
+    | Target  {-# UNPACK #-} !Word8 {-# UNPACK #-} !Int
+    | Hold    !Point
+    | Patrol  !Point !Point 
+    | Invoke {-# UNPACK #-} !Word16 {- Ability ID -}
+    | InvokeAt {-# UNPACK #-} !Word16 {- Ability ID -} !Point
+    | InvokeOn 
+    {-# UNPACK #-} !Word16 -- Ability ID
+    {-# UNPACK #-} !Word8  -- Team ID
+    {-# UNPACK #-} !Int -- Unit ID
+    deriving (Generic)
+
+instance Binary Orders
+instance Binary Order
+
+----------------------------------------------------------------------------
+--             # DATA SENT OVER WIRE FROM SERVER TO CLIENT #              --
+----------------------------------------------------------------------------
+
 instance Binary (Unit gameS teamS unitS tileS) where
     get = undefined
     put u = do
@@ -102,38 +134,6 @@ instance Binary (Unit gameS teamS unitS tileS) where
         coordTo16 :: Float -> Word16
         coordTo16 a = floor $ a * 64
 
-----------------------------------------------------------------------------
---             # DATA SENT OVER WIRE FROM CLIENT TO SERVER #              --
-----------------------------------------------------------------------------
-
-data ControlMessage
-    = OrderMsg Orders
-    | TeamMsg -- TODO IMPLEMENT
-    | PlayerMsg -- TODO IMPLEMENT
-    | AllMsg -- TODO IMPLEMENT
-    deriving (Generic)
-
-data Orders = Orders !Bool ![Int] !Order deriving (Generic)
-
-data Order 
-    = Standby
-    | Move    !Point
-    | Assault !Point
-    | Target  {-# UNPACK #-} !Word8 {-# UNPACK #-} !Int
-    | Hold    !Point
-    | Patrol  !Point !Point 
-    | Invoke {-# UNPACK #-} !Word16 {- Ability ID -}
-    | InvokeAt {-# UNPACK #-} !Word16 {- Ability ID -} !Point
-    | InvokeOn 
-    {-# UNPACK #-} !Word16 -- Ability ID
-    {-# UNPACK #-} !Word8  -- Team ID
-    {-# UNPACK #-} !Int -- Unit ID
-    deriving (Generic)
-
-----------------------------------------------------------------------------
---             # DATA SENT OVER WIRE FROM SERVER TO CLIENT #              --
-----------------------------------------------------------------------------
-
 instance Binary (GameFrame gameS teamS unitS tileS) where
     get = undefined
     put (GameFrame delta gram) = do
@@ -145,14 +145,31 @@ data GameFrame gameS teamS unitS tileS = GameFrame {-# UNPACK #-} !Double !(Clie
 instance Binary (ClientDatagram gameS teamS unitS tileS) where
     get = undefined
     put (UnitDatagram xs) = do
+        put (0 :: Word8)
         put (fromIntegral $ length xs :: Word8)
         mapM_ put xs
     put (TeamDatagram xs) = do
+        put (1 :: Word8)
         put (fromIntegral $ length xs :: Word8)
         mapM_ put xs
     put (TerrainDatagram xs) = do
+        put (2 :: Word8)
         put (fromIntegral $ length xs :: Word8)
         mapM_ put xs
+    put (LineFXDatagram xs) = do
+        put (3 :: Word8)
+        put (fromIntegral $ length xs :: Word8)
+        mapM_ put xs
+    put (SFXDatagram xs) = do
+        put (4 :: Word8)
+        put (fromIntegral $ length xs :: Word8)
+        mapM_ put xs
+    put (TargetFXDatagram xs) = do
+        put (5 :: Word8)
+        put (fromIntegral $ length xs :: Word8)
+        mapM_ put xs
+    put (MessageDatagram txt) = put txt
+    put (YourPlaceInLife tid x y) = put tid >> put x >> put y
 
 -- Datagram sent to client
 data ClientDatagram gameS teamS unitS tileS
@@ -163,7 +180,11 @@ data ClientDatagram gameS teamS unitS tileS
     | SFXDatagram      ![SFX]
     | TargetFXDatagram ![TargetFX]
     | MessageDatagram  !Text
-    deriving (Generic)
+    | YourPlaceInLife  {-# UNPACK #-} !Word8 -- Team ID
+                       {-# UNPACK #-} !Word16 -- X Coord
+                       {-# UNPACK #-} !Word16 -- Y Coord
+
+instance Binary Terrain
 
 data Terrain = Terrain
     { terrainID :: {-# UNPACK #-} !Word16
@@ -172,6 +193,7 @@ data Terrain = Terrain
     , terrainZ  :: {-# UNPACK #-} !Word16
     } deriving (Generic)
 
+instance Binary SFX
 
 data SFX = SFX
     { sfxID :: {-# UNPACK #-} !Word16
@@ -180,6 +202,7 @@ data SFX = SFX
     , sfxZ  :: {-# UNPACK #-} !Word16
     } deriving (Generic)
 
+instance Binary TargetFX
 
 data TargetFX = TargetFX
     { targetfxID   :: {-# UNPACK #-} !Word16
@@ -187,6 +210,7 @@ data TargetFX = TargetFX
     , targetfxteam :: {-# UNPACK #-} !Word8
     } deriving (Generic)
 
+instance Binary LineFX
 
 data LineFX = LineFX
     { linefxID :: {-# UNPACK #-} !Word16
@@ -215,8 +239,3 @@ doubleToWord x = runST (cast x)
 cast :: (MArray (STUArray s) a (ST s),
          MArray (STUArray s) b (ST s)) => a -> ST s b
 cast x = newArray (0 :: Word64, 0) x >>= castSTUArray >>= flip readArray 0
-
-instance Binary Terrain
-instance Binary SFX
-instance Binary TargetFX
-instance Binary LineFX

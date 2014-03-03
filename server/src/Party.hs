@@ -8,6 +8,7 @@ module Party
 , openDoors
 , closeDoors
 , getMessages
+, allPlayers
 , idlePlayers
 , removePlayer
 , switchTeam
@@ -17,14 +18,14 @@ module Party
 import           Control.Applicative    ((<*>),(<$>))
 import           Control.Concurrent.STM 
 import           Control.Concurrent     (ThreadId,forkIO,killThread,myThreadId)
-import           Control.Monad          (forever)
+import           Control.Monad          (forever,filterM)
 import           Data.List              (partition)
 import           Data.Monoid            ((<>))
 import           Data.Time.Clock        (UTCTime,diffUTCTime,getCurrentTime)
 import           Data.Binary            (Binary,Get,get,put,decodeOrFail,encode)
 import           Data.Binary.Get        (getByteString)
 import           Data.Binary.Put        (putByteString)
-import           Data.Word              (Word32)
+import           Data.Word              (Word16,Word32)
 import           Data.Text.Encoding     (decodeUtf8,encodeUtf8)
 import qualified Data.Text            as T
 import qualified Data.Text.IO         as TIO
@@ -49,7 +50,7 @@ data Player = Player
     , playerName    :: !Name
     , playerSecret  :: !Secret
     , playerConn    :: !W.Connection
-    , playerLastMsg :: !UTCTime
+    , playerLastMsg :: !(TVar UTCTime)
     }
 
 instance (Binary a) => Binary (ClientMessage a) where
@@ -92,7 +93,8 @@ openDoors port xs = do
                             let writeInPlayer :: (TeamID, Slots) -> STM Player
                                 writeInPlayer (team,newSlots) = do
                                     writeTVar teamSlotsVar newSlots
-                                    let player = Player team myThread name secret conn myTime
+                                    timeTVar <- newTVar myTime
+                                    let player = Player team myThread name secret conn timeTVar
                                     players <- readTVar playersVar
                                     writeTVar playersVar $ player:players
                                     return player
@@ -118,7 +120,11 @@ openDoors port xs = do
                     Left _ -> TIO.putStrLn "Somebodies data wasn't encoded properly."
                     Right (_,_,ClientMessage name secret (msg :: a)) -> do
                         if name == playerName player && secret == playerSecret player
-                        then atomically $ readTVar messagesVar >>= writeTVar messagesVar . ((player, msg):)
+                        then do
+                            timeNow <- getCurrentTime
+                            atomically $ do
+                                readTVar messagesVar >>= writeTVar messagesVar . ((player, msg):)
+                                writeTVar (playerLastMsg player) timeNow
                         else TIO.putStrLn "Somebodies name or secret was wrong."
 
         getFirstSlot :: Slots -> Maybe (TeamID, Slots)
@@ -139,12 +145,18 @@ getMessages gt = atomically $ do
     writeTVar msgsVar []
     return msgs
 
+allPlayers :: Party a -> IO [Player]
+allPlayers = atomically . readTVar . playersTVar
+
 idlePlayers :: Rational -> Party a -> IO [Player]
 idlePlayers duration gt = do
     let playersVar = playersTVar gt
     timeNow <- getCurrentTime
     atomically $ readTVar playersVar >>= 
-        return . filter (\player -> toRational (diffUTCTime timeNow $ playerLastMsg player) > duration)
+        filterM (\player -> do
+            lastTime <- readTVar $ playerLastMsg player
+            return $ toRational (diffUTCTime timeNow $ lastTime) > duration
+        )
 
 removePlayer :: Party a -> Player -> IO ()
 removePlayer gt player = do
@@ -184,17 +196,18 @@ switchTeam gt player team = atomically $ do
 
 sendToPlayers :: (Binary a) => BS.ByteString -> [a] -> [Player] -> IO ()
 sendToPlayers header list players = do
-    let choppy = chopList BS.empty $ map encode list
+    let choppy = chopList BS.empty 0 $ map encode list
     mapM_ (\p -> mapM_ (sendMsg $ playerConn p) choppy) players
     
     where
-    packetSize = 2048 - BS.length header
+    packetSize = 2048 - 3
 
-    chopList :: BS.ByteString -> [BS.ByteString] -> [BS.ByteString]
-    chopList bs (x:xs) = if   BS.length x + BS.length bs > packetSize
-                         then BS.append header bs : chopList BS.empty (x:xs)
-                         else chopList (BS.append x bs) xs
-    chopList bs ______ = [bs]
+    chopList :: BS.ByteString -> Int -> [BS.ByteString] -> [BS.ByteString]
+    chopList bs n (x:xs) = 
+        if   BS.length x + BS.length bs > packetSize
+        then BS.append header (BS.append (encode (fromIntegral n :: Word16)) bs) : chopList BS.empty 0 (x:xs)
+        else chopList (BS.append x bs) (n+1) xs
+    chopList bs n _      = [BS.append header (BS.append (encode (fromIntegral n :: Word16)) bs)]
 
     sendMsg :: W.Connection -> BS.ByteString -> IO ()
     sendMsg conn = W.send conn . W.DataMessage . W.Binary

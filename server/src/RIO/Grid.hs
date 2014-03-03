@@ -11,7 +11,7 @@ module RIO.Grid
 
 import Prelude hiding (read)
 import RIO.RIO
-import RIO.Prelude
+import RIO.Privileges
 import Grid.UnboxedGrid (MGrid)
 import qualified Grid.UnboxedGrid as G
 import Data.Vector.Unboxed.Mutable (Unbox)

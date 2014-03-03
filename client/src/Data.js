@@ -15,8 +15,9 @@ function Unit(uid,team,anim,type,vals,x,y,z,f,time) {
     this.updateTime = time;
 }
 
-function Game(myTeamID,myName,mySecret,myStartVals) {
-    this.myTeamID = myTeamID;
+function Game(myName,mySecret,myStartVals) {
+    this.myTeamID = null;
+    this.myStart = null;
     this.myName   = myName;
     this.mySecret = mySecret;
     this.units    = new buckets.Dictionary(function (a){a.team + ":" + a.uid;});
@@ -24,7 +25,7 @@ function Game(myTeamID,myName,mySecret,myStartVals) {
 
     // Get game info from cereal
     this.getGameInfo = function(cereal) {
-        var gramTime = cereal.getF64();
+        var time = cereal.getF64();
         var tag = cereal.getU8();
         switch(tag) {
         case 0:
@@ -33,14 +34,39 @@ function Game(myTeamID,myName,mySecret,myStartVals) {
         case 1:
             this.getTeamInfo(cereal,time);
             break;
+        case 2:
+            // TODO
+            break;
+        case 3:
+            // TODO
+            break;
+        case 4:
+            // TODO
+            break;
+        case 5:
+            // TODO
+            break;
+        case 6:
+            // TODO
+            break;
+        case 7:
+            this.getPlaceInLife(cereal);
         default:
             break;
         }
     }
 
+    this.getPlaceInLife = function(cereal) {
+        this.myTeamID = cereal.getU8();
+        var x = cereal.getU16();
+        var y = cereal.getU16();
+        this.myStart = {startX:x,startY:y};
+        console.log("Your team " + myTeamID);
+    }
+
    // Get units from cereal
     this.getUnitInfo = function(cereal,time) {
-        var valCount = cereal.getU8();
+        var valCount = cereal.getU16();
         for (var i = 0; i < valCount; i++) {
             var uid = cereal.get32();
             var team = cereal.getU8();
@@ -83,7 +109,7 @@ function Game(myTeamID,myName,mySecret,myStartVals) {
 
     // Get team info from cereal
     this.getTeamInfo = function(cereal,time) {
-        var valCount = cereal.getU8();
+        var valCount = cereal.getU16();
         for (var i = 0; i < valCount; i++) {
             var key = cereal.getU8();
             var val = cereal.getU16();
