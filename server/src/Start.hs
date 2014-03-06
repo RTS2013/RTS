@@ -4,46 +4,50 @@ module Start where
 
 import qualified Data.HashTable.IO as HT
 import qualified Data.IntMap       as IM
+import qualified Grid.UnboxedGrid  as Grid
 import Data.Monoid ((<>))
 import Data.Binary (encode)
 import Data.IORef
-import Control.Concurrent.ParallelIO.Global (parallel)
+import Control.Concurrent.ParallelIO.Global (parallel,stopGlobalPool)
 import Data.Int (Int64)
 import Data.Sequence ((|>),singleton)
 import Control.Concurrent (threadDelay)
 import Data.Time.Clock (diffUTCTime,getCurrentTime)
 import Data.Word (Word8)
-import qualified Grid.UnboxedGrid as Grid
 import RIO.RIO
 import RIO.Privileges
+import RIO.Prelude (makeTeam)
 import Data
 import Party
-import safe Mod (runMod)
+import safe Mod (runMod,defaultGameState,defaultTileState,defaultTeamState)
 
 main :: IO ()
 main = do
     teamNums <- fmap read getLine
     party    <- openDoors 4444 teamNums :: IO (Party ControlMessage)
-    game     <- defaultGame party >>= toIO . runMod (length teamNums)
+    defaultGame <- do 
+        stepRef  <- newIORef 0
+        stateRef <- newIORef defaultGameState
+        teams <- HT.new
+        grid  <- Grid.make (1024,1024) defaultTileState
+        valuesRef <- newIORef $ \_ -> []
+        behaveRef <- newIORef IM.empty
+        return $ Game 
+            { gameStep = stepRef
+            , gameState = stateRef 
+            , gameParty = party
+            , gameTeams = teams
+            , gameTiles = grid
+            , gameValues = valuesRef
+            , gameBehaviors = behaveRef
+            }
+    -- Add default teams to game
+    toIO $ mapM_ (makeTeam defaultGame defaultTeamState) [0..length teamNums - 1]
+    -- Run Mod on game
+    game <- toIO $ runMod (length teamNums) defaultGame
+    -- Start game
     loop 10 stepGame game
-
-defaultGame :: Party ControlMessage -> IO (Game () teamS unitS ())
-defaultGame party = do 
-    stepRef  <- newIORef 0
-    stateRef <- newIORef ()
-    teams <- HT.new
-    grid  <- Grid.make (0,0) ()
-    valuesRef <- newIORef $ \_ -> []
-    behaveRef <- newIORef IM.empty
-    return $ Game 
-        { gameStep = stepRef
-        , gameState = stateRef 
-        , gameParty = party
-        , gameTeams = teams
-        , gameTiles = grid
-        , gameValues = valuesRef
-        , gameBehaviors = behaveRef
-        }
+    stopGlobalPool
 
 loop :: Int64 -> (a -> IO a) -> a -> IO ()
 loop fps f game' = getCurrentTime >>= actualLoop 1 game'
@@ -58,20 +62,37 @@ loop fps f game' = getCurrentTime >>= actualLoop 1 game'
 
 stepGame :: Game gameS teamS unitS tileS -> IO (Game gameS teamS unitS tileS)
 stepGame game = do
-    stepN <- readIORef (gameStep game)
-    modifyIORef (gameStep game) (+1)
+    -- Apply player commands to units
     getMessages (gameParty game) >>= mapM_ (applyControlMessage game)
+    -- Gather game behaviors
     gameBehavings <- fmap IM.elems $ readIORef (gameBehaviors game)
-    gameCs        <- parallel $ map (toIO . ($game)) gameBehavings
-    teams         <- fmap (map snd) $ HT.toList $ gameTeams game
-    teamCs        <- fmap concat $ parallel $ map teamChanges teams
-    units         <- fmap concat $ sequence $ map (fmap (map snd) . HT.toList . teamUnits) teams
-    unitCs        <- fmap concat $ parallel $ map unitChanges units
-    toIO $ sequence_ unitCs >> sequence_ teamCs >> sequence_ gameCs
+    -- Gather all teams
+    teams <- fmap (map snd) $ HT.toList $ gameTeams game
+    -- Gather all units
+    units <- fmap concat $ sequence $ map (fmap (map snd) . HT.toList . teamUnits) teams
+    -- Gather game changes
+    gamesChanges <- parallel (map (toIO . ($game)) gameBehavings)
+    -- Gather team changes
+    teamsChanges <- parallel (map teamChanges teams)
+    -- Gather unit changes
+    unitsChanges <- parallel (map unitChanges units)
+    -- Apply game changes
+    toIO $ sequence_ gamesChanges
+    -- Apply team changes
+    toIO $ mapM_ sequence_ teamsChanges
+    -- Apply unit changes
+    toIO $ mapM_ sequence_ unitsChanges
+    -- Extract all units from all teams
     allUnits <- fmap concat $ sequence $ map (fmap (map snd) . HT.toList . teamUnits) teams
-    players  <- allPlayers (gameParty game)
+    -- Send unit all information to all players
+    players <- allPlayers (gameParty game)
+    -- Get game step number
+    stepN <- readIORef (gameStep game)
     -- Send unit information to all players
     sendToPlayers (encode stepN <> encode (0::Word8)) allUnits players
+    -- Increment gamestep
+    modifyIORef (gameStep game) (+1)
+    -- print allUnits
     return game
 
 unitChanges :: Unit gameS teamS unitS tileS -> IO [RIO ReadWrite ()]

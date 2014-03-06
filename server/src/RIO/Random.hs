@@ -1,24 +1,28 @@
 {-# LANGUAGE Trustworthy #-}
 
 module RIO.Random
-( getStdRandom
-, getStdGen
-, setStdGen
-, newStdGen
+( getRIORandom
+, getRIOGen
+, setRIOGen
+, newRIOGen
+, module Control.Monad.Random
+, module Control.Monad.Trans.Class
 ) where
 
 import qualified System.Random as R
 import RIO.RIO
-import RIO.Prelude
+import RIO.Privileges
+import Control.Monad.Random
+import Control.Monad.Trans.Class
 
-getStdRandom :: (R.StdGen -> (a, R.StdGen)) -> RIO ReadWrite a
-getStdRandom = RIO . R.getStdRandom
+getRIORandom :: (R.StdGen -> (a, R.StdGen)) -> RIO ReadWrite a
+getRIORandom = RIO . R.getStdRandom
 
-getStdGen :: RIO ReadWrite R.StdGen
-getStdGen = RIO R.getStdGen
+getRIOGen :: RIO ReadWrite R.StdGen
+getRIOGen = RIO R.getStdGen
 
-setStdGen :: R.StdGen -> RIO ReadWrite ()
-setStdGen = RIO . R.setStdGen
+setRIOGen :: R.StdGen -> RIO ReadWrite ()
+setRIOGen = RIO . R.setStdGen
 
-newStdGen :: RIO ReadWrite R.StdGen
-newStdGen = RIO R.newStdGen
+newRIOGen :: RIO ReadWrite R.StdGen
+newRIOGen = RIO R.newStdGen

@@ -20,6 +20,7 @@ import Grid.UnboxedGrid (MGrid)
 import RIO.Privileges (ReadOnly,ReadWrite,RIO)
 import Party (Party,Player)
 import Movement (Point(..))
+import qualified Movement as M
 
 type Ref = IORef
 type HashTable a = BasicHashTable Int a
@@ -60,6 +61,18 @@ data Unit gameS teamS unitS tileS = Unit
     , unitBehaviors    :: !(IntMap (Behavior gameS teamS unitS tileS Unit))
     } 
 
+instance Show (Unit gameS teamS unitS tileS) where
+    show u = let ms = unitMoveState u in
+        show (positionX ms, positionY ms)
+
+instance M.Moves (Unit gameS teamS unitS tileS) where
+    getMoveStats u = let ms = unitMoveState u in 
+        M.Bulk (radius ms) (weight ms)
+    getMoveState u = let ms = unitMoveState u in 
+        Point (positionX ms) (positionY ms) (positionZ ms)
+    setMoveState u (Point x y z) =
+        u {unitMoveState = (unitMoveState u) {positionX = x, positionY = y, positionZ = z}}
+
 data MoveState = MoveState
     { positionX :: {-# UNPACK #-} !Float
     , positionY :: {-# UNPACK #-} !Float
@@ -72,6 +85,7 @@ data MoveState = MoveState
     , weight    :: {-# UNPACK #-} !Float
     , radius    :: {-# UNPACK #-} !Float
     } 
+
 
 ----------------------------------------------------------------------------
 --             # DATA SENT OVER WIRE FROM CLIENT TO SERVER #              --

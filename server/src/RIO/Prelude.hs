@@ -3,50 +3,17 @@
 
 module RIO.Prelude where
 
-import RIO.Privileges
 import Data
-
+import RIO.Privileges
 import qualified RIO.Ref as Ref
 import qualified RIO.Grid as Grid
 import qualified RIO.HashTable as HT
 import qualified Data.IntMap as IM
 import qualified Data.Sequence as Seq
 
-defaultTeam :: Int -> RIO ReadWrite (Int, Team gameS () unitS tileS)
-defaultTeam n = do
-    stateRef <- Ref.make ()
-    countRef <- Ref.make 0
-    grid     <- Grid.make (0,0) (-1)
-    noUnits  <- HT.make 10
-    return (n, Team
-        { teamState = stateRef
-        , teamPlayers = []
-        , teamVision = grid
-        , teamSpawnCount = countRef
-        , teamUnits = noUnits
-        , teamValues = \_ -> []
-        , teamBehaviors = IM.empty
-        })
-
-makeUnitForTeam :: 
-	Game gameS teamS unitS tileS ->
-    Unit gameS teamS unitS tileS -> 
-    Int ->
-    (Float,Float,Float,Float) -> 
-    RIO ReadWrite ()
-makeUnitForTeam game unit teamN xyza = do
-	mTeam <- HT.read (gameTeams game) teamN
-	case mTeam of
-		Nothing -> return ()
-		Just team -> do
-			newUnitID <- Ref.read (teamSpawnCount team)
-			Ref.modify (teamSpawnCount team) (+1)
-			HT.write (teamUnits team) newUnitID 
-			         (setUnitOrientation xyza unit {unitTeam = teamN})
-
-defaultUnit :: Unit gameS teamS () tileS
-defaultUnit = Unit
-    { unitState = ()
+defaultUnit :: unitS -> Unit gameS teamS unitS tileS
+defaultUnit unitS = Unit
+    { unitState = unitS
     , unitID    = 0
     , unitTeam  = 0
     , unitType  = 0
@@ -67,6 +34,53 @@ defaultUnit = Unit
     , unitValues = \_ -> []
     , unitBehaviors = IM.empty
     }
+
+makeTeam :: Game gameS teamS unitS tileS -> teamS -> Int -> RIO ReadWrite ()
+makeTeam game teamS i = defaultTeam >>= HT.write (gameTeams game) i
+	where
+	defaultTeam = do
+	    stateRef <- Ref.make teamS
+	    countRef <- Ref.make 0
+	    grid     <- Grid.make (0,0) (-1)
+	    noUnits  <- HT.make 10
+	    return $ Team
+	        { teamState = stateRef
+	        , teamPlayers = []
+	        , teamVision = grid
+	        , teamSpawnCount = countRef
+	        , teamUnits = noUnits
+	        , teamValues = \_ -> []
+	        , teamBehaviors = IM.empty
+	        }
+
+makeUnit :: 
+	Game gameS teamS unitS tileS ->
+    Unit gameS teamS unitS tileS -> 
+    Int ->
+    (Float,Float,Float,Float) -> 
+    RIO ReadWrite ()
+makeUnit game unit teamN xyza = do
+	mTeam <- HT.read (gameTeams game) teamN
+	case mTeam of
+		Nothing -> return ()
+		Just team -> do
+			newUnitID <- Ref.read (teamSpawnCount team)
+			Ref.modify (teamSpawnCount team) (+1)
+			HT.write (teamUnits team) newUnitID 
+			         (setUnitOrientation xyza unit {unitTeam = teamN})
+
+modifyUnit ::
+	Game gameS teamS unitS tileS ->
+    Int -> 
+    Int ->
+    (Unit gameS teamS unitS tileS -> Unit gameS teamS unitS tileS) -> 
+    RIO ReadWrite ()
+modifyUnit game tID uID f = do
+	mTeam <- HT.read (gameTeams game) tID
+	case mTeam of
+		Nothing -> return ()
+		Just team -> do
+			HT.modify (teamUnits team) uID f
 
 setUnitPosition :: (Float,Float,Float) -> Unit gameS teamS unitS tileS -> Unit gameS teamS unitS tileS
 setUnitPosition (x,y,z) u = u 

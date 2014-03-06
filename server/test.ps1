@@ -8,4 +8,4 @@ ghc -threaded -rtsopts -O2 -Wall `
     -main-is $name `
     -isrc
 Invoke-Expression $("src/build/" + $name + ".exe +RTS -N4 -A4M -H1G")
-rm -Recurse src/build/$name.exe
+rm src/build/$name.exe
