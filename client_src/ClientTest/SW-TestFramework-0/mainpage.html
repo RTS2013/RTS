@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Scrounge-like WebGL</title>
+<link rel="stylesheet" type="text/css" href="ui.css"/>
+	<!--    
+	<script src="../libs/jquery.mousewheel.js"></script>
+	-->	
+	
+	<!-- Refs to Chef Code -->
+
+	<script src="../../StringView.js"></script>
+	<script src="../../Buckets.js"></script>
+	<script src="../../Chef.js"></script>
+	<script src="../../Cereal.js"></script>
+	<script src="../../Go.js"></script>
+	<script src="../../Data.js"></script>
+	<script src="../../StringView.js"></script>
+
+	<!-- Libraries & Packages & Modules, Oh my! -->
+
+	<script src="js/libs/vender/jquery-1.11.0.js"></script>
+	<script src="js/libs/vender/Detector.js"></script>
+	<script src="js/libs/vender/RequestAnimationFrame.js"></script>
+	<script src="js/libs/vender/three.min.js"></script>
+	<script src="js/libs/vender/stats.min.js"></script>
+	<script src="js/libs/vender/ColladaLoader.js"></script>
+	<script src="js/libs/sim/sim.js"></script>
+	<script src="js/libs/controls/RTSControls.js"></script>
+	<script src="js/libs/animation/Animation.js"></script>
+	<script src="js/libs/animation/AnimationHandler.js"></script>
+	<script src="js/libs/animation/AnimationMorphTarget.js"></script>
+	<script src="js/libs/animation/KeyFrameAnimation.js"></script>
+	
+	<!-- My stuff-ish -->
+
+	<script src="js/src/init.js"></script>	
+	<script src="js/src/Unit.js"></script>	
+	<script src="js/src/mousePicker.js"></script>
+
+
+	<!-- ACTUALLY my stuff; in 80% of the WebGL Up and Running "framework" SIMJS -->
+
+	<script src="js/src/Unit.js"></script>
+	<script src="js/src/UnitRing.js"></script>
+	
+	<script src="Moon.js"></script>
+	<script src="Sun.js"></script>
+	<script src="Earth.js"></script>
+	<script src="Stars.js"></script>
+	
+	<script src="js/src/ScroungeApp.js"></script>
+
+	<script>
+
+	var renderer = null;
+	var scene = null;
+	var camera = null;
+	var SCREEN_HEIGHT = window.innerHeight;
+	var SCREEN_WIDTH = window.innerWidth;
+
+	//pretty sure this is a garbage declaration but I don't ahve time to find out rigtht now
+	var mesh = null;
+	//these WILL come from the server and will tell me where to start my player/camera
+	var myX = 10, myY = 100, myZ = 10;
+	
+	$(document).ready(
+		function() {
+			var container = document.getElementById("container");
+			var app = new ScroungeApp();
+			app.init({ container: container }, myX, myY, myZ);
+			app.run();
+		}
+	);
+
+	</script>
+
+</head>
+<body>
+    <div id="container" style="width:98%; height:98%; overflow:hidden; position:absolute; background-color:#000011"></div>
+
+	<div id="info">
+		<a href="http://scroungeworld.blogspot.com" 
+                   target="_blank">Scrounge Blog</a> SW Collada Loader Main
+		
+   		<div id="instruct2">move mouse over edges to scroll</div>
+        <div id="instruct1">also move with WASD (R/F = up/down)</div>
+	</div>
+    <div id="info2">
+            go to fullscreen mode
+            to click on objects and
+            see their ID
+    </div>
+            	
+    <div id="animated_div">
+			CSS3
+			<span style="font-size:10px;">Tutorial</span>
+	</div>
+		<!--<div id="stats"></div>-->
+     <div id="stats2"></div>
+
+</body>
+</html>
