@@ -21,6 +21,7 @@ import RIO.Privileges (ReadOnly,ReadWrite,RIO)
 import Party (Party,Player)
 import Movement (Point(..))
 import qualified Movement as M
+import qualified KDT as KDT
 
 type Ref = IORef
 type HashTable a = BasicHashTable Int a
@@ -32,6 +33,7 @@ type Behavior gameS teamS unitS tileS behaving =
 data Game gameS teamS unitS tileS = Game 
     { gameStep      :: !(Ref Double)
     , gameState     :: !(Ref gameS)
+    , gameKDT       :: !(Ref (KDT.KDT Float (Unit gameS teamS unitS tileS)))
     , gameTiles     :: !(MGrid tileS)
     , gameParty     :: !(Party ControlMessage)
     , gameTeams     :: !(HashTable (Team gameS teamS unitS tileS))
@@ -60,6 +62,9 @@ data Unit gameS teamS unitS tileS = Unit
     , unitValues       :: !(Unit gameS teamS unitS tileS -> [(Word8,Word16)])
     , unitBehaviors    :: !(IntMap (Behavior gameS teamS unitS tileS Unit))
     } 
+
+instance Eq (Unit gameS teamS unitS tileS) where
+    a == b = unitTeam a == unitTeam b && unitID a == unitID b
 
 instance Show (Unit gameS teamS unitS tileS) where
     show u = let ms = unitMoveState u in

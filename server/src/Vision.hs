@@ -1,3 +1,5 @@
+{-# LANGUAGE Trustworthy #-}
+
 module Vision where
 
 import qualified RIO.Grid as G

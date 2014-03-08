@@ -1,3 +1,5 @@
+{-# LANGUAGE Trustworthy #-}
+
 module KDT (KDT,make,makePar,inRange,empty) where
 import GHC.Conc.Sync (par,pseq)
 
@@ -18,7 +20,6 @@ instance (Show n, Show a) => Show (KDT n a) where
 empty :: (Floating n, Ord n) => KDT n a
 empty = Leaf []
 
-{-# INLINE make #-}
 make :: (Floating n, Ord n) => [a -> n] -> [a] -> KDT n a
 make getters = mkKDT (cycle getters)
     where
@@ -42,7 +43,6 @@ make getters = mkKDT (cycle getters)
             else split xs' ls' (x:rs')
     mkKDT _ xs = Leaf xs
 
-{-# INLINE makePar #-}
 makePar :: (Floating n, Ord n) => [a -> n] -> [a] -> KDT n a
 makePar getters = mkKDT (cycle getters)
     where
@@ -66,7 +66,6 @@ makePar getters = mkKDT (cycle getters)
             else split xs' ls' (x:rs')
     mkKDT _ xs = Leaf xs
 
-{-# INLINE inRange #-}
 inRange :: (Floating n, Ord n) => KDT n a -> [a -> n] -> [n] -> n -> [a]
 inRange kdt fs ns r = filter rangeFilter $ searchKDT kdt leftRightChecks
     where

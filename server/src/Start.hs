@@ -5,6 +5,7 @@ module Start where
 import qualified Data.HashTable.IO as HT
 import qualified Data.IntMap       as IM
 import qualified Grid.UnboxedGrid  as Grid
+import qualified KDT               as KDT
 import Data.Monoid ((<>))
 import Data.Binary (encode)
 import Data.IORef
@@ -23,7 +24,9 @@ import safe Mod (runMod,defaultGameState,defaultTileState,defaultTeamState)
 
 main :: IO ()
 main = do
+    putStrLn "Enter a list of teams (Ex. [4,1,1,2] )"
     teamNums <- fmap read getLine
+    putStrLn "Game is accepting players and streaming info to them."
     party    <- openDoors 4444 teamNums :: IO (Party ControlMessage)
     defaultGame <- do 
         stepRef  <- newIORef 0
@@ -32,11 +35,13 @@ main = do
         grid  <- Grid.make (1024,1024) defaultTileState
         valuesRef <- newIORef $ \_ -> []
         behaveRef <- newIORef IM.empty
+        kdtRef    <- newIORef KDT.empty
         return $ Game 
             { gameStep = stepRef
             , gameState = stateRef 
             , gameParty = party
             , gameTeams = teams
+            , gameKDT   = kdtRef
             , gameTiles = grid
             , gameValues = valuesRef
             , gameBehaviors = behaveRef
@@ -49,32 +54,28 @@ main = do
     loop 10 stepGame game
     stopGlobalPool
 
-loop :: Int64 -> (a -> IO a) -> a -> IO ()
-loop fps f game' = getCurrentTime >>= actualLoop 1 game'
+loop :: Int64 -> (a -> IO ()) -> a -> IO ()
+loop fps f game = getCurrentTime >>= actualLoop 1
     where
-    actualLoop steps game time = do
-        newGame <- f game
+    actualLoop steps time = do
+        f game
         timeNow <- getCurrentTime
         threadDelay $ max 0 $ fromIntegral $ 
             (steps * 1000000 `div` fps) - 
             ceiling (diffUTCTime timeNow time * fromInteger 1000000)
-        actualLoop (steps + 1) newGame time 
+        actualLoop (steps + 1) time 
 
-stepGame :: Game gameS teamS unitS tileS -> IO (Game gameS teamS unitS tileS)
+stepGame :: Game gameS teamS unitS tileS -> IO ()
 stepGame game = do
     -- Apply player commands to units
     getMessages (gameParty game) >>= mapM_ (applyControlMessage game)
-    -- Gather game behaviors
     gameBehavings <- fmap IM.elems $ readIORef (gameBehaviors game)
-    -- Gather all teams
     teams <- fmap (map snd) $ HT.toList $ gameTeams game
-    -- Gather all units
     units <- fmap concat $ sequence $ map (fmap (map snd) . HT.toList . teamUnits) teams
-    -- Gather game changes
+    let kdt = KDT.makePar [positionX . unitMoveState, positionY . unitMoveState] units
+    writeIORef (gameKDT game) kdt
     gamesChanges <- parallel (map (toIO . ($game)) gameBehavings)
-    -- Gather team changes
     teamsChanges <- parallel (map teamChanges teams)
-    -- Gather unit changes
     unitsChanges <- parallel (map unitChanges units)
     -- Apply game changes
     toIO $ sequence_ gamesChanges
@@ -82,18 +83,12 @@ stepGame game = do
     toIO $ mapM_ sequence_ teamsChanges
     -- Apply unit changes
     toIO $ mapM_ sequence_ unitsChanges
-    -- Extract all units from all teams
     allUnits <- fmap concat $ sequence $ map (fmap (map snd) . HT.toList . teamUnits) teams
-    -- Send unit all information to all players
     players <- allPlayers (gameParty game)
-    -- Get game step number
     stepN <- readIORef (gameStep game)
-    -- Send unit information to all players
     sendToPlayers (encode stepN <> encode (0::Word8)) allUnits players
     -- Increment gamestep
     modifyIORef (gameStep game) (+1)
-    -- print allUnits
-    return game
 
 unitChanges :: Unit gameS teamS unitS tileS -> IO [RIO ReadWrite ()]
 unitChanges u = do

@@ -125,6 +125,7 @@ openDoors port xs = do
                             atomically $ do
                                 readTVar messagesVar >>= writeTVar messagesVar . ((player, msg):)
                                 writeTVar (playerLastMsg player) timeNow
+                            TIO.putStrLn $ "Received message from " <> playerName player
                         else TIO.putStrLn "Somebodies name or secret was wrong."
 
         getFirstSlot :: Slots -> Maybe (TeamID, Slots)
@@ -197,7 +198,7 @@ switchTeam gt player team = atomically $ do
 sendToPlayers :: (Binary a) => BS.ByteString -> [a] -> [Player] -> IO ()
 sendToPlayers header list players = do
     let choppy = chopList BS.empty 0 $ map encode list
-    mapM_ (\p -> mapM_ (sendMsg $ playerConn p) choppy) players
+    mapM_ (\p -> mapM_ (forkIO . sendMsg (playerConn p)) choppy) players
     
     where
     packetSize = 2048 - 3

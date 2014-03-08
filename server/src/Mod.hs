@@ -5,18 +5,19 @@ module Mod
 , defaultTeamState
 ) where
 
-import Data
+import qualified Data.IntMap as IM
+--import qualified RIO.HashTable as HT
+import qualified RIO.Ref as Ref
+--import qualified RIO.Grid as Grid
+import qualified Movement as M
+import qualified KDT as KDT
+import Data.Sequence (viewl,ViewL(..))
 import RIO.Privileges
 import RIO.Prelude
 import RIO.Random
-import qualified Data.IntMap as IM
+import Data
 
 {-
-import qualified RIO.HashTable as HT
-import qualified RIO.Ref as Ref
-import qualified RIO.Grid as Grid
-import qualified Data.IntMap as IM
-
 DD = damage dealt
 DT = damage taken
 
@@ -38,11 +39,13 @@ data UnitS = UnitS
 
 type TileS = (Int,Bool)
 
-type TheGame = Game GameS TeamS UnitS TileS
+type ModGame = Game GameS TeamS UnitS TileS
 
-type TheUnit = Unit GameS TeamS UnitS TileS
+type ModTeam = Team GameS TeamS UnitS TileS
 
-type TheTeam = Team GameS TeamS UnitS TileS
+type ModUnit = Unit GameS TeamS UnitS TileS
+
+type ModBehavior a = Behavior GameS TeamS UnitS TileS a
 
 defaultGameState :: GameS
 defaultGameState = GameS
@@ -53,7 +56,7 @@ defaultTileState = (-1,True)
 defaultTeamState :: TeamS
 defaultTeamState = TeamS
 
-runMod :: Int -> TheGame -> RIO ReadWrite TheGame
+runMod :: Int -> ModGame -> RIO ReadWrite ModGame
 runMod nTeams game = do
 	rng <- getRIOGen
 	flip evalRandT rng $ do
@@ -65,8 +68,35 @@ runMod nTeams game = do
 				lift $ makeUnit game (defaultUnit UnitS) nTeam (x,y,0,a)
 	return game
 
-genericGroundUnit :: TheGame -> TheUnit
+genericGroundUnit :: ModGame -> ModUnit
 genericGroundUnit game = (defaultUnit UnitS) 
 	{ unitBehaviors = IM.singleton 0 $ \u -> do
 		undefined
 	}
+
+firstUnit :: ModGame -> ModUnit
+firstUnit game = (genericGroundUnit game)
+	{ unitBehaviors = IM.singleton 0 $ \u -> return $ do
+		case viewl (unitOrders u) of
+			EmptyL -> return ()
+			(a:<_) -> undefined
+	}
+
+maxRadius :: (Num a) => a
+maxRadius = 5
+
+moveDistToPoint :: ModGame -> Float -> Float -> Float -> ModBehavior Unit
+moveDistToPoint g dx dy dist u = do
+	kdt <- Ref.read (gameKDT g)
+	return $ do
+		modifyUnit g (unitTeam u) (unitID u) $ M.move2D 
+			(\_ _ -> True) 
+			(\x y r -> KDT.inRange 
+				kdt 
+				[ positionX . unitMoveState, positionY . unitMoveState ] 
+				[x,y] 
+				r)
+			maxRadius
+			dx
+			dy
+			dist
