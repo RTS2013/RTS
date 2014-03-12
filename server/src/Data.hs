@@ -7,7 +7,7 @@ import Data.IORef (IORef)
 import Data.Text (Text)
 import Data.Int (Int32)
 import Data.List (genericLength)
-import Data.Binary (Binary,get,put)
+import Data.Binary (Binary,Get,get,put)
 import Data.Word (Word8,Word16,Word32,Word64)
 import Data.HashTable.IO (BasicHashTable)
 import Data.IntMap (IntMap)
@@ -16,39 +16,33 @@ import Data.Array.ST (newArray,readArray,MArray,STUArray)
 import Data.Array.Unsafe (castSTUArray)
 import GHC.Generics (Generic)
 import GHC.ST (runST,ST)
-import Grid.UnboxedGrid (MGrid)
-import RIO.Privileges (ReadOnly,ReadWrite,RIO)
+import MIO.Privileges
 import Party (Party,Player)
-import Movement (Point(..))
-import qualified Movement as M
+import qualified Grid.UnboxedMutable as MG
+import qualified Grid.Unboxed as G
 import qualified KDT as KDT
 
 type Ref = IORef
 type HashTable a = BasicHashTable Int a
 
-type Behavior gameS teamS unitS tileS behaving = 
-    behaving gameS teamS unitS tileS -> 
-    RIO ReadOnly (RIO ReadWrite ())
-
 data Game gameS teamS unitS tileS = Game 
     { gameStep      :: !(Ref Double)
     , gameState     :: !(Ref gameS)
     , gameKDT       :: !(Ref (KDT.KDT Float (Unit gameS teamS unitS tileS)))
-    , gameTiles     :: !(MGrid tileS)
+    , gameTiles     :: !(G.Grid tileS)
     , gameParty     :: !(Party ControlMessage)
     , gameTeams     :: !(HashTable (Team gameS teamS unitS tileS))
-    , gameValues    :: !(Ref (Game gameS teamS unitS tileS -> [(Word8,Word16)]))
-    , gameBehaviors :: !(Ref (IntMap (Behavior gameS teamS unitS tileS Game)))
+    , gameBehaviors :: !(Ref (IntMap (Behavior () (Change ()))))
     } 
 
 data Team gameS teamS unitS tileS = Team
-    { teamState      :: !(Ref teamS)
+    { teamID         :: {-# UNPACK #-} !Int
+    , teamState      :: !(Ref teamS)
     , teamPlayers    :: ![Player]
-    , teamVision     :: !(MGrid Int)
+    , teamVision     :: !(MG.Grid Int)
     , teamSpawnCount :: !(Ref Int) -- Incremented with each new unit
     , teamUnits      :: !(HashTable (Unit gameS teamS unitS tileS))
-    , teamValues     :: !(Team gameS teamS unitS tileS -> [(Word8,Word16)])
-    , teamBehaviors  :: !(IntMap (Behavior gameS teamS unitS tileS Team))
+    , teamBehaviors  :: !(IntMap (Behavior (Team gameS teamS unitS tileS) (Change ())))
     } 
 
 data Unit gameS teamS unitS tileS = Unit
@@ -59,37 +53,38 @@ data Unit gameS teamS unitS tileS = Unit
     , unitAnimation    :: {-# UNPACK #-} !Int
     , unitOrders       :: !(Seq Order)
     , unitMoveState    :: !MoveState
+    , unitMoveStats    :: !MoveStats
     , unitValues       :: !(Unit gameS teamS unitS tileS -> [(Word8,Word16)])
-    , unitBehaviors    :: !(IntMap (Behavior gameS teamS unitS tileS Unit))
+    , unitBehaviors    :: !(IntMap (Behavior (Unit gameS teamS unitS tileS) (Change ())))
     } 
+
+data Point = Point {_X,_Y,_Z :: {-# UNPACK #-} !Float}
 
 instance Eq (Unit gameS teamS unitS tileS) where
     a == b = unitTeam a == unitTeam b && unitID a == unitID b
 
+instance Ord (Unit gameS teamS unitS tileS) where
+    compare a b = compare (unitID a, unitTeam a) (unitID b, unitTeam b)
+
 instance Show (Unit gameS teamS unitS tileS) where
     show u = let ms = unitMoveState u in
-        show (positionX ms, positionY ms)
-
-instance M.Moves (Unit gameS teamS unitS tileS) where
-    getMoveStats u = let ms = unitMoveState u in 
-        M.Bulk (radius ms) (weight ms)
-    getMoveState u = let ms = unitMoveState u in 
-        Point (positionX ms) (positionY ms) (positionZ ms)
-    setMoveState u (Point x y z) =
-        u {unitMoveState = (unitMoveState u) {positionX = x, positionY = y, positionZ = z}}
+        show (msX ms, msY ms)
 
 data MoveState = MoveState
-    { positionX :: {-# UNPACK #-} !Float
-    , positionY :: {-# UNPACK #-} !Float
-    , positionZ :: {-# UNPACK #-} !Float
-    , angle     :: {-# UNPACK #-} !Float
-    , speed     :: {-# UNPACK #-} !Float
-    , angleRate :: {-# UNPACK #-} !Float
+    { msX   :: {-# UNPACK #-} !Float
+    , msY   :: {-# UNPACK #-} !Float
+    , msZ   :: {-# UNPACK #-} !Float
+    , angle :: {-# UNPACK #-} !Float
+    , speed :: {-# UNPACK #-} !Float
+    } 
+
+data MoveStats = MoveStats
+    { angleRate :: {-# UNPACK #-} !Float
     , speedMax  :: {-# UNPACK #-} !Float
     , speedRate :: {-# UNPACK #-} !Float
     , weight    :: {-# UNPACK #-} !Float
     , radius    :: {-# UNPACK #-} !Float
-    } 
+    }
 
 
 ----------------------------------------------------------------------------
@@ -124,8 +119,11 @@ data Order
     {-# UNPACK #-} !Int -- Unit ID
     deriving (Generic)
 
-instance Binary Orders
-instance Binary Order
+instance Binary Orders where
+
+instance Binary Order where
+    put = undefined
+    get = undefined
 
 ----------------------------------------------------------------------------
 --             # DATA SENT OVER WIRE FROM SERVER TO CLIENT #              --
@@ -139,9 +137,9 @@ instance Binary (Unit gameS teamS unitS tileS) where
         put (fromIntegral $ unitAnimation u :: Word8)
         put (fromIntegral $ unitType u      :: Word16)
         let xyz = unitMoveState u
-        put (coordTo16 $ positionX xyz :: Word16)
-        put (coordTo16 $ positionY xyz :: Word16)
-        put (coordTo16 $ positionZ xyz :: Word16)
+        put (coordTo16 $ msX xyz :: Word16)
+        put (coordTo16 $ msY xyz :: Word16)
+        put (coordTo16 $ msZ xyz :: Word16)
         put (faceTo8 $ angle xyz :: Word8)
         let vals = (unitValues u) u
         put (genericLength vals :: Word8) -- Length of list
@@ -202,6 +200,14 @@ data ClientDatagram gameS teamS unitS tileS
     | YourPlaceInLife  {-# UNPACK #-} !Word8 -- Team ID
                        {-# UNPACK #-} !Word16 -- X Coord
                        {-# UNPACK #-} !Word16 -- Y Coord
+
+instance Binary Point where
+    put = undefined
+    get = do
+        x <- get :: Get Word32
+        y <- get :: Get Word32
+        z <- get :: Get Word32
+        return $ Point (wordToFloat x) (wordToFloat y) (wordToFloat z)
 
 instance Binary Terrain
 

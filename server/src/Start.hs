@@ -2,10 +2,10 @@
 
 module Start where
 
-import qualified Data.HashTable.IO as HT
-import qualified Data.IntMap       as IM
-import qualified Grid.UnboxedGrid  as Grid
-import qualified KDT               as KDT
+import qualified Data.HashTable.IO   as HT
+import qualified Data.IntMap         as IM
+import qualified Grid.Unboxed        as G
+import qualified KDT                 as KDT
 import Data.Monoid ((<>))
 import Data.Binary (encode)
 import Data.IORef
@@ -15,12 +15,11 @@ import Data.Sequence ((|>),singleton)
 import Control.Concurrent (threadDelay)
 import Data.Time.Clock (diffUTCTime,getCurrentTime)
 import Data.Word (Word8)
-import RIO.RIO
-import RIO.Privileges
-import RIO.Prelude (makeTeam)
+import MIO.MIO
+import Mod.Prelude (makeTeam)
 import Data
 import Party
-import safe Mod (runMod,defaultGameState,defaultTileState,defaultTeamState)
+import safe Mod.Setup (runMod,defaultGameState,defaultTileState,defaultTeamState)
 
 main :: IO ()
 main = do
@@ -28,12 +27,10 @@ main = do
     teamNums <- fmap read getLine
     putStrLn "Game is accepting players and streaming info to them."
     party    <- openDoors 4444 teamNums :: IO (Party ControlMessage)
-    defaultGame <- do 
+    game <- do 
         stepRef  <- newIORef 0
         stateRef <- newIORef defaultGameState
         teams <- HT.new
-        grid  <- Grid.make (1024,1024) defaultTileState
-        valuesRef <- newIORef $ \_ -> []
         behaveRef <- newIORef IM.empty
         kdtRef    <- newIORef KDT.empty
         return $ Game 
@@ -42,14 +39,13 @@ main = do
             , gameParty = party
             , gameTeams = teams
             , gameKDT   = kdtRef
-            , gameTiles = grid
-            , gameValues = valuesRef
+            , gameTiles = G.make (0,0) defaultTileState
             , gameBehaviors = behaveRef
             }
     -- Add default teams to game
-    toIO $ mapM_ (makeTeam defaultGame defaultTeamState) [0..length teamNums - 1]
+    flip train game $ mapM_ (makeTeam defaultTeamState) [0..length teamNums - 1]
     -- Run Mod on game
-    game <- toIO $ runMod (length teamNums) defaultGame
+    flip train game $ runMod (length teamNums)
     -- Start game
     loop 10 stepGame game
     stopGlobalPool
@@ -62,7 +58,7 @@ loop fps f game = getCurrentTime >>= actualLoop 1
         timeNow <- getCurrentTime
         threadDelay $ max 0 $ fromIntegral $ 
             (steps * 1000000 `div` fps) - 
-            ceiling (diffUTCTime timeNow time * fromInteger 1000000)
+            ceiling (diffUTCTime timeNow time * 1000000)
         actualLoop (steps + 1) time 
 
 stepGame :: Game gameS teamS unitS tileS -> IO ()
@@ -72,17 +68,17 @@ stepGame game = do
     gameBehavings <- fmap IM.elems $ readIORef (gameBehaviors game)
     teams <- fmap (map snd) $ HT.toList $ gameTeams game
     units <- fmap concat $ sequence $ map (fmap (map snd) . HT.toList . teamUnits) teams
-    let kdt = KDT.makePar [positionX . unitMoveState, positionY . unitMoveState] units
+    let kdt = KDT.make (radius . unitMoveStats) [msX . unitMoveState, msY . unitMoveState] units
     writeIORef (gameKDT game) kdt
-    gamesChanges <- parallel (map (toIO . ($game)) gameBehavings)
+    gamesChanges <- parallel (map (flip behave ()) gameBehavings)
     teamsChanges <- parallel (map teamChanges teams)
     unitsChanges <- parallel (map unitChanges units)
     -- Apply game changes
-    toIO $ sequence_ gamesChanges
+    change $ sequence_ gamesChanges
     -- Apply team changes
-    toIO $ mapM_ sequence_ teamsChanges
+    change $ mapM_ sequence_ teamsChanges
     -- Apply unit changes
-    toIO $ mapM_ sequence_ unitsChanges
+    change $ mapM_ sequence_ unitsChanges
     allUnits <- fmap concat $ sequence $ map (fmap (map snd) . HT.toList . teamUnits) teams
     players <- allPlayers (gameParty game)
     stepN <- readIORef (gameStep game)
@@ -90,19 +86,19 @@ stepGame game = do
     -- Increment gamestep
     modifyIORef (gameStep game) (+1)
 
-unitChanges :: Unit gameS teamS unitS tileS -> IO [RIO ReadWrite ()]
+unitChanges :: Unit gameS teamS unitS tileS -> IO [Change ()]
 unitChanges u = do
     let behaviors = IM.elems $ unitBehaviors u
-    sequence $ map (\b -> toIO $ b u) behaviors
+    sequence $ map (\b -> behave b u) behaviors
 
-teamChanges :: Team gameS teamS unitS tileS -> IO [RIO ReadWrite ()]
+teamChanges :: Team gameS teamS unitS tileS -> IO [Change ()]
 teamChanges t = do
     let behaviors = IM.elems $ teamBehaviors t
-    sequence $ map (\b -> toIO $ b t) behaviors
+    sequence $ map (\b -> behave b t) behaviors
 
 applyControlMessage :: Game gameS teamS unitS tileS -> (Player, ControlMessage) -> IO ()
 applyControlMessage game (player, OrderMsg (Orders shift ids order)) = do
-    maybeTeam <- HT.lookup teams teamID
+    maybeTeam <- HT.lookup teams playersTeam
     case maybeTeam of
         Just team -> do
             let units = teamUnits team
@@ -117,5 +113,5 @@ applyControlMessage game (player, OrderMsg (Orders shift ids order)) = do
         Nothing -> return ()
     where
     teams = gameTeams game
-    teamID = playerTeam player
+    playersTeam = playerTeam player
 applyControlMessage _ _ = return ()

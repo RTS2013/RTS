@@ -6,20 +6,17 @@ type Radius = Float
 type Weight = Float
 type Distance = Float
 
-moveM ::
-    ((X,Y) -> Radius -> [(X,Y,Radius,Weight)]) ->
-    Radius -> -- Max radius of any entity
+move ::
+    (X,Y,Radius,Weight) -> -- Entity being moved
     (X,Y) -> -- Desination
     Distance -> -- Distance to move
-    (X,Y,Radius,Weight) -> -- Entity being moved
+    [(X,Y,Radius,Weight)] ->
     (X,Y) -- New coordinates for entity
-moveM getInRange maxR (dx,dy) dist (sx,sy,r,w) = newXY $ push inRange
+move (sx,sy,r,w) (dx,dy) dist nearby = newXY $ push inRange
     where
     two = 2 :: Int
     len = length inRange
-    inRange = filter (\(nx,ny,nr,_) -> 
-            nx /= sx && ny /= sy && ((nx-sx)^two + (ny-sx)^two <= (r+nr)^two)
-        ) $ getInRange (sx,sy) (maxR + r)
+    inRange = flip filter nearby $ \(nx,ny,_,_) -> nx /= sx && ny /= sy
     push xs = foldr 
         (\(nx,ny) (ox,oy) -> (ox+nx,oy+ny)) (0,0) $ map (\(nx,ny,nr,nw) -> 
             let (xDif,yDif) = (sx-nx,sy-ny) in

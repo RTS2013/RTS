@@ -1,0 +1,44 @@
+{-# LANGUAGE Trustworthy #-}
+
+module MIO.HashTable 
+( Read(..)
+, Write(..)
+) where
+
+import Prelude hiding (read,Read)
+import MIO.MIO
+import MIO.Privileges ()
+import Data.Hashable (Hashable)
+import qualified Data.HashTable.IO as H
+
+type HashTable k v = H.BasicHashTable k v
+
+class (Monad m) => Read m where
+	read :: (Eq k, Hashable k) => HashTable k v -> k -> m (Maybe v)
+
+class (Monad m) => Write m where
+	make :: Int -> m (HashTable k v)
+	write :: (Eq k, Hashable k) => HashTable k v -> k -> v -> m ()
+	delete :: (Eq k, Hashable k) => HashTable k v -> k -> m ()
+	modify :: (Eq k, Hashable k) => HashTable k v -> k -> (v -> v) -> m ()
+
+instance Read (Trainer s) where
+	read a b = Trainer $! \_ -> H.lookup a b
+
+instance Read (Behavior s) where
+	read a b = Behavior $! \_ -> H.lookup a b
+
+instance Read Change where
+	read a b = Change $! H.lookup a b
+
+instance Write (Trainer s) where
+	make a = Trainer $! \_ -> H.newSized a
+	write a b c = Trainer $! \_ -> H.insert a b c
+	delete a b = Trainer $! \_ -> H.delete a b
+	modify a b c = read a b >>= maybe (return ()) (write a b . c)
+
+instance Write Change where
+	make a = Change $ H.newSized a
+	write a b c = Change $ H.insert a b c
+	delete a b = Change $ H.delete a b
+	modify a b c = read a b >>= maybe (return ()) (write a b . c)

@@ -9,6 +9,25 @@ import Control.Monad.STM (atomically)
 import Control.Concurrent.STM.TVar
 import Data.Graph.AStar (aStar)
 
+getPath ::
+    ((Int,Int) -> Bool) -> -- Is tile "open" predicate
+    ((Int,Int) -> V.Vector (Int,Int)) ->
+    (Int,Int) -> -- Start XY
+    (Int,Int) -> -- Goal XY
+    Maybe [(Int,Int)] -- Empty list means you can move directly to goal
+getPath isOpen corners xy exy@(gx,gy) = 
+    if inSight isOpen xy exy
+    then Just [] 
+    else aStar 
+        (V.foldr' S.insert S.empty . corners)
+        (\(ax,ay) (bx,by) -> sqrt $ fromIntegral $ (ax-bx)^two + (ay-by)^two :: Double)
+        (\(x,y) -> sqrt $ fromIntegral $ (x-gx)^two + (y-gy)^two)
+        (flip S.member endCorners)
+        xy
+    where 
+    two = 2 :: Int
+    endCorners = V.foldr' S.insert S.empty $ corners exy
+
 setGroupsM ::
     (Int,Int) -> -- Width/Height
     ((Int,Int) -> IO Bool) -> -- Is open predicate
@@ -87,25 +106,6 @@ getCornersM (width,height) isOpen = V.filterM isCorner $ V.fromList [(x,y) | x <
                   ||(not sw && s && w && (ss || ww))
                   ||(not nw && n && w && (nn || ww))
                   )
-
-getPath ::
-    ((Int,Int) -> Bool) -> -- Is tile "open" predicate
-    ((Int,Int) -> V.Vector (Int,Int)) ->
-    (Int,Int) -> -- Start XY
-    (Int,Int) -> -- Goal XY
-    Maybe [(Int,Int)] -- Empty list means you can move directly to goal
-getPath isOpen corners xy exy@(gx,gy) = 
-    if inSight isOpen xy exy
-    then Just [] 
-    else aStar 
-        (V.foldr' S.insert S.empty . corners)
-        (\(ax,ay) (bx,by) -> sqrt $ fromIntegral $ (ax-bx)^two + (ay-by)^two :: Double)
-        (\(x,y) -> sqrt $ fromIntegral $ (x-gx)^two + (y-gy)^two)
-        (flip S.member endCorners)
-        xy
-    where 
-    two = 2 :: Int
-    endCorners = V.foldr' S.insert S.empty $ corners exy
 
 inSight :: 
     ((Int,Int) -> Bool) -> -- Is tile "open" predicate
