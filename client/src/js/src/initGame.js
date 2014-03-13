@@ -3,7 +3,7 @@
 /////////////////////////////
 //storage containers for all the units and entities
 
-var living	= new buckets.Dictionary(function (a){a.team + ":" + a.uid;});
+var living = new buckets.Dictionary(function (a){a.team + ":" + a.uid;});
 var controlGroups = new Array(20);
 var initX = 0, initY = 0, initZ = 100;
 
@@ -14,7 +14,25 @@ for(var i = 0; i < controlGroups.length; i++){
 }
 
 initGame = function(){	
+	// Game-connection init
+	var game = new Game('Zach','Kittens',new Array());
+	var chef = new Chef();
+	chef.putString('Yo Name Fool');
+	chef.putString('Yo Secret Fool');
+	chef.trim();
+	var conn = new WebSocket('ws://192.168.1.116:4444');
+		conn.onopen = function(){
+		console.log('Connection open!');
+		conn.send(chef.ab);
+	}
+	conn.onmessage = function (event) {
+		game.getGameInfo(new Cereal(new DataView(event.data)));
+		game.units.forEach(function(u) {
+			console.log(u.unitTeam + ":" + u.unitID + " x:" + u.newX + " y:" + u.newY);
+		});
+	}
 
+	//WebGL init
 	if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
     statsNode = document.getElementById('stats');
@@ -70,8 +88,11 @@ initGame = function(){
 	//							Game instance
 	///////////////////////////////////////////////////////////////////////////
 
+	//this is where we need some input handlers to get the vals for
+	//myName, mySecret.   myStartVals starts as an array of 0s to represent all the different types/items
+	
 	// ...and here it is folks.  impressive huh?
-	//var game = new Game();
+	//var game = new Game(myName,mySecret,myStartVals);
 };
 
 function createWorld(){

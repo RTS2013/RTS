@@ -3,12 +3,12 @@
 function spawnEntity(unit){
 	var entity;
 
-	entity = models[0].clone();
+	entity = models[unit.unitType].clone();
 
 	entity.x = entity.position.x = unit.newX;
 	entity.y = entity.position.y = unit.newY;
 	entity.z = entity.position.z = unit.newZ;
-
+	
 	// * 360 * Math.PI/180; to convert to degrees if we need to
 	unit.facing = entity.rotation.z = unit.newFacing;
 
@@ -18,7 +18,7 @@ function spawnEntity(unit){
 	unit.y = entity.y;
 	unit.z = entity.z;
 
-	unitRing(unit);
-	living.add(unit.uid);
+	unitRing(1, 10, unit);
+	living.set(unit.team +":"+ unit.uid, unit);
  	scene.add(unit.model);
 }

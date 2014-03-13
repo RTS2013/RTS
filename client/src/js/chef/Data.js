@@ -24,7 +24,7 @@ function Game(myName,mySecret,myStartVals) {
     this.myName   = myName;
     this.mySecret = mySecret;
     this.units    = new buckets.Dictionary(function (a){a.team + ":" + a.uid;});
-    this.teamVals = new Array().concat(myStartVals);
+    this.teamVals = myStartVals;
 
     // Get game info from cereal
     this.getGameInfo = function(cereal) {
@@ -105,10 +105,12 @@ function Game(myName,mySecret,myStartVals) {
                 
             }
             else {
-                this.units.add(new Unit(uid,team,anim,type,vals,x/65536 * 1024,
+			var newUnit = new Unit(uid,team,anim,type,vals,x/65536 * 1024,
                                                                 y/65536 * 1024,
                                                                 z,
-                                                                toRadians(f*(360/256))));
+                                                                toRadians(f*(360/256)));
+            this.units.add(newUnit);
+			spawnEntity(newUnit);
             }
         }
     }
