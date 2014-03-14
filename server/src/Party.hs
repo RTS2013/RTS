@@ -211,4 +211,4 @@ sendToPlayers header list players = do
     chopList bs n _      = [BS.append header (BS.append (encode (fromIntegral n :: Word16)) bs)]
 
     sendMsg :: W.Connection -> BS.ByteString -> IO ()
-    sendMsg conn = W.send conn . W.DataMessage . W.Binary
+    sendMsg conn = W.send conn . W.DataMessage . W.Binary bs
