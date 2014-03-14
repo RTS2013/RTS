@@ -108,8 +108,8 @@ function Game(myName,mySecret,myStartVals) {
 			var newUnit = new Unit(uid,team,anim,type,vals,x/65536 * 1024,
                                                                 y/65536 * 1024,
                                                                 z,
-                                                                toRadians(f*(360/256)));
-            this.units.add(newUnit);
+                                                                Math.radians(f*(360/256)));
+            this.units.set(newUnit.team + ":" + newUnit.uid,newUnit);
 			spawnEntity(newUnit);
             }
         }
@@ -127,3 +127,13 @@ function Game(myName,mySecret,myStartVals) {
         }
     }
 }
+
+// Converts from degrees to radians.
+Math.radians = function(degrees) {
+  return degrees * Math.PI / 180;
+};
+ 
+// Converts from radians to degrees.
+Math.degrees = function(radians) {
+  return radians * 180 / Math.PI;
+};

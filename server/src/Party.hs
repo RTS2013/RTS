@@ -85,7 +85,7 @@ openDoors port xs = do
                 W.Text _ -> TIO.putStrLn "Somebodies hello message was in a textual format."
                 W.Binary binData -> case decodeOrFail binData of
                     Left _ -> TIO.putStrLn "Somebodies hello message wasn't encoded properly."
-                    Right (_,_,ClientMessage name secret (_ :: a)) -> do
+                    Right (_,_,ClientMessage name secret (_ :: ())) -> do
                         myThread <- myThreadId
                         myTime <- getCurrentTime
                         -- Attempt to join team
