@@ -157,7 +157,9 @@ instance Binary (GameFrame gameS teamS unitS tileS) where
         put $ doubleToWord delta
         put gram
 
-data GameFrame gameS teamS unitS tileS = GameFrame {-# UNPACK #-} !Double !(ClientDatagram gameS teamS unitS tileS) 
+data GameFrame gameS teamS unitS tileS = GameFrame 
+    {-# UNPACK #-} !Double 
+    !(ClientDatagram gameS teamS unitS tileS) 
 
 instance Binary (ClientDatagram gameS teamS unitS tileS) where
     get = undefined
