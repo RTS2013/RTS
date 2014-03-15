@@ -1,25 +1,19 @@
 {-# LANGUAGE Trustworthy #-}
 
-module KDT (KDT,make,nearby,empty) where
+module KDT (KDT,make,nearby,empty,main) where
 import qualified Data.Set as Set
-import Control.Parallel.Strategies (rpar,rseq,runEval)
-
-{-
 import qualified System.Random as R
 import qualified Criterion.Main as C
+import Control.Parallel.Strategies (rpar,rseq,runEval)
 
 main :: IO ()
 main = do
     xs <- fmap (R.randomRs (0,2236::Double)) R.getStdGen
     ys <- fmap (R.randomRs (0,2236::Double)) R.getStdGen
-    C.defaultMain [ C.bench "KDT" 
-                  $ C.whnf (make (\(_,_,r) -> r) [\(x,_,_) -> x, \(_,y,_) -> y]) 
-                  $ take 5000 
-                  $ zip3 xs ys (cycle [0.25])
-                  ]
--}
+    C.defaultMain [C.bench "KDT" $ C.whnf (make (\(_,_,r) -> r) [\(x,_,_) -> x, \(_,y,_) -> y]) $ take 5000 $ zip3 xs ys (cycle [0.25])]
 
-data KDT n a = Fork !n !(KDT n a) !(KDT n a) | Leaf !(Set.Set a)
+
+data KDT n a = Fork !n !(KDT n a) !(KDT n a) | Leaf ![a]
 
 instance (Show n, Show a) => Show (KDT n a) where
     show = toStr 4
@@ -34,10 +28,10 @@ instance (Show n, Show a) => Show (KDT n a) where
         toStr _ (Leaf xs) = "Leaf " ++ show xs
 
 empty :: (Floating n, Ord n) => KDT n a
-empty = Leaf Set.empty
+empty = Leaf []
 
-make :: (Floating n, Ord n, Ord a, Eq a) => (a -> n) -> [a -> n] -> [a] -> KDT n a
-make _ [] _ = Leaf Set.empty 
+make :: (Floating n, Ord n, Eq a) => (a -> n) -> [a -> n] -> [a] -> KDT n a
+make _ [] _ = Leaf []
 make radius getters entities = mkKDT (2::Int) 
                                      (cycle $ tail getters) 
                                      (split (mean 0 0 (head getters) entities) 
@@ -45,7 +39,7 @@ make radius getters entities = mkKDT (2::Int)
                                             entities 
                                             [] [] 0 0 0 0) 
                                      (-1) 
-                                     (-1) 
+                                     (-1)
     where
     mean n a _ [    ] = a / n
     mean n a f (x:xs) = mean (n + 1) (a + f x) f xs
@@ -67,20 +61,20 @@ make radius getters entities = mkKDT (2::Int)
         then if rn <= 1 
              then if ln == 1 && rn == 1
                   then if ls == rs
-                       then Leaf $ Set.fromList ls
-                       else Fork ((la+ra)/2) (Leaf $ Set.fromList ls) (Leaf $ Set.fromList rs)
+                       then Leaf ls
+                       else Fork ((la+ra)/2) (Leaf ls) (Leaf rs)
                   else if ln == 0
-                       then Leaf $ Set.fromList rs
-                       else Leaf $ Set.fromList ls
+                       then Leaf rs
+                       else Leaf ls
              else let lKDT = (mkKDT 0 fs (split (la/ln) f ls [] [] 0 0 0 0) ln rn)
                       rKDT = (mkKDT 0 fs (split (ra/rn) f rs [] [] 0 0 0 0) ln rn) in
                   Fork ((la+ra) / (ln+rn)) lKDT rKDT
         else if rn == 0
-             then Leaf $ Set.fromList ls
+             then Leaf ls
              else if pln == ln && prn == rn 
                   then if ls == rs
-                       then Leaf $ Set.fromList ls
-                       else Fork ((la+ra)/2) (Leaf $ Set.fromList ls) (Leaf $ Set.fromList rs)
+                       then Leaf ls
+                       else Fork ((la+ra)/2) (Leaf ls) (Leaf rs)
                   else let lKDT = (mkKDT 0 fs (split (la/ln) f ls [] [] 0 0 0 0) ln rn)
                            rKDT = (mkKDT 0 fs (split (ra/rn) f rs [] [] 0 0 0 0) ln rn) in
                         Fork ((la+ra) / (ln+rn)) lKDT rKDT
@@ -89,29 +83,29 @@ make radius getters entities = mkKDT (2::Int)
         then if rn <= 1 
              then if ln == 1 && rn == 1
                   then if ls == rs
-                       then Leaf $ Set.fromList ls
-                       else Fork ((la+ra)/2) (Leaf $ Set.fromList ls) (Leaf $ Set.fromList rs)
+                       then Leaf ls
+                       else Fork ((la+ra)/2) (Leaf ls) (Leaf rs)
                   else if ln == 0
-                       then Leaf $ Set.fromList rs
-                       else Leaf $ Set.fromList ls
+                       then Leaf rs
+                       else Leaf ls
              else runEval $ do
                       lKDT <- rpar (mkKDT (n-1) fs (split (la/ln) f ls [] [] 0 0 0 0) ln rn)
                       rKDT <- rseq (mkKDT (n-1) fs (split (ra/rn) f rs [] [] 0 0 0 0) ln rn)
                       _ <- rseq lKDT
                       return $ Fork ((la+ra) / (ln+rn)) lKDT rKDT
         else if rn == 0
-             then Leaf $ Set.fromList ls
+             then Leaf ls
              else if pln == ln && prn == rn 
-                  then Fork ((la+ra)/2) (Leaf $ Set.fromList ls) (Leaf $ Set.fromList rs)
+                  then Fork ((la+ra)/2) (Leaf ls) (Leaf rs)
                   else runEval $ do
                           lKDT <- rpar (mkKDT (n-1) fs (split (la/ln) f ls [] [] 0 0 0 0) ln rn)
                           rKDT <- rseq (mkKDT (n-1) fs (split (ra/rn) f rs [] [] 0 0 0 0) ln rn)
                           _ <- rseq lKDT
                           return $ Fork ((la+ra) / (ln+rn)) lKDT rKDT
-    mkKDT _ [] _ _ _ = Leaf Set.empty
+    mkKDT _ [] _ _ _ = Leaf []
 
-nearby :: (Floating n, Ord n, Ord a) => KDT n a -> [a -> n] -> [n] -> n -> [a]
-nearby kdt getters ns r = filter rangeFilter $ Set.toList $ searchKDT leftRightChecks
+nearby :: (Floating n, Ord n, Ord a) => KDT n a -> [a -> n] -> [n] -> n -> Set.Set a
+nearby kdt getters ns r = searchKDT leftRightChecks
     where
     dims = length ns
     fns = zip getters ns
@@ -124,5 +118,5 @@ nearby kdt getters ns r = filter rangeFilter $ Set.toList $ searchKDT leftRightC
             (True,False) -> search a fs
             (False,True) -> search b fs
             (False,False) -> Set.empty
-        search (Leaf xs) _ = xs
+        search (Leaf xs) _ = Set.fromList $ filter rangeFilter xs
         search _ _ = Set.empty

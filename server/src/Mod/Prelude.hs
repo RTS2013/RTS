@@ -5,15 +5,13 @@ module Mod.Prelude where
 
 import Data
 import MIO.Privileges
-import KDT (KDT)
 import qualified MIO.Ref as Ref
 import qualified MIO.Grid.Unboxed as Grid
 import qualified MIO.HashTable as HT
 import qualified Data.IntMap as IM
 import qualified Data.Sequence as Seq
 
-defaultUnit :: unitS 
-            -> Unit gameS teamS unitS tileS
+defaultUnit :: unitS -> Unit gameS teamS unitS tileS
 defaultUnit unitS = Unit
     { unitState = unitS
     , unitID    = 0
@@ -39,9 +37,7 @@ defaultUnit unitS = Unit
     , unitBehaviors = IM.empty
     }
 
-makeTeam :: teamS 
-         -> Int 
-         -> Trainer (Game gameS teamS unitS tileS) ()
+makeTeam :: teamS -> Int -> Trainer (Game gameS teamS unitS tileS) ()
 makeTeam teamS i = do
     game <- training
     stateRef <- Ref.make teamS
@@ -88,22 +84,16 @@ modifyUnit tID uID f = do
         Just team -> do
             HT.modify (teamUnits team) uID f
 
-modifyUnitState :: (unitS -> unitS) -> Unit gameS teamS unitS tileS -> Unit gameS teamS unitS tileS
-modifyUnitState f u = u {unitState = f (unitState u)}
-
 modifyThisUnit :: 
     Unit gameS teamS unitS tileS ->
     (Unit gameS teamS unitS tileS -> Unit gameS teamS unitS tileS) -> 
     Trainer (Game gameS teamS unitS tileS) ()
 modifyThisUnit u f = modifyUnit (unitTeam u) (unitID u) f
 
-getUnitPosition :: Unit gameS teamS unitS tileS 
-                -> (Float,Float)
+getUnitPosition :: Unit gameS teamS unitS tileS -> (Float,Float)
 getUnitPosition u = let m = (unitMoveState u) in (msX m, msY m)
 
-setUnitPosition :: (Float,Float) 
-                -> Unit gameS teamS unitS tileS 
-                -> Unit gameS teamS unitS tileS
+setUnitPosition :: (Float,Float) -> Unit gameS teamS unitS tileS -> Unit gameS teamS unitS tileS
 setUnitPosition (x,y) u = u 
     { unitMoveState = (unitMoveState u)
         { msX = x
@@ -111,9 +101,7 @@ setUnitPosition (x,y) u = u
         }
     }
 
-setUnitOrientation :: (Float,Float,Float,Float) 
-                   -> Unit gameS teamS unitS tileS 
-                   -> Unit gameS teamS unitS tileS
+setUnitOrientation :: (Float,Float,Float,Float) -> Unit gameS teamS unitS tileS -> Unit gameS teamS unitS tileS
 setUnitOrientation (x,y,z,a) u = u 
     { unitMoveState = (unitMoveState u)
         { msX = x
@@ -123,14 +111,8 @@ setUnitOrientation (x,y,z,a) u = u
         }
     }
 
-setUnitFacingAngle :: Float 
-                   -> Unit gameS teamS unitS tileS 
-                   -> Unit gameS teamS unitS tileS
+setUnitFacingAngle :: Float -> Unit gameS teamS unitS tileS -> Unit gameS teamS unitS tileS
 setUnitFacingAngle a u = u 
     { unitMoveState = (unitMoveState u)
         { angle = a }
     }
-
-getKDT :: (Game gameS teamS unitS tileS) 
-       -> Behavior a (KDT Float (Unit gameS teamS unitS tileS))
-getKDT = Ref.read . gameKDT
