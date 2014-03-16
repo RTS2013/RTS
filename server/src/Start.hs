@@ -82,7 +82,7 @@ stepGame game = do
     allUnits <- fmap concat $ sequence $ map (fmap (map snd) . HT.toList . teamUnits) teams
     players <- allPlayers (gameParty game)
     stepN <- readIORef (gameStep game)
-    sendToPlayers (encode stepN <> encode (0::Word8)) allUnits players
+    sendToPlayers ((encode $ doubleToWord stepN) <> encode (0::Word8)) allUnits players
     -- Increment gamestep
     modifyIORef (gameStep game) (+1)
 

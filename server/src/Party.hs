@@ -198,7 +198,7 @@ switchTeam gt player team = atomically $ do
 sendToPlayers :: (Binary a) => BS.ByteString -> [a] -> [Player] -> IO ()
 sendToPlayers header list players = do
     let choppy = chopList BS.empty 0 $ map encode list
-    mapM_ (\p -> mapM_ (forkIO . sendMsg (playerConn p)) choppy) players
+    mapM_ (\p -> mapM_ (sendMsg (playerConn p)) choppy) players
     
     where
     packetSize = 2048 - 3
@@ -211,4 +211,4 @@ sendToPlayers header list players = do
     chopList bs n _      = [BS.append header (BS.append (encode (fromIntegral n :: Word16)) bs)]
 
     sendMsg :: W.Connection -> BS.ByteString -> IO ()
-    sendMsg conn = W.send conn . W.DataMessage . W.Binary bs
+    sendMsg conn = W.send conn . W.DataMessage . W.Binary

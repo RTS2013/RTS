@@ -67,9 +67,9 @@ makeUnit unit teamN xyza = do
         Nothing -> return ()
         Just team -> do
             newUnitID <- Ref.read (teamSpawnCount team)
-            Ref.modify (teamSpawnCount team) (+1)
+            Ref.write (teamSpawnCount team) (newUnitID+1)
             HT.write (teamUnits team) newUnitID 
-                     (setUnitOrientation xyza unit {unitTeam = teamN})
+                     (setUnitOrientation xyza unit {unitID=newUnitID,unitTeam = teamN})
 
 modifyUnit ::
     Int -> 

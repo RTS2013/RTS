@@ -23,8 +23,8 @@ function Game(myName,mySecret) {
     this.myStart = null;
     this.myName   = myName;
     this.mySecret = mySecret;
-    this.units    = new buckets.Dictionary(function (a){a.team + ":" + a.uid;});
-    this.teamVals;
+    this.units    = new buckets.Dictionary();
+    this.teamVals = myStartVals;
 
     // Get game info from cereal
     this.getGameInfo = function(cereal) {
@@ -79,16 +79,16 @@ function Game(myName,mySecret) {
             var y = cereal.getU16();
             var z = cereal.getU16();
             var f = cereal.getU8();
-            var valCount = cereal.getU8();
+            var valsCount = cereal.getU8();
             var vals = new Array();
-            for (var i = 0; i < valCount; i++) {
+            for (var j = 0; j < valsCount; j++) {
                 var key = cereal.getU8();
                 var val = cereal.getU16();
                 vals.push({k:key,v:val});
             }
-            var key = team + ":" + uid;
-            if (this.units.containsKey(key)) {
-                var u = this.units.get(key);
+            var dicKey = team + ":" + uid;
+            if (this.units.containsKey(dicKey)) {
+                var u = this.units.get(dicKey);
                 if (u.updateTime < time) {
                     u.unitAnimation = anim;
                     u.unitType = type;
@@ -102,15 +102,13 @@ function Game(myName,mySecret) {
                     u.newFacing = toRadians(f*(360/256));
                     u.updateTime = time;
                 }
-                
             }
             else {
 			var newUnit = new Unit(uid,team,anim,type,vals,x/65536 * 1024,
                                                                 y/65536 * 1024,
                                                                 z,
                                                                 Math.radians(f*(360/256)));
-            this.units.set(newUnit.team + ":" + newUnit.uid,newUnit);
-			spawnEntity(newUnit);
+            this.units.set(dicKey,newUnit);
             }
         }
     }

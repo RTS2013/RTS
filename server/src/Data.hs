@@ -151,42 +151,45 @@ instance Binary (Unit gameS teamS unitS tileS) where
         coordTo16 :: Float -> Word16
         coordTo16 a = floor $ a * 64
 
+{-
 instance Binary (GameFrame gameS teamS unitS tileS) where
     get = undefined
     put (GameFrame delta gram) = do
         put $ doubleToWord delta
         put gram
-
+-}
 data GameFrame gameS teamS unitS tileS = GameFrame {-# UNPACK #-} !Double !(ClientDatagram gameS teamS unitS tileS) 
 
+{-
 instance Binary (ClientDatagram gameS teamS unitS tileS) where
     get = undefined
     put (UnitDatagram xs) = do
         put (0 :: Word8)
-        put (fromIntegral $ length xs :: Word8)
+        put (fromIntegral $ length xs :: Word16)
         mapM_ put xs
     put (TeamDatagram xs) = do
         put (1 :: Word8)
-        put (fromIntegral $ length xs :: Word8)
+        put (fromIntegral $ length xs :: Word16)
         mapM_ put xs
     put (TerrainDatagram xs) = do
         put (2 :: Word8)
-        put (fromIntegral $ length xs :: Word8)
+        put (fromIntegral $ length xs :: Word16)
         mapM_ put xs
     put (LineFXDatagram xs) = do
         put (3 :: Word8)
-        put (fromIntegral $ length xs :: Word8)
+        put (fromIntegral $ length xs :: Word16)
         mapM_ put xs
     put (SFXDatagram xs) = do
         put (4 :: Word8)
-        put (fromIntegral $ length xs :: Word8)
+        put (fromIntegral $ length xs :: Word16)
         mapM_ put xs
     put (TargetFXDatagram xs) = do
         put (5 :: Word8)
-        put (fromIntegral $ length xs :: Word8)
+        put (fromIntegral $ length xs :: Word16)
         mapM_ put xs
     put (MessageDatagram txt) = put txt
     put (YourPlaceInLife tid x y) = put tid >> put x >> put y
+-}
 
 -- Datagram sent to client
 data ClientDatagram gameS teamS unitS tileS
