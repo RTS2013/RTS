@@ -24,7 +24,7 @@ function Game(myName,mySecret) {
     this.myName   = myName;
     this.mySecret = mySecret;
     this.units    = new buckets.Dictionary();
-    this.teamVals = myStartVals;
+    this.teamVals;
 
     // Get game info from cereal
     this.getGameInfo = function(cereal) {
