@@ -55,6 +55,7 @@ loadEntities = function(){
 		}
 		console.log("step 3: done pushing the models array");
 
+<<<<<<< HEAD
 		//spawnEntity(obj1);
 		//spawnEntity(obj2);
 		//spawnEntity(obj3);
@@ -62,6 +63,8 @@ loadEntities = function(){
 		//spawnEntity(obj5);
 		//spawnEntity(obj6);
 
+=======
+>>>>>>> a5967fa54b01baaaa7abbd035f8e64d3ac0e6da7
 		//these two are now in initGame
 		//there are the lighting for the Collada scene	
 		spawnEntity(obj7);

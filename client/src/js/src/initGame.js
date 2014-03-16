@@ -28,9 +28,6 @@ initGame = function(){
 	}
 	conn.onmessage = function (event) {
 		game.getGameInfo(new Cereal(new DataView(event.data)));
-		game.units.forEach(function(u) {
-			console.log(u.unitTeam + ":" + u.unitID + " x:" + u.newX + " y:" + u.newY);
-		});
 	}
 
 	//WebGL init

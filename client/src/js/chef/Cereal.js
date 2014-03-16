@@ -49,13 +49,7 @@ function Cereal(dv) {
    		this.offset = this.offset + 8;
    		return val;
    }
-   /*
-   this.getString = function() {
-      var val = this.dv.getFloat64(this.offset);
-         this.offset = this.offset + 8;
-         return val;
-   }
-   */
+
 }
 
 function uintToString(uintArray) {

@@ -1,17 +1,19 @@
 {-# LANGUAGE Trustworthy #-}
 
-module KDT (KDT,make,nearby,empty,main) where
+module KDT (KDT,make,nearby,empty) where
 import qualified Data.Set as Set
+import Control.Parallel.Strategies (rpar,rseq,runEval)
+{-
 import qualified System.Random as R
 import qualified Criterion.Main as C
-import Control.Parallel.Strategies (rpar,rseq,runEval)
+
 
 main :: IO ()
 main = do
     xs <- fmap (R.randomRs (0,2236::Double)) R.getStdGen
     ys <- fmap (R.randomRs (0,2236::Double)) R.getStdGen
     C.defaultMain [C.bench "KDT" $ C.whnf (make (\(_,_,r) -> r) [\(x,_,_) -> x, \(_,y,_) -> y]) $ take 5000 $ zip3 xs ys (cycle [0.25])]
-
+-}
 
 data KDT n a = Fork !n !(KDT n a) !(KDT n a) | Leaf ![a]
 
