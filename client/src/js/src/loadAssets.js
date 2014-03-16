@@ -55,8 +55,8 @@ loadEntities = function(){
 		}
 		console.log("step 3: done pushing the models array");
 
-		spawnEntity(obj1);
-		spawnEntity(obj2);
+		//spawnEntity(obj1);
+		//spawnEntity(obj2);
 		//spawnEntity(obj3);
 		//spawnEntity(obj4);
 		//spawnEntity(obj5);
