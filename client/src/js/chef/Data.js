@@ -18,13 +18,13 @@ function Unit(uid,team,anim,type,vals,x,y,z,f,time) {
     //this needs to be uncommented
 }
 
-function Game(myName,mySecret,myStartVals) {
+function Game(myName,mySecret) {
     this.myTeamID = null;
     this.myStart = null;
     this.myName   = myName;
     this.mySecret = mySecret;
     this.units    = new buckets.Dictionary(function (a){a.team + ":" + a.uid;});
-    this.teamVals = myStartVals;
+    this.teamVals;
 
     // Get game info from cereal
     this.getGameInfo = function(cereal) {

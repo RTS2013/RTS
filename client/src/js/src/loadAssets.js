@@ -45,22 +45,25 @@ loadEntities = function(){
 			child.rotation.z = 0;
 		});
 	
-		
 		//scene.add(baseModel);
-		console.log("loadEnitities working");
+		console.log("step 2: loadEnitities working");
 		//scene.add(baseModel);
 		for(var i = 0; i < baseModel.children.length; i++){
 			console.log(""+baseModel.children[i]);
 			models.push(baseModel.children[i]);
 			console.log("in model parser");
 		}
+		console.log("step 3: done pushing the models array");
 
-		//spawnEntity(obj1);
-		//spawnEntity(obj2);
+		spawnEntity(obj1);
+		spawnEntity(obj2);
 		//spawnEntity(obj3);
 		//spawnEntity(obj4);
 		//spawnEntity(obj5);
 		//spawnEntity(obj6);
+
+		//these two are now in initGame
+		//there are the lighting for the Collada scene	
 		spawnEntity(obj7);
 		spawnEntity(obj8);
 	});
@@ -84,9 +87,6 @@ loadAssets = function(){
     loadEntities();
     loadSound(1);
     loadBitmaps(1);
-    
-    console.log("calling spawnEntity");
-
-    console.log("loadAssets working");
+    console.log("step 1: loadAssets working");
 
 }

@@ -15,12 +15,13 @@ for(var i = 0; i < controlGroups.length; i++){
 
 initGame = function(){	
 	// Game-connection init
-	var game = new Game('Zach','Kittens',new Array());
+	var game = new Game('Zach','Kittens');
 	var chef = new Chef();
 	chef.putString('Yo Name Fool');
 	chef.putString('Yo Secret Fool');
 	chef.trim();
-	var conn = new WebSocket('ws://192.168.1.116:4444');
+	var conn = new WebSocket('ws://76.121.129.76:4444');
+		conn.binaryType = "arraybuffer";
 		conn.onopen = function(){
 		console.log('Connection open!');
 		conn.send(chef.ab);
@@ -92,13 +93,18 @@ initGame = function(){
 	//myName, mySecret.   myStartVals starts as an array of 0s to represent all the different types/items
 	
 	// ...and here it is folks.  impressive huh?
-	//var game = new Game(myName,mySecret,myStartVals);
+	//var game = new Game(myName,mySecr bet,myStartVals);
 };
 
 function createWorld(){
 	createTerrain();
 	createLighting();
 	createClouds();
+	
+	//spawnEntity(obj1);
+	//spawnEntity(obj2);
+	//spawnEntity(obj7);
+	//spawnEntity(obj8);
 }
 
 
