@@ -77,7 +77,7 @@ runMod nTeams = do
 	rng <- getMIOGen
 	flip evalRandT rng $ do
 		flip mapM_ [0..nTeams-1] $ \nTeam -> do
-			flip mapM_ [0..99::Int] $ \_ -> do
+			flip mapM_ [0..9::Int] $ \_ -> do
 				x <- getRandomR (0,1024)
 				y <- getRandomR (0,1024)
 				a <- getRandomR (0,2*pi)
