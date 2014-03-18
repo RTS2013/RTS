@@ -55,24 +55,3 @@ function Cereal(dv) {
 function uintToString(uintArray) {
     return decodeURIComponent(escape(atob(String.fromCharCode.apply(null, uintArray))));
 }
-
-/*
-var client = new BinaryClient('ws://' + document.location.host);
-
-client.on('stream', function(stream, meta){
-
-	// collect stream data
-	var parts = [];
-
-	// data = ArrayBuffer
-	stream.on('data', function(data){
-		var dv = new DataView(data);
-		// TODO
-	});
-
-	// when finished, set it as the background image
-	stream.on('end', function(){
-		// TODO
-	});
-});
-*/

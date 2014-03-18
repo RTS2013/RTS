@@ -15,10 +15,13 @@ module Party
 , sendToPlayers
 ) where 
 
+import           Control.Exception      (onException)
 import           Control.Applicative    ((<*>),(<$>))
 import           Control.Concurrent.STM 
 import           Control.Concurrent     (ThreadId,forkIO,killThread,myThreadId)
 import           Control.Monad          (forever,filterM)
+import           Blaze.ByteString.Builder
+import           Data.Int               (Int64)
 import           Data.List              (partition)
 import           Data.Monoid            ((<>))
 import           Data.Time.Clock        (UTCTime,diffUTCTime,getCurrentTime)
@@ -109,7 +112,7 @@ openDoors port xs = do
                                             <> (T.pack . show) (playerTeam player) 
                                             <> " with secret: "
                                             <> playerSecret player
-                                forever $ acceptMessages player messagesVar
+                                acceptMessages player messagesVar
 
         acceptMessages :: Player -> TVar [(Player,a)] -> IO ()
         acceptMessages player messagesVar = forever $ do
@@ -197,18 +200,30 @@ switchTeam gt player team = atomically $ do
 
 sendToPlayers :: (Binary a) => BS.ByteString -> [a] -> [Player] -> IO ()
 sendToPlayers header list players = do
-    let choppy = chopList BS.empty 0 $ map encode list
-    mapM_ (\p -> mapM_ (sendMsg (playerConn p)) choppy) players
-    
+    _ <- forkIO $ do
+        let choppy = {-# SCC "choppy" #-} chopList header $ map encode list
+        mapM_ (\p -> mapM_ (sendMsg (playerConn p)) choppy) players
+    return ()
     where
-    packetSize = 2048 - 3
-
-    chopList :: BS.ByteString -> Int -> [BS.ByteString] -> [BS.ByteString]
-    chopList bs n (x:xs) = 
-        if   BS.length x + BS.length bs > packetSize
-        then BS.append header (BS.append (encode (fromIntegral n :: Word16)) bs) : chopList BS.empty 0 (x:xs)
-        else chopList (BS.append x bs) (n+1) xs
-    chopList bs n _      = [BS.append header (BS.append (encode (fromIntegral n :: Word16)) bs)]
-
     sendMsg :: W.Connection -> BS.ByteString -> IO ()
-    sendMsg conn = W.send conn . W.DataMessage . W.Binary
+    sendMsg conn = flip onException (putStrLn "You suck")
+                 . W.send conn . W.DataMessage . W.Binary
+
+chopList :: BS.ByteString -> [BS.ByteString] -> [BS.ByteString]
+chopList header pieces = chopper 0 (hLen + 2) (flbs BS.empty) pieces []
+    where
+    tlbs = toLazyByteString
+    flbs = fromLazyByteString
+    hLen = BS.length header
+    hBld = flbs header
+    packetSize = 2048
+    chopper :: Int64 -> Int64 -> Builder -> [BS.ByteString] -> [BS.ByteString] -> [BS.ByteString]
+    chopper n accLen acc (x:xs) bs =
+        let xLen = BS.length x
+            currentSize = xLen + accLen in
+        if currentSize < packetSize 
+        -- Add to chunk
+        then chopper (n + 1) currentSize (acc <> flbs x) xs bs
+        -- Start new chunk
+        else chopper 1 (hLen + xLen + 2) (flbs x) xs (tlbs (hBld <> fromStorable (fromIntegral n :: Word16) <> acc) : bs)
+    chopper n _ acc _ bs = (tlbs (hBld <> fromStorable (fromIntegral n :: Word16) <> acc) : bs)

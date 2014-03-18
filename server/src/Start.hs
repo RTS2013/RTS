@@ -68,11 +68,11 @@ stepGame game = do
     gameBehavings <- fmap IM.elems $ readIORef (gameBehaviors game)
     teams <- fmap (map snd) $ HT.toList $ gameTeams game
     units <- fmap concat $ sequence $ map (fmap (map snd) . HT.toList . teamUnits) teams
-    let kdt = KDT.make (radius . unitMoveStats) [msX . unitMoveState, msY . unitMoveState] units
+    let kdt = {-# SCC "makeKDT" #-} KDT.make (radius . unitMoveStats) [msX . unitMoveState, msY . unitMoveState] units
     writeIORef (gameKDT game) kdt
-    gamesChanges <- parallel (map (flip behave ()) gameBehavings)
-    teamsChanges <- parallel (map teamChanges teams)
-    unitsChanges <- parallel (map unitChanges units)
+    gamesChanges <- sequence (map (flip behave ()) gameBehavings)
+    teamsChanges <- sequence (map teamChanges teams)
+    unitsChanges <- sequence (map unitChanges units)
     -- Apply game changes
     change $ sequence_ gamesChanges
     -- Apply team changes

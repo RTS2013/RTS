@@ -8,5 +8,5 @@ ghc -threaded -rtsopts -O2 -Wall `
     -prof `
     -main-is $name `
     -isrc
-Invoke-Expression $("src/build/" + $name + ".exe +RTS -N8 -A512K -K4M -H1G")
+Invoke-Expression $("src/build/" + $name + ".exe +RTS -p -N8 -A512K -K4M -H1G")
 rm src/build/$name.exe

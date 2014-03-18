@@ -70,6 +70,7 @@ function Game(myName,mySecret) {
    // Get units from cereal
     this.getUnitInfo = function(cereal,time) {
         var valCount = cereal.getU16();
+        console.log(valCount);
         for (var i = 0; i < valCount; i++) {
             var uid = cereal.get32();
             var team = cereal.getU8();
