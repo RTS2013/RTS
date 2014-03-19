@@ -19,17 +19,16 @@ var soundURLs  = new Array();
 //modelURLs.push('models/TestFemale.dae');
 //modelURLs.push('models/ColladaMale.dae');
 
-//create sounds and bitmap URLs here
-
-
 //create units and shove them in the array so we can clone them later.
 //we clone them out of this array with spawnEntity
 loadEntities = function(){
     var loader = new THREE.ColladaLoader();
+    
 	loader.options.convertUpAxis = true;
 	loader.load("models/Everybody.dae", function (collada) {
 
 		var baseModel = collada.scene;
+		//baseModel.crossOrigin = "anonymous";
 		baseModel.updateMatrix();
 		console.log(collada.scene);
 
@@ -57,6 +56,7 @@ loadEntities = function(){
 
 		//these two are now in initGame
 		//there are the lighting for the Collada scene	
+		initGame();
 		spawnEntity(obj7);
 		spawnEntity(obj8);
 	});

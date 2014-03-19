@@ -6,8 +6,8 @@
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 	<link rel="stylesheet" type="text/css" href="css/ui.css"/>
 </head>	
-<body>
-	<div id="container"></div>
+<body onLoad="loadAssets()">
+	<div id="container"></div> 
 
 	<div id="hud">
 		<!-- Buttons -->
@@ -30,6 +30,7 @@
 	    </div>
 	        	
 	    <div id="stats2"></div>
+  
 	</div>
 	<!-- Refs to Chef Code (Zach's stuff) -->
 	<script src="js/chef/StringView.js"></script>
@@ -49,6 +50,7 @@
 	<script src="js/libs/vender/ColladaLoader.js"></script>
 	<script src="js/libs/controls/RTSControls.js"></script>
 	<script src="js/libs/animation/Animation.js"></script>
+
 	<!--I'm not entirely sure I'll use these animation modules but we'll see-->
 	<script src="js/libs/animation/AnimationHandler.js"></script>
 	<script src="js/libs/animation/AnimationMorphTarget.js"></script>
@@ -88,7 +90,8 @@
 		var scene = new THREE.Scene();	
 		var stats = new Stats();
 
-		initGame();
+		//initGame();
+		//loadAssets();
 		animate();
 
 		function animate() {

@@ -10,8 +10,10 @@ body {
 }
 
 #buttons {
+	display: block;
 	position: absolute;
-	left: 5%;
+	left: 5px;
+	top: 200px;
 	background: #F90;
 	height: 20px;
 	width: 20px;
@@ -36,7 +38,7 @@ a {
 	right: 10px;
 	top: 10px;
     text-align: left;
-    background: rgba(0.5, 1, 0, 0.5);
+    background: rgba(0, 1, 0, 0.5);
     /*
     padding: 10px;
     width: 200px;
@@ -49,7 +51,7 @@ a {
 #stats2 {
 	display: block;
 	position: absolute;
-	left: 10px;
+	left: 5px;
 	bottom: 5px;
     color: #fff;
     text-align: left;

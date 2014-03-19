@@ -14,7 +14,7 @@ function Unit(uid,team,anim,type,vals,x,y,z,f,time) {
     this.newFacing  = f;
     this.updateTime = time;
 
-    //spawnEntity(this);
+    spawnEntity(this);
     //this needs to be uncommented
 }
 
@@ -30,6 +30,7 @@ function Game(myName,mySecret) {
     this.getGameInfo = function(cereal) {
         var time = cereal.getF64();
         var tag = cereal.getU8();
+        console.log("logical step "+time);
         switch(tag) {
         case 0:
             this.getUnitInfo(cereal,time);
@@ -70,7 +71,7 @@ function Game(myName,mySecret) {
    // Get units from cereal
     this.getUnitInfo = function(cereal,time) {
         var valCount = cereal.getU16();
-        console.log(valCount);
+        console.log("Unit Count " + valCount);
         for (var i = 0; i < valCount; i++) {
             var uid = cereal.get32();
             var team = cereal.getU8();

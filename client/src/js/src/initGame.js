@@ -20,7 +20,7 @@ initGame = function(){
 	chef.putString('Yo Name Fool');
 	chef.putString('Yo Secret Fool');
 	chef.trim();
-	var conn = new WebSocket('ws://76.121.129.76:4444');
+	var conn = new WebSocket('ws://localhost:4444');
 		conn.binaryType = "arraybuffer";
 		conn.onopen = function(){
 		console.log('Connection open!');

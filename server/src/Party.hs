@@ -198,16 +198,37 @@ switchTeam gt player team = atomically $ do
                 ) players
             return True
 
+
 sendToPlayers :: (Binary a) => BS.ByteString -> [a] -> [Player] -> IO ()
 sendToPlayers header list players = do
     _ <- forkIO $ do
-        let choppy = {-# SCC "choppy" #-} chopList header $ map encode list
+        let choppy = chopList header $ map encode list
         mapM_ (\p -> mapM_ (sendMsg (playerConn p)) choppy) players
     return ()
     where
     sendMsg :: W.Connection -> BS.ByteString -> IO ()
     sendMsg conn = flip onException (putStrLn "You suck")
                  . W.send conn . W.DataMessage . W.Binary
+
+{-
+sendToPlayers :: (Binary a) => BS.ByteString -> [a] -> [Player] -> IO ()
+sendToPlayers header list players = do
+    _ <- forkIO $ do
+        let choppy = choppy2 header $ map encode list
+        mapM_ (\p -> sendMsg (playerConn p) choppy) players
+    return ()
+    where
+    sendMsg :: W.Connection -> BS.ByteString -> IO ()
+    sendMsg conn = flip onException (putStrLn "You suck")
+                 . W.send conn . W.DataMessage . W.Binary
+
+choppy2 :: BS.ByteString -> [BS.ByteString] -> BS.ByteString
+choppy2 header pieces = tlbs $ foldl (<>) (hBld <> fromWord16be (fromIntegral (length pieces) :: Word16)) $ map flbs pieces
+    where
+    tlbs = toLazyByteString
+    flbs = fromLazyByteString
+    hBld = flbs header
+-}
 
 chopList :: BS.ByteString -> [BS.ByteString] -> [BS.ByteString]
 chopList header pieces = chopper 0 (hLen + 2) (flbs BS.empty) pieces []
@@ -225,5 +246,5 @@ chopList header pieces = chopper 0 (hLen + 2) (flbs BS.empty) pieces []
         -- Add to chunk
         then chopper (n + 1) currentSize (acc <> flbs x) xs bs
         -- Start new chunk
-        else chopper 1 (hLen + xLen + 2) (flbs x) xs (tlbs (hBld <> fromStorable (fromIntegral n :: Word16) <> acc) : bs)
-    chopper n _ acc _ bs = (tlbs (hBld <> fromStorable (fromIntegral n :: Word16) <> acc) : bs)
+        else chopper 1 (hLen + xLen + 2) (flbs x) xs (tlbs (hBld <> fromWord16be (fromIntegral n :: Word16) <> acc) : bs)
+    chopper n _ acc _ bs = (tlbs (hBld <> fromWord16be (fromIntegral n :: Word16) <> acc) : bs)
