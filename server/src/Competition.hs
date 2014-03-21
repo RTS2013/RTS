@@ -16,6 +16,7 @@ import qualified Data.Binary.Get as G
 import           Data.ByteString.Lazy (ByteString)
 import           Data.IntMap (IntMap)
 import qualified Data.IntMap as IM
+import           Data.List (genericLength)
 import           Data.List.Split (chunksOf)
 import           Data.Map (Map)
 import qualified Data.Map as M
@@ -136,7 +137,7 @@ sendPiecesToParty cptn chunkSize header pieces pID = ignore $ forkIO $ do
     sendMsg conn = flip onException (putStrLn "You suck")
                  . W.send conn . W.DataMessage . W.Binary
     chopList :: [ByteString]
-    chopList = map (\xs -> toLazyByteString . mconcat $ (header:fromWord16be (fromIntegral $ length xs):xs)) $ chunksOf chunkSize pieces
+    chopList = map (\xs -> toLazyByteString . mconcat $ (header:fromWord16be (genericLength xs):xs)) $ chunksOf chunkSize pieces
 
 
 decodeText :: Get Text
