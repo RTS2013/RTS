@@ -8,6 +8,7 @@ import MIO.Privileges
 import qualified MIO.Ref as Ref
 import qualified MIO.Grid.Unboxed as Grid
 import qualified MIO.HashTable as HT
+import qualified MIO.Vector as V
 import qualified Data.IntMap as IM
 import qualified Data.Sequence as Seq
 
@@ -42,18 +43,18 @@ makeTeam teamS i = do
     game <- training
     stateRef <- Ref.make teamS
     countRef <- Ref.make 0
+    behavRef <- Ref.make IM.empty
     grid     <- Grid.make (0,0) (-1)
     noUnits  <- HT.make 10
     let t = Team
             { teamID = i
             , teamState = stateRef
-            , teamPlayers = []
             , teamVision = grid
             , teamSpawnCount = countRef
             , teamUnits = noUnits
-            , teamBehaviors = IM.empty
+            , teamBehaviors = behavRef
             } 
-    HT.write (gameTeams game) i t
+    V.write (gameTeams game) i t
 
 makeUnit :: 
     Unit gameS teamS unitS tileS -> 
@@ -62,7 +63,7 @@ makeUnit ::
     Trainer (Game gameS teamS unitS tileS) ()
 makeUnit unit teamN xyza = do
     game <- training
-    mTeam <- HT.read (gameTeams game) teamN
+    mTeam <- V.read (gameTeams game) teamN
     case mTeam of
         Nothing -> return ()
         Just team -> do
@@ -78,7 +79,7 @@ modifyUnit ::
     Trainer (Game gameS teamS unitS tileS) ()
 modifyUnit tID uID f = do
     game <- training
-    mTeam <- HT.read (gameTeams game) tID
+    mTeam <- V.read (gameTeams game) tID
     case mTeam of
         Nothing -> return ()
         Just team -> do

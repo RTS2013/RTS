@@ -20,9 +20,9 @@ import           Data.Word (Word8, Word16, Word32, Word64)
 import           GHC.Generics (Generic)
 import           GHC.ST (runST, ST)
 import           Grid.UnboxedMutable (Grid)
-import           KDT (KDT)
+import           KDTree (KDTree)
 import           MIO.Privileges
-import           Party (Party,Player)
+import           Competition (Competition)
 
 type Ref = IORef
 type HashTable a = BasicHashTable Int a
@@ -30,9 +30,9 @@ type HashTable a = BasicHashTable Int a
 data Game gameS teamS unitS tileS = Game 
     { gameStep      :: !(Ref Double)
     , gameState     :: !(Ref gameS)
-    , gameKDT       :: !(Ref (KDT Float (Unit gameS teamS unitS tileS)))
+    , gameKDT       :: !(Ref (KDTree Float (Unit gameS teamS unitS tileS)))
     , gameTiles     :: !(Grid tileS)
-    , gameParty     :: !(Party ControlMessage)
+    , gameParty     :: !(Competition ControlMessage)
     , gameTeams     :: !(IOVector (Team gameS teamS unitS tileS))
     , gameBehaviors :: !(Ref (IntMap (Behavior () (Change ()))))
     } 

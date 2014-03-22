@@ -51,6 +51,13 @@ data Member = Member
 data Status = Connected Connection ThreadId
             | Disconnected
 
+getMessages :: Competition a -> IO [(a,Name)]
+getMessages cptn = atomically $ do
+    let mailbox = cptnMailbox cptn
+    msgs <- readTVar mailbox
+    writeTVar mailbox []
+    return msgs
+
 begin :: Int -> Get a -> [[(Name,Pass)]] -> IO (ThreadId,Competition a)
 begin port decodeMsg namesAndPasses = do
     beginTime    <- Clock.getCurrentTime
@@ -91,12 +98,14 @@ begin port decodeMsg namesAndPasses = do
                             Just member -> forever $ do
                                 msg <- onException (W.receive conn) $ do
                                     TIO.putStrLn $ name <> " disconnected."
+                                    atomically $ writeTVar (memberStatus member) Disconnected
                                     myThreadId >>= killThread
                                 case msg of 
                                     W.DataMessage (W.Binary msgBS) -> 
                                         case G.runGetOrFail decodeMsg msgBS of
                                             Left _ -> do
                                                 TIO.putStrLn $ name <> " sent an incorrectly encoded message."
+                                                atomically $ writeTVar (memberStatus member) Disconnected
                                                 W.sendClose conn ("Bad message encoding." :: ByteString)
                                                 myThreadId >>= killThread
                                             Right (_,_,newMsg) -> do
@@ -107,6 +116,7 @@ begin port decodeMsg namesAndPasses = do
                                                     writeTVar mailboxVar $ (newMsg,name):mail
                                     _ -> do
                                         TIO.putStrLn $ name <> " used the wrong message format."
+                                        atomically $ writeTVar (memberStatus member) Disconnected
                                         W.sendClose conn ("Bad message format." :: ByteString)
                                         myThreadId >>= killThread
                             Nothing -> do 
