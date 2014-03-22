@@ -27,9 +27,9 @@ function Chef() {
 
     this.putString = function(string) {
         var sv = new StringView(string);
-        this.resize(sv.buffer.byteLength + 4);
-        this.dv.setUint32(this.offset,sv.buffer.byteLength);
-        this.offset = this.offset + 4;
+        this.resize(sv.buffer.byteLength + 1);
+        this.dv.setUint8(this.offset,sv.buffer.byteLength);
+        this.offset = this.offset + 1;
         for (var i = 0; i < sv.buffer.byteLength; i++) {
             this.dv.setUint8(this.offset,sv.rawData[i]);
             this.offset++;

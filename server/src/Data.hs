@@ -3,24 +3,26 @@
 
 module Data where
 
-import Data.IORef (IORef)
-import Data.Text (Text)
-import Data.Int (Int32)
-import Data.List (genericLength)
-import Data.Binary (Binary,Get,get,put)
-import Data.Word (Word8,Word16,Word32,Word64)
-import Data.HashTable.IO (BasicHashTable)
-import Data.IntMap (IntMap)
-import Data.Sequence (Seq)
-import Data.Array.ST (newArray,readArray,MArray,STUArray)
-import Data.Array.Unsafe (castSTUArray)
-import GHC.Generics (Generic)
-import GHC.ST (runST,ST)
-import MIO.Privileges
-import Party (Party,Player)
-import qualified Grid.UnboxedMutable as MG
-import qualified Grid.Unboxed as G
-import qualified KDT as KDT
+import           Blaze.ByteString.Builder
+import           Data.Array.ST (newArray, readArray, MArray, STUArray)
+import           Data.Array.Unsafe (castSTUArray)
+import           Data.Binary (Binary, Get, put, get)
+import           Data.HashTable.IO (BasicHashTable)
+import           Data.Int (Int32)
+import           Data.IntMap (IntMap)
+import           Data.IORef (IORef)
+import           Data.List (genericLength)
+import           Data.Monoid (mconcat, (<>))
+import           Data.Sequence (Seq)
+import           Data.Text (Text)
+import           Data.Vector.Mutable (IOVector)
+import           Data.Word (Word8, Word16, Word32, Word64)
+import           GHC.Generics (Generic)
+import           GHC.ST (runST, ST)
+import           Grid.UnboxedMutable (Grid)
+import           KDTree (KDTree)
+import           MIO.Privileges
+import           Competition (Competition)
 
 type Ref = IORef
 type HashTable a = BasicHashTable Int a
@@ -28,21 +30,20 @@ type HashTable a = BasicHashTable Int a
 data Game gameS teamS unitS tileS = Game 
     { gameStep      :: !(Ref Double)
     , gameState     :: !(Ref gameS)
-    , gameKDT       :: !(Ref (KDT.KDT Float (Unit gameS teamS unitS tileS)))
-    , gameTiles     :: !(G.Grid tileS)
-    , gameParty     :: !(Party ControlMessage)
-    , gameTeams     :: !(HashTable (Team gameS teamS unitS tileS))
+    , gameKDT       :: !(Ref (KDTree Float (Unit gameS teamS unitS tileS)))
+    , gameTiles     :: !(Grid tileS)
+    , gameParty     :: !(Competition ControlMessage)
+    , gameTeams     :: !(IOVector (Team gameS teamS unitS tileS))
     , gameBehaviors :: !(Ref (IntMap (Behavior () (Change ()))))
     } 
 
 data Team gameS teamS unitS tileS = Team
     { teamID         :: {-# UNPACK #-} !Int
     , teamState      :: !(Ref teamS)
-    , teamPlayers    :: ![Player]
-    , teamVision     :: !(MG.Grid Int)
+    , teamVision     :: !(Grid Int)
     , teamSpawnCount :: !(Ref Int) -- Incremented with each new unit
     , teamUnits      :: !(HashTable (Unit gameS teamS unitS tileS))
-    , teamBehaviors  :: !(IntMap (Behavior (Team gameS teamS unitS tileS) (Change ())))
+    , teamBehaviors  :: !(Ref (IntMap (Behavior (Team gameS teamS unitS tileS) (Change ()))))
     } 
 
 data Unit gameS teamS unitS tileS = Unit
@@ -86,7 +87,6 @@ data MoveStats = MoveStats
     , radius    :: {-# UNPACK #-} !Float
     }
 
-
 ----------------------------------------------------------------------------
 --             # DATA SENT OVER WIRE FROM CLIENT TO SERVER #              --
 ----------------------------------------------------------------------------
@@ -120,76 +120,33 @@ data Order
     deriving (Generic)
 
 instance Binary Orders where
-
-instance Binary Order where
-    put = undefined
-    get = undefined
+instance Binary Order
 
 ----------------------------------------------------------------------------
 --             # DATA SENT OVER WIRE FROM SERVER TO CLIENT #              --
 ----------------------------------------------------------------------------
 
-instance Binary (Unit gameS teamS unitS tileS) where
-    get = undefined
-    put u = do
-        put (fromIntegral $ unitID u        :: Int32)
-        put (fromIntegral $ unitTeam u      :: Word8)
-        put (fromIntegral $ unitAnimation u :: Word8)
-        put (fromIntegral $ unitType u      :: Word16)
-        let xyz = unitMoveState u
-        put (coordTo16 $ msX xyz :: Word16)
-        put (coordTo16 $ msY xyz :: Word16)
-        put (coordTo16 $ msZ xyz :: Word16)
-        put (faceTo8 $ angle xyz :: Word8)
-        let vals = (unitValues u) u
-        put (genericLength vals :: Word8) -- Length of list
-        mapM_ put vals                    -- (Key,Val) Pairs
-        where
-        faceTo8 :: Float -> Word8
-        faceTo8 a | a < 0 = floor $ (2*pi + a) / (2*pi) * 256
-                  | True  = floor $ a / (2*pi) * 256
-        coordTo16 :: Float -> Word16
-        coordTo16 a = floor $ a * 64
-
-{-
-instance Binary (GameFrame gameS teamS unitS tileS) where
-    get = undefined
-    put (GameFrame delta gram) = do
-        put $ doubleToWord delta
-        put gram
--}
-data GameFrame gameS teamS unitS tileS = GameFrame {-# UNPACK #-} !Double !(ClientDatagram gameS teamS unitS tileS) 
-
-{-
-instance Binary (ClientDatagram gameS teamS unitS tileS) where
-    get = undefined
-    put (UnitDatagram xs) = do
-        put (0 :: Word8)
-        put (fromIntegral $ length xs :: Word16)
-        mapM_ put xs
-    put (TeamDatagram xs) = do
-        put (1 :: Word8)
-        put (fromIntegral $ length xs :: Word16)
-        mapM_ put xs
-    put (TerrainDatagram xs) = do
-        put (2 :: Word8)
-        put (fromIntegral $ length xs :: Word16)
-        mapM_ put xs
-    put (LineFXDatagram xs) = do
-        put (3 :: Word8)
-        put (fromIntegral $ length xs :: Word16)
-        mapM_ put xs
-    put (SFXDatagram xs) = do
-        put (4 :: Word8)
-        put (fromIntegral $ length xs :: Word16)
-        mapM_ put xs
-    put (TargetFXDatagram xs) = do
-        put (5 :: Word8)
-        put (fromIntegral $ length xs :: Word16)
-        mapM_ put xs
-    put (MessageDatagram txt) = put txt
-    put (YourPlaceInLife tid x y) = put tid >> put x >> put y
--}
+buildUnit :: Unit gameS teamS unitS tileS -> Builder
+buildUnit u = buildCore <> buildVals
+    where
+    xyz = unitMoveState u
+    vals = (unitValues u) u
+    buildCore = fromWrite $
+                writeInt32be  (fromIntegral $ unitID u       ) <>
+                writeWord8    (fromIntegral $ unitTeam u     ) <>
+                writeWord8    (fromIntegral $ unitAnimation u) <>
+                writeWord16be (fromIntegral $ unitType u     ) <>
+                writeWord16be (coordTo16    $ msX xyz        ) <>
+                writeWord16be (coordTo16    $ msY xyz        ) <>
+                writeWord16be (coordTo16    $ msZ xyz        ) <>
+                writeWord8    (faceTo8      $ angle xyz      ) <>
+                writeWord8    (genericLength vals            )
+    buildVals = mconcat $ map (\(k,v) -> fromWrite $ writeWord8 k <> writeWord16be v) vals
+    faceTo8 :: Float -> Word8
+    faceTo8 a | a < 0 = floor $ (2*pi + a) / (2*pi) * 256
+              | True  = floor $ a / (2*pi) * 256
+    coordTo16 :: Float -> Word16
+    coordTo16 a = floor $ a * 64
 
 -- Datagram sent to client
 data ClientDatagram gameS teamS unitS tileS

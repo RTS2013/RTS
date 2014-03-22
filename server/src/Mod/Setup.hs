@@ -13,7 +13,7 @@ import qualified MIO.Grid.Boxed   as GBM -- Grid Boxed Mutable
 import qualified Grid.Unboxed     as GU  -- Grid Unboxed Immutable
 import qualified Grid.Boxed       as GB  -- Grid Boxed Immutable
 import qualified Movers           as Move
-import qualified KDT              as KDT
+import qualified KDTree           as KDT
 import Control.Monad.Reader
 import Data.Sequence (viewl,ViewL(..))
 import MIO.Privileges
