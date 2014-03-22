@@ -15,6 +15,7 @@ import           Data.List (genericLength)
 import           Data.Monoid (mconcat, (<>))
 import           Data.Sequence (Seq)
 import           Data.Text (Text)
+import           Data.Vector.Mutable (IOVector)
 import           Data.Word (Word8, Word16, Word32, Word64)
 import           GHC.Generics (Generic)
 import           GHC.ST (runST, ST)
@@ -32,18 +33,17 @@ data Game gameS teamS unitS tileS = Game
     , gameKDT       :: !(Ref (KDT Float (Unit gameS teamS unitS tileS)))
     , gameTiles     :: !(Grid tileS)
     , gameParty     :: !(Party ControlMessage)
-    , gameTeams     :: !(HashTable (Team gameS teamS unitS tileS))
+    , gameTeams     :: !(IOVector (Team gameS teamS unitS tileS))
     , gameBehaviors :: !(Ref (IntMap (Behavior () (Change ()))))
     } 
 
 data Team gameS teamS unitS tileS = Team
     { teamID         :: {-# UNPACK #-} !Int
     , teamState      :: !(Ref teamS)
-    , teamPlayers    :: ![Player]
     , teamVision     :: !(Grid Int)
     , teamSpawnCount :: !(Ref Int) -- Incremented with each new unit
     , teamUnits      :: !(HashTable (Unit gameS teamS unitS tileS))
-    , teamBehaviors  :: !(IntMap (Behavior (Team gameS teamS unitS tileS) (Change ())))
+    , teamBehaviors  :: !(Ref (IntMap (Behavior (Team gameS teamS unitS tileS) (Change ()))))
     } 
 
 data Unit gameS teamS unitS tileS = Unit
