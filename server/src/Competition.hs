@@ -1,6 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Competition where
+module Competition 
+( getMessages
+, begin
+, sendPiecesToParty
+, Competition(..)
+, Name
+) where
 
 import           Blaze.ByteString.Builder
 import           Control.Concurrent.STM
@@ -161,14 +167,6 @@ decodeHello = do
     text <- decodeText
     pass <- decodeText
     return (text,pass)
-
-
-disconnected :: Member -> IO Bool
-disconnected m = do
-    ms <- atomically $ readTVar $ memberStatus m
-    return $ case ms of
-        Disconnected -> True
-        _            -> False
 
 
 withMemberConn :: (Connection -> IO ()) -> Member -> IO ()
