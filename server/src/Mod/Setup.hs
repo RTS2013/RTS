@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+
 module Mod.Setup
 ( runMod
 , defaultGameState
@@ -14,21 +16,12 @@ import qualified Grid.Unboxed     as GU  -- Grid Unboxed Immutable
 import qualified Grid.Boxed       as GB  -- Grid Boxed Immutable
 import qualified Movers           as Move
 import qualified KDTree           as KDT
-import Control.Monad.Reader
 import Data.Sequence (viewl,ViewL(..))
 import MIO.Privileges
 import Mod.Prelude
-import Mod.Pathing
 import MIO.Random
+import Pathing
 import Data
-
-{-
-DD = damage dealt
-DT = damage taken
-
-(DD + DT)*0.5 + sqrt( (DD*a) * (DT*b)
-where a + b = 1
--}
 
 data GameS = GameS
 	{ 
@@ -44,17 +37,17 @@ data UnitS = UnitS
 	, moveType   :: !MoveType
 	} 
 
-data MoveType = Ground | Flying
+data MoveType = Ground
 
 type TileS = (Int,Bool)
 
 type ModGame = Game GameS TeamS UnitS TileS
 
-type ModTeam = Team GameS TeamS UnitS TileS
+-- type ModTeam = Team GameS TeamS UnitS TileS
 
 type ModUnit = Unit GameS TeamS UnitS TileS
 
-type ModBehavior a = Behavior ModGame a
+type UnitBehavior a = Behavior ModUnit a
 
 defaultGameState :: GameS
 defaultGameState = GameS
@@ -82,98 +75,24 @@ runMod nTeams = do
 				y <- getRandomR (0,1024)
 				a <- getRandomR (0,2*pi)
 				lift $ makeUnit (defaultUnit defaultUnitState) nTeam (x,y,0,a)
-	return ()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 {-
-handleOrders :: Trainer ModGame ()
-handleOrders u = do
-	case viewl (unitOrders u) of
-			EmptyL -> return $ return ()
-			(a:<_) -> case a of
-				(Move (Point x y z)) -> undefined -- handleMoveOrder g u
-				_ -> return $ return ()
-
-
-handleMoveOrder :: ModGame -> ModBehavior Unit
-handleMoveOrder g u = do
-	let unitS = unitState u
-	if undefined --calcPath unitS
-	then do
-		kdt <- Ref.read (gameKDT g)
-		let (x,y) = getUnitPosition u
-		let nearby = KDT.nearby kdt [msX . unitMoveState, msY . unitMoveState] [x,y] (radius $ unitMoveStats u)
-		--let xy = Move.move nearby maxRadius 
-		let xy' = undefined
-		return $ modifyThisUnit u $ setUnitPosition xy'
-	else undefined
-
-firstUnit :: ModGame -> ModUnit
-firstUnit game = (genericGroundUnit game)
-	{ unitBehaviors = IM.singleton 0 $ \u -> return $ do
-		case viewl (unitOrders u) of
-			EmptyL -> return ()
-			(a:<_) -> case a of
-				(Move (Point x y z)) -> 
-					if calcPath $ unitState u 
-					then getPath (snd . G.read (gameTiles game)) 
-				_ -> return ()
-	}
-
-maxRadius :: Float
-maxRadius = 1.0
-
-
-moveDistToPoint :: ModGame -> Float -> Float -> Float -> ModBehavior Unit
-moveDistToPoint g dx dy dist u = do
-	kdt <- Ref.read (gameKDT g)
+handleOrders :: Trainer ModGame (UnitBehavior (Change ()))
+handleOrders = do
+	game <- training
 	return $ do
-		modifyUnit g (unitTeam u) (unitID u) $
-			let (nx,ny) = M.move
-					(\(x,y) r -> map xyrw $ KDT.inRange 
-						kdt 
-						[ msX . unitMoveState, msY . unitMoveState ] 
-						[x,y] 
-						r)
-					maxRadius
-					(dx,dy)
-					dist
-					(xyrw u)
-					in
-			setUnitOrientation ( nx
-				               , ny
-				               , msZ $ unitMoveState u
-				               , atan2 (dx - msX (unitMoveState u)) (dy - msY (unitMoveState u))
-				               )
-					
-	where
-	xyrw Unit {unitMoveState=m,unitMoveStats=s} = 
-		let MoveState {msX=x,msY=y} = m 
-		    MoveStats {radius=r,weight=w} = s 
-		in (x,y,r,w)
+		u <- behaving
+		case viewl (unitOrders u) of
+				EmptyL -> return $ return ()
+				(a:<_) -> case a of
+					(Move p) -> handleMoveOrder game p
+					_ -> return $ return ()
+
+handleMoveOrder :: ModGame -> Point -> UnitBehavior (Change ())
+handleMoveOrder (Point x y _) = do
+	u <- behaving
+	let (ux,uy) = getUnitPosition u
+	if null $ unitPath $ unitState u
+	then getPath 
+	else undefined
 -}

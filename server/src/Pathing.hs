@@ -3,6 +3,7 @@
 module Pathing where
 
 import qualified Data.Set as S
+import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as V
 import Control.Concurrent.ParallelIO.Global (parallel_)
 import Control.Monad.STM (atomically)
@@ -11,7 +12,7 @@ import Data.Graph.AStar (aStar)
 
 getPath ::
     ((Int,Int) -> Bool) -> -- Is tile "open" predicate
-    ((Int,Int) -> V.Vector (Int,Int)) ->
+    ((Int,Int) -> Vector (Int,Int)) ->
     (Int,Int) -> -- Start XY
     (Int,Int) -> -- Goal XY
     Maybe [(Int,Int)] -- Empty list means you can move directly to goal
@@ -31,7 +32,7 @@ getPath isOpen corners xy exy@(gx,gy) =
 setGroupsM ::
     (Int,Int) -> -- Width/Height
     ((Int,Int) -> IO Bool) -> -- Is open predicate
-    ((Int,Int) -> V.Vector (Int,Int) -> IO ()) -> -- Set group at point
+    ((Int,Int) -> Vector (Int,Int) -> IO ()) -> -- Set group at point
     IO ()
 setGroupsM (w,h) isOpen setGroup = do
     corners <- getCornersM (w,h) isOpen
@@ -83,7 +84,7 @@ inSightM isOpen (x0,y0) (x1,y1) = rat (1 + dx + dy) x0 y0 err
 getCornersM :: (Monad m) =>
     (Int,Int) -> -- Width/Height
     ((Int,Int) -> m Bool) -> -- Is tile "open" predicate
-    m (V.Vector (Int,Int)) -- List of corners
+    m (Vector (Int,Int)) -- List of corners
 getCornersM (width,height) isOpen = V.filterM isCorner $ V.fromList [(x,y) | x <- [0..width], y <- [0..height]]
   where
     isCorner (x,y) = do
@@ -140,7 +141,7 @@ inSight isOpen (x0,y0) (x1,y1) = rat (1 + dx + dy) (x0,y0) err
 getCorners :: 
     (Int,Int) -> -- Width/Height
     ((Int,Int) -> Bool) -> -- Is tile "open" predicate
-    V.Vector (Int,Int) -- List of corners
+    Vector (Int,Int) -- List of corners
 getCorners (width,height) isOpen = V.filter isCorner $ V.fromList [(x,y) | x <- [0..width], y <- [0..height]]
     where
     isCorner (x,y) = 
