@@ -1,0 +1,5 @@
+{ "dependencies":
+      { "maxsnew/Lazy": "0.2"
+      , "xashili/Array": "0.2.2"
+      }
+}

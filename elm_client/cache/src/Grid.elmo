@@ -1,0 +1,165 @@
+Elm.Grid = Elm.Grid || {};
+Elm.Grid.make = function (_elm) {
+   "use strict";
+   _elm.Grid = _elm.Grid || {};
+   if (_elm.Grid.values)
+   return _elm.Grid.values;
+   var _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   _E = _N.Error.make(_elm),
+   _J = _N.JavaScript.make(_elm),
+   $moduleName = "Grid";
+   var Array = Elm.Array.make(_elm);
+   var Basics = Elm.Basics.make(_elm);
+   var Color = Elm.Color.make(_elm);
+   var Debug = Elm.Debug.make(_elm);
+   var Graphics = Graphics || {};
+   Graphics.Collage = Elm.Graphics.Collage.make(_elm);
+   var Graphics = Graphics || {};
+   Graphics.Element = Elm.Graphics.Element.make(_elm);
+   var List = Elm.List.make(_elm);
+   var Maybe = Elm.Maybe.make(_elm);
+   var Native = Native || {};
+   Native.Ports = Elm.Native.Ports.make(_elm);
+   var Signal = Elm.Signal.make(_elm);
+   var String = Elm.String.make(_elm);
+   var Text = Elm.Text.make(_elm);
+   var Time = Elm.Time.make(_elm);
+   var _op = {};
+   var Grid = F3(function (a,b,c) {
+      return {ctor: "Grid"
+             ,_0: a
+             ,_1: b
+             ,_2: c};
+   });
+   var make = F2(function (_v0,a) {
+      return function () {
+         switch (_v0.ctor)
+         {case "_Tuple2": return A2(Grid,
+              _v0._0,
+              _v0._1)(Array.fromList(A2(List.repeat,
+              _v0._0 * _v0._1,
+              a)));}
+         _E.Case($moduleName,
+         "on line 9, column 16 to 58");
+      }();
+   });
+   var set = F3(function (_v4,
+   a,
+   _v5) {
+      return function () {
+         switch (_v5.ctor)
+         {case "Grid":
+            return function () {
+                 switch (_v4.ctor)
+                 {case "_Tuple2": return A2(Grid,
+                      _v5._0,
+                      _v5._1)(A3(Array.set,
+                      _v5._0 * _v4._1 + _v4._0,
+                      a,
+                      _v5._2));}
+                 _E.Case($moduleName,
+                 "on line 12, column 30 to 65");
+              }();}
+         _E.Case($moduleName,
+         "on line 12, column 30 to 65");
+      }();
+   });
+   var get = F2(function (_v13,
+   _v14) {
+      return function () {
+         switch (_v14.ctor)
+         {case "Grid":
+            return function () {
+                 switch (_v13.ctor)
+                 {case "_Tuple2":
+                    return A2(Array.get,
+                      _v14._0 * _v13._1 + _v13._0,
+                      _v14._2);}
+                 _E.Case($moduleName,
+                 "on line 15, column 28 to 49");
+              }();}
+         _E.Case($moduleName,
+         "on line 15, column 28 to 49");
+      }();
+   });
+   var modify = F3(function (xy,
+   f,
+   g) {
+      return function (a) {
+         return A3(set,xy,a,g);
+      }(f(A2(get,xy,g)));
+   });
+   var slice = F2(function (_v22,
+   grid) {
+      return function () {
+         switch (_v22.ctor)
+         {case "_Tuple4":
+            return List.concat(A2(Basics.flip,
+              List.map,
+              _L.range(_v22._2 - 1,
+              _v22._2 + _v22._0 - 1))(function (x) {
+                 return A2(Basics.flip,
+                 List.map,
+                 _L.range(_v22._3 - 1,
+                 _v22._3 + _v22._1 - 1))(function (y) {
+                    return {ctor: "_Tuple3"
+                           ,_0: x
+                           ,_1: y
+                           ,_2: A2(get,
+                           {ctor: "_Tuple2",_0: x,_1: y},
+                           grid)};
+                 });
+              }));}
+         _E.Case($moduleName,
+         "between lines 21 and 24");
+      }();
+   });
+   var sliceBounds = F2(function (_v28,
+   grid) {
+      return function () {
+         switch (_v28.ctor)
+         {case "_Tuple4":
+            return function () {
+                 switch (grid.ctor)
+                 {case "Grid":
+                    return Maybe.justs(List.concat(A2(Basics.flip,
+                      List.map,
+                      _L.range(_v28._2,
+                      _v28._2 + _v28._0))(function (x) {
+                         return A2(Basics.flip,
+                         List.map,
+                         _L.range(_v28._3,
+                         _v28._3 + _v28._1))(function (y) {
+                            return _U.cmp(x,
+                            grid._0) > -1 || (_U.cmp(x,
+                            0) < 0 || (_U.cmp(y,
+                            grid._1) > -1 || _U.cmp(y,
+                            0) < 0)) ? Maybe.Nothing : Maybe.Just({ctor: "_Tuple3"
+                                                                  ,_0: x
+                                                                  ,_1: y
+                                                                  ,_2: A2(get,
+                                                                  {ctor: "_Tuple2"
+                                                                  ,_0: x
+                                                                  ,_1: y},
+                                                                  grid)});
+                         });
+                      })));}
+                 _E.Case($moduleName,
+                 "between lines 27 and 35");
+              }();}
+         _E.Case($moduleName,
+         "between lines 27 and 35");
+      }();
+   });
+   _elm.Grid.values = {_op: _op
+                      ,make: make
+                      ,set: set
+                      ,get: get
+                      ,modify: modify
+                      ,slice: slice
+                      ,sliceBounds: sliceBounds
+                      ,Grid: Grid};
+   return _elm.Grid.values;
+};

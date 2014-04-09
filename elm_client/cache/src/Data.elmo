@@ -1,0 +1,198 @@
+Elm.Data = Elm.Data || {};
+Elm.Data.make = function (_elm) {
+   "use strict";
+   _elm.Data = _elm.Data || {};
+   if (_elm.Data.values)
+   return _elm.Data.values;
+   var _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   _E = _N.Error.make(_elm),
+   _J = _N.JavaScript.make(_elm),
+   $moduleName = "Data";
+   var Basics = Elm.Basics.make(_elm);
+   var Color = Elm.Color.make(_elm);
+   var Dict = Elm.Dict.make(_elm);
+   var Graphics = Graphics || {};
+   Graphics.Collage = Elm.Graphics.Collage.make(_elm);
+   var Graphics = Graphics || {};
+   Graphics.Element = Elm.Graphics.Element.make(_elm);
+   var Grid = Elm.Grid.make(_elm);
+   var List = Elm.List.make(_elm);
+   var Maybe = Elm.Maybe.make(_elm);
+   var Native = Native || {};
+   Native.Ports = Elm.Native.Ports.make(_elm);
+   var Signal = Elm.Signal.make(_elm);
+   var String = Elm.String.make(_elm);
+   var Text = Elm.Text.make(_elm);
+   var Time = Elm.Time.make(_elm);
+   var Touch = Elm.Touch.make(_elm);
+   var Window = Elm.Window.make(_elm);
+   var _op = {};
+   var MoveCamera = function (a) {
+      return {ctor: "MoveCamera"
+             ,_0: a};
+   };
+   var Free = {ctor: "Free"};
+   var initInput = {_: {}
+                   ,left: false
+                   ,middle: false
+                   ,mouse: {_: {},posX: 0,posY: 0}
+                   ,right: false
+                   ,touches: _J.toList([])
+                   ,unitData: {_: {}
+                              ,time: 0
+                              ,unitInfos: _J.toList([])}};
+   var Input = F6(function (a,
+   b,
+   c,
+   d,
+   e,
+   f) {
+      return {_: {}
+             ,left: a
+             ,middle: b
+             ,mouse: d
+             ,right: c
+             ,touches: e
+             ,unitData: f};
+   });
+   var Camera = F4(function (a,
+   b,
+   c,
+   d) {
+      return {_: {}
+             ,camAngle: d
+             ,camSpeed: c
+             ,posX: a
+             ,posY: b};
+   });
+   var updateUnitDict = F3(function (time,
+   ui,
+   ud) {
+      return function () {
+         var $new = {_: {}
+                    ,animID: ui.animID
+                    ,facing: ui.facing
+                    ,posX: ui.posX
+                    ,posY: ui.posY
+                    ,posZ: ui.posZ
+                    ,time: time
+                    ,typeID: ui.typeID
+                    ,values: Dict.fromList(A2(List.map,
+                    function (kv) {
+                       return {ctor: "_Tuple2"
+                              ,_0: kv.k
+                              ,_1: kv.v};
+                    },
+                    ui.valueList))};
+         var key = {ctor: "_Tuple2"
+                   ,_0: ui.unitID
+                   ,_1: ui.teamID};
+         var maybePair = A2(Dict.lookup,
+         key,
+         ud);
+         return function () {
+            switch (maybePair.ctor)
+            {case "Just":
+               return A3(Dict.insert,
+                 key,
+                 {ctor: "_Tuple2"
+                 ,_0: Basics.fst(maybePair._0)
+                 ,_1: $new},
+                 ud);
+               case "Nothing":
+               return A3(Dict.insert,
+                 key,
+                 {ctor: "_Tuple2"
+                 ,_0: $new
+                 ,_1: $new},
+                 ud);}
+            _E.Case($moduleName,
+            "between lines 67 and 69");
+         }();
+      }();
+   });
+   var UnitInfo = F9(function (a,
+   b,
+   c,
+   d,
+   e,
+   f,
+   g,
+   h,
+   i) {
+      return {_: {}
+             ,animID: c
+             ,facing: h
+             ,posX: e
+             ,posY: f
+             ,posZ: g
+             ,teamID: b
+             ,typeID: d
+             ,unitID: a
+             ,valueList: i};
+   });
+   var Unit = F8(function (a,
+   b,
+   c,
+   d,
+   e,
+   f,
+   g,
+   h) {
+      return {_: {}
+             ,animID: a
+             ,facing: f
+             ,posX: c
+             ,posY: d
+             ,posZ: e
+             ,time: g
+             ,typeID: b
+             ,values: h};
+   });
+   var Game = F5(function (a,
+   b,
+   c,
+   d,
+   e) {
+      return {_: {}
+             ,camera: b
+             ,grid: a
+             ,input: c
+             ,mode: d
+             ,units: e};
+   });
+   var gridH = 1024;
+   var gridW = 1024;
+   var gridWH = {ctor: "_Tuple2"
+                ,_0: gridW
+                ,_1: gridH};
+   var initCamera = {_: {}
+                    ,camAngle: 0
+                    ,camSpeed: 0
+                    ,posX: gridW / 2
+                    ,posY: gridH / 2};
+   var initGame = {_: {}
+                  ,camera: initCamera
+                  ,grid: A2(Grid.make,gridWH,0)
+                  ,input: initInput
+                  ,mode: Free
+                  ,units: Dict.empty};
+   _elm.Data.values = {_op: _op
+                      ,gridW: gridW
+                      ,gridH: gridH
+                      ,gridWH: gridWH
+                      ,initGame: initGame
+                      ,updateUnitDict: updateUnitDict
+                      ,initCamera: initCamera
+                      ,initInput: initInput
+                      ,Free: Free
+                      ,MoveCamera: MoveCamera
+                      ,Game: Game
+                      ,Unit: Unit
+                      ,UnitInfo: UnitInfo
+                      ,Camera: Camera
+                      ,Input: Input};
+   return _elm.Data.values;
+};

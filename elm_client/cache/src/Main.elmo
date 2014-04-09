@@ -1,0 +1,223 @@
+Elm.Main = Elm.Main || {};
+Elm.Main.make = function (_elm) {
+   "use strict";
+   _elm.Main = _elm.Main || {};
+   if (_elm.Main.values)
+   return _elm.Main.values;
+   var _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   _E = _N.Error.make(_elm),
+   _J = _N.JavaScript.make(_elm),
+   $moduleName = "Main";
+   var Basics = Elm.Basics.make(_elm);
+   var Color = Elm.Color.make(_elm);
+   var Data = Elm.Data.make(_elm);
+   var Dict = Elm.Dict.make(_elm);
+   var Graphics = Graphics || {};
+   Graphics.Collage = Elm.Graphics.Collage.make(_elm);
+   var Graphics = Graphics || {};
+   Graphics.Element = Elm.Graphics.Element.make(_elm);
+   var Grid = Elm.Grid.make(_elm);
+   var List = Elm.List.make(_elm);
+   var Maybe = Elm.Maybe.make(_elm);
+   var Native = Native || {};
+   Native.Ports = Elm.Native.Ports.make(_elm);
+   var Signal = Elm.Signal.make(_elm);
+   var String = Elm.String.make(_elm);
+   var Text = Elm.Text.make(_elm);
+   var Time = Elm.Time.make(_elm);
+   var Touch = Elm.Touch.make(_elm);
+   var Transform2D = Elm.Transform2D.make(_elm);
+   var Window = Elm.Window.make(_elm);
+   var _op = {};
+   var display = F2(function (g,
+   _v0) {
+      return function () {
+         switch (_v0.ctor)
+         {case "_Tuple2":
+            return function () {
+                 var cameraY = g.camera.posY;
+                 var cameraX = g.camera.posX;
+                 var units = Graphics.Collage.group(List.map(function (u) {
+                    return Graphics.Collage.move({ctor: "_Tuple2"
+                                                 ,_0: u.posX * 16 - cameraX
+                                                 ,_1: u.posY * 16 - cameraY})(A2(Graphics.Collage.filled,
+                    Color.black,
+                    Graphics.Collage.circle(16)));
+                 })(A2(List.map,
+                 Basics.snd,
+                 Dict.values(g.units))));
+                 var screenH = Basics.toFloat(_v0._1);
+                 var screenW = Basics.toFloat(_v0._0);
+                 var slice = A3(Basics.flip,
+                 Grid.sliceBounds,
+                 g.grid,
+                 {ctor: "_Tuple4"
+                 ,_0: Basics.ceiling(screenW / 64 + 1)
+                 ,_1: Basics.ceiling(screenH / 64 + 1)
+                 ,_2: Basics.floor((cameraX - screenW / 2) / 64)
+                 ,_3: Basics.floor((cameraY - screenH / 2) / 64)});
+                 var tiles = Graphics.Collage.group(A2(List.map,
+                 function (_v4) {
+                    return function () {
+                       switch (_v4.ctor)
+                       {case "_Tuple3":
+                          return Graphics.Collage.move({ctor: "_Tuple2"
+                                                       ,_0: Basics.toFloat(_v4._0) * 64 - cameraX
+                                                       ,_1: Basics.toFloat(_v4._1) * 64 - cameraY})(Graphics.Collage.filled(A3(Color.rgb,
+                            A2(Basics.mod,_v4._0,255),
+                            A2(Basics.mod,_v4._1,255),
+                            A2(Basics.mod,
+                            _v4._0 * _v4._1,
+                            255)))(Graphics.Collage.square(65)));}
+                       _E.Case($moduleName,
+                       "between lines 106 and 109");
+                    }();
+                 },
+                 slice));
+                 return A3(Graphics.Collage.collage,
+                 _v0._0,
+                 _v0._1,
+                 _J.toList([tiles,units]));
+              }();}
+         _E.Case($moduleName,
+         "between lines 94 and 116");
+      }();
+   });
+   var updateUnits = F2(function (i,
+   g) {
+      return _U.replace([["units"
+                         ,A3(List.foldl,
+                         Data.updateUnitDict(i.unitData.time),
+                         g.units,
+                         i.unitData.unitInfos)]],
+      g);
+   });
+   var updateGame = F2(function (i,
+   g) {
+      return function () {
+         var _v9 = g.mode;
+         switch (_v9.ctor)
+         {case "Free":
+            return i.middle ? function () {
+                 var mode = Data.MoveCamera({_: {}
+                                            ,cx: g.camera.posX
+                                            ,cy: g.camera.posY
+                                            ,mx: i.mouse.posX
+                                            ,my: i.mouse.posY});
+                 return A2(updateUnits,
+                 i,
+                 _U.replace([["input",i]
+                            ,["mode",mode]],
+                 g));
+              }() : A2(updateUnits,
+              i,
+              _U.replace([["input",i]],g));
+            case "MoveCamera":
+            return i.middle ? function () {
+                 var cam = g.camera;
+                 var cam$ = _U.replace([["posX"
+                                        ,_v9._0.cx - (g.input.mouse.posX - _v9._0.mx)]
+                                       ,["posY"
+                                        ,_v9._0.cy + (g.input.mouse.posY - _v9._0.my)]],
+                 cam);
+                 return A2(updateUnits,
+                 i,
+                 _U.replace([["input",i]
+                            ,["camera",cam$]],
+                 g));
+              }() : A2(updateUnits,
+              i,
+              _U.replace([["input",i]
+                         ,["mode",Data.Free]],
+              g));}
+         _E.Case($moduleName,
+         "between lines 50 and 79");
+      }();
+   });
+   var unitData = Native.Ports.portIn("unitData",
+   Native.Ports.incomingSignal(function (v) {
+      return typeof v === "object" && "time" in v && "unitInfos" in v ? {_: {}
+                                                                        ,time: typeof v.time === "number" ? _J.toFloat(v.time) : _E.raise("invalid input, expecting JSNumber but got " + v.time)
+                                                                        ,unitInfos: typeof v.unitInfos === "object" && v.unitInfos instanceof Array ? _J.toList(v.unitInfos.map(function (v) {
+                                                                           return typeof v === "object" && "unitID" in v && "teamID" in v && "animID" in v && "typeID" in v && "posX" in v && "posY" in v && "posZ" in v && "facing" in v && "valueList" in v ? {_: {}
+                                                                                                                                                                                                                                                                ,unitID: typeof v.unitID === "number" ? _J.toInt(v.unitID) : _E.raise("invalid input, expecting JSNumber but got " + v.unitID)
+                                                                                                                                                                                                                                                                ,teamID: typeof v.teamID === "number" ? _J.toInt(v.teamID) : _E.raise("invalid input, expecting JSNumber but got " + v.teamID)
+                                                                                                                                                                                                                                                                ,animID: typeof v.animID === "number" ? _J.toInt(v.animID) : _E.raise("invalid input, expecting JSNumber but got " + v.animID)
+                                                                                                                                                                                                                                                                ,typeID: typeof v.typeID === "number" ? _J.toInt(v.typeID) : _E.raise("invalid input, expecting JSNumber but got " + v.typeID)
+                                                                                                                                                                                                                                                                ,posX: typeof v.posX === "number" ? _J.toFloat(v.posX) : _E.raise("invalid input, expecting JSNumber but got " + v.posX)
+                                                                                                                                                                                                                                                                ,posY: typeof v.posY === "number" ? _J.toFloat(v.posY) : _E.raise("invalid input, expecting JSNumber but got " + v.posY)
+                                                                                                                                                                                                                                                                ,posZ: typeof v.posZ === "number" ? _J.toFloat(v.posZ) : _E.raise("invalid input, expecting JSNumber but got " + v.posZ)
+                                                                                                                                                                                                                                                                ,facing: typeof v.facing === "number" ? _J.toFloat(v.facing) : _E.raise("invalid input, expecting JSNumber but got " + v.facing)
+                                                                                                                                                                                                                                                                ,valueList: typeof v.valueList === "object" && v.valueList instanceof Array ? _J.toList(v.valueList.map(function (v) {
+                                                                                                                                                                                                                                                                   return typeof v === "object" && "k" in v && "v" in v ? {_: {}
+                                                                                                                                                                                                                                                                                                                          ,k: typeof v.k === "number" ? _J.toInt(v.k) : _E.raise("invalid input, expecting JSNumber but got " + v.k)
+                                                                                                                                                                                                                                                                                                                          ,v: typeof v.v === "number" ? _J.toInt(v.v) : _E.raise("invalid input, expecting JSNumber but got " + v.v)} : _E.raise("invalid input, expecting JSObject [\"k\",\"v\"] but got " + v);
+                                                                                                                                                                                                                                                                })) : _E.raise("invalid input, expecting JSArray but got " + v.valueList)} : _E.raise("invalid input, expecting JSObject [\"unitID\",\"teamID\",\"animID\",\"typeID\",\"posX\",\"posY\",\"posZ\",\"facing\",\"valueList\"] but got " + v);
+                                                                        })) : _E.raise("invalid input, expecting JSArray but got " + v.unitInfos)} : _E.raise("invalid input, expecting JSObject [\"time\",\"unitInfos\"] but got " + v);
+   }));
+   var middleDown = Native.Ports.portIn("middleDown",
+   Native.Ports.incomingSignal(function (v) {
+      return typeof v === "boolean" ? _J.toBool(v) : _E.raise("invalid input, expecting JSBoolean but got " + v);
+   }));
+   var rightDown = Native.Ports.portIn("rightDown",
+   Native.Ports.incomingSignal(function (v) {
+      return typeof v === "boolean" ? _J.toBool(v) : _E.raise("invalid input, expecting JSBoolean but got " + v);
+   }));
+   var leftDown = Native.Ports.portIn("leftDown",
+   Native.Ports.incomingSignal(function (v) {
+      return typeof v === "boolean" ? _J.toBool(v) : _E.raise("invalid input, expecting JSBoolean but got " + v);
+   }));
+   var mousePosition = Native.Ports.portIn("mousePosition",
+   Native.Ports.incomingSignal(function (v) {
+      return typeof v === "object" && "posX" in v && "posY" in v ? {_: {}
+                                                                   ,posX: typeof v.posX === "number" ? _J.toFloat(v.posX) : _E.raise("invalid input, expecting JSNumber but got " + v.posX)
+                                                                   ,posY: typeof v.posY === "number" ? _J.toFloat(v.posY) : _E.raise("invalid input, expecting JSNumber but got " + v.posY)} : _E.raise("invalid input, expecting JSObject [\"posX\",\"posY\"] but got " + v);
+   }));
+   var inputS = A2(Signal._op["~"],
+   A2(Signal._op["~"],
+   A2(Signal._op["~"],
+   A2(Signal._op["~"],
+   A2(Signal._op["~"],
+   A2(Signal._op["<~"],
+   F6(function (left,
+   mid,
+   right,
+   pos,
+   touches,
+   unitData) {
+      return {_: {}
+             ,left: left
+             ,middle: mid
+             ,mouse: pos
+             ,right: right
+             ,touches: touches
+             ,unitData: unitData};
+   }),
+   leftDown),
+   middleDown),
+   rightDown),
+   mousePosition),
+   Touch.touches),
+   unitData);
+   var gameS = A3(Signal.foldp,
+   updateGame,
+   Data.initGame,
+   inputS);
+   var main = A2(Signal._op["~"],
+   A2(Signal._op["<~"],
+   display,
+   A2(Signal.sampleOn,
+   Time.fps(10),
+   gameS)),
+   Window.dimensions);
+   _elm.Main.values = {_op: _op
+                      ,inputS: inputS
+                      ,updateGame: updateGame
+                      ,updateUnits: updateUnits
+                      ,gameS: gameS
+                      ,main: main
+                      ,display: display};
+   return _elm.Main.values;
+};
