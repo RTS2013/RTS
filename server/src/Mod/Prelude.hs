@@ -38,24 +38,6 @@ defaultUnit unitS = Unit
     , unitBehaviors = IM.empty
     }
 
-makeTeam :: teamS -> Int -> Trainer (Game gameS teamS unitS tileS) ()
-makeTeam teamS i = do
-    game <- training
-    stateRef <- Ref.make teamS
-    countRef <- Ref.make 0
-    behavRef <- Ref.make IM.empty
-    grid     <- Grid.make (0,0) (-1)
-    noUnits  <- HT.make 10
-    let t = Team
-            { teamID = i
-            , teamState = stateRef
-            , teamVision = grid
-            , teamSpawnCount = countRef
-            , teamUnits = noUnits
-            , teamBehaviors = behavRef
-            } 
-    V.write (gameTeams game) i t
-
 makeUnit :: 
     Unit gameS teamS unitS tileS -> 
     Int ->

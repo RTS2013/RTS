@@ -89,6 +89,8 @@ gameS = foldp updateGame initGame inputS
 main : Signal Element
 main = display <~ (sampleOn (fps 10) gameS) ~ Window.dimensions
 
+cthulhu = toForm (image 64 64 "build/resources/pure_evil.png")
+
 display : Game -> (Int,Int) -> Element
 display g (w,h) =
     let screenW = toFloat w
@@ -110,7 +112,7 @@ display g (w,h) =
                     ) ) slice
         units = 
             map snd (Dict.values g.units)
-            |> map (\u -> filled black (circle 16) |> move (u.posX * 16 - cameraX, u.posY * 16 - cameraY)) 
+            |> filter (\u -> (u.posX * 64 - cameraX)^2 + (u.posY * 64 - cameraY)^2 < (screenW/2)^2 + (screenH/2)^2)
+            |> map (\u -> cthulhu |> move (u.posX * 64 - cameraX, u.posY * 64 - cameraY)) 
             |> group in
-
     collage w h [tiles,units]

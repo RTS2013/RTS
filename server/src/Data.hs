@@ -4,9 +4,11 @@
 module Data where
 
 import           Blaze.ByteString.Builder
+import           Control.Concurrent.STM.TVar
 import           Data.Array.ST (newArray, readArray, MArray, STUArray)
 import           Data.Array.Unsafe (castSTUArray)
 import           Data.Binary (Binary, Get, put, get)
+import           Data.ByteString.Lazy (ByteString)
 import           Data.HashTable.IO (BasicHashTable)
 import           Data.Int (Int32)
 import           Data.IntMap (IntMap)
@@ -44,6 +46,8 @@ data Team gameS teamS unitS tileS = Team
     , teamSpawnCount :: !(Ref Int) -- Incremented with each new unit
     , teamUnits      :: !(HashTable (Unit gameS teamS unitS tileS))
     , teamBehaviors  :: !(Ref (IntMap (Behavior (Team gameS teamS unitS tileS) (Change ()))))
+    , teamDiscovered :: !(Ref (Seq (Int,Int)))
+    , teamSendTiles  :: !(TVar [(Int,Int)])
     } 
 
 data Unit gameS teamS unitS tileS = Unit

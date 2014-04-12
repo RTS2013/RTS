@@ -171,8 +171,8 @@ Elm.Data.make = function (_elm) {
    var initCamera = {_: {}
                     ,camAngle: 0
                     ,camSpeed: 0
-                    ,posX: gridW / 2
-                    ,posY: gridH / 2};
+                    ,posX: gridW / 2 * 64
+                    ,posY: gridH / 2 * 64};
    var initGame = {_: {}
                   ,camera: initCamera
                   ,grid: A2(Grid.make,gridWH,0)

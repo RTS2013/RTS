@@ -18,7 +18,7 @@
     <script type="text/javascript">
         var embed = document.getElementById('embed');
 
-        var elm = Elm.embed(Elm.Main, embed, 
+        var elm = Elm.fullscreen(Elm.Main, 
                 { mousePosition: {posX:0,posY:0}
                 , leftDown: false
                 , rightDown: false
@@ -27,7 +27,7 @@
                 });
 
         window.onload = function() {
-            embed.addEventListener('contextmenu', function(e) {
+            window.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 if (embed.requestFullscreen) {
                 embed.requestFullscreen();
@@ -41,17 +41,11 @@
             })
         }
 
-        embed.onmousemove = function(e) {
+        window.onmousemove = function(e) {
             elm.ports.mousePosition.send({posX:e.clientX,posY:e.clientY});
         }
 
-        embed.onmouseout = function() {
-            elm.ports.leftDown.send(false);
-            elm.ports.middleDown.send(false);
-            elm.ports.rightDown.send(false);
-        }
-
-        embed.onmousedown = function(e) {
+        window.onmousedown = function(e) {
             switch (e.button) {
                 case 0: 
                     elm.ports.leftDown.send(true);
@@ -67,7 +61,7 @@
             }
         }
 
-        embed.onmouseup = function(e) {
+        window.onmouseup = function(e) {
             switch (e.button) {
                 case 0: 
                     elm.ports.leftDown.send(false);
@@ -90,7 +84,7 @@
         chef.putString(pass);
         chef.trim();
 
-        var conn = new WebSocket('ws://localhost:4444');
+        var conn = new WebSocket('ws://76.121.129.76:4444');
         conn.binaryType = "arraybuffer";
 
         conn.onopen = function(){

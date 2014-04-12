@@ -9,17 +9,14 @@ import qualified Data.IntMap         as IM
 import qualified Grid.UnboxedMutable as G
 import qualified KDTree              as KDT
 import qualified Data.Map            as M
-import Data.Monoid ((<>))
-import Data.Binary (Get,get)
-import Data.IORef
--- import Control.Concurrent.ParallelIO.Global (parallel,stopGlobalPool)
-import Data.Int (Int64)
-import Data.Sequence ((|>),singleton)
-import Control.Concurrent (threadDelay)
-import Data.Time.Clock (diffUTCTime,getCurrentTime)
-import MIO.MIO
-import Mod.Prelude (makeTeam)
-import Data
+import           Data.Monoid ((<>))
+import           Data.Binary (Get,get)
+import           Data.IORef
+import           Control.Concurrent.ParallelIO.Global (parallel,stopGlobalPool)
+import           Data.Sequence ((|>),singleton,empty)
+import           Looping (loopImpure)
+import           MIO.MIO
+import           Data
 import           Competition (Name)
 import qualified Competition as Cptn
 import qualified Data.Vector as V
@@ -48,23 +45,12 @@ main = do
             , gameBehaviors = behaveRef
             }
     -- Add default teams to game
-    flip train game $ mapM_ (makeTeam defaultTeamState) [0..length namesAndPasses - 1]
+    mapM_ (makeTeam game defaultTeamState) [0..length namesAndPasses - 1]
     -- Run Mod on game
     flip train game $ runMod (length namesAndPasses)
     -- Start game
-    loop 10 stepGame game
-    -- stopGlobalPool
-
-loop :: Int64 -> (a -> IO ()) -> a -> IO ()
-loop fps f game = getCurrentTime >>= actualLoop 1
-    where
-    actualLoop steps time = do
-        f game
-        timeNow <- getCurrentTime
-        threadDelay $ max 0 $ fromIntegral $ 
-            (steps * 1000000 `div` fps) - 
-            ceiling (diffUTCTime timeNow time * 1000000)
-        actualLoop (steps + 1) time 
+    loopImpure 10 stepGame game
+    stopGlobalPool
 
 stepGame :: Game gameS teamS unitS tileS -> IO ()
 stepGame game = do
@@ -118,3 +104,24 @@ applyControlMessage game (OrderMsg (Orders shift ids order),player) = do
     where
     teams = gameTeams game
 applyControlMessage _ _ = return ()
+
+makeTeam :: Game gameS teamS unitS tileS -> teamS -> Int -> IO ()
+makeTeam game teamS i = do
+    stateRef <- newIORef teamS
+    countRef <- newIORef 0
+    behavRef <- newIORef IM.empty
+    grid     <- G.make (0,0) (-1)
+    noUnits  <- HT.newSized 10
+    discovered <- newIORef empty
+    sendTilesVar <- newTVarIO []
+    let t = Team
+            { teamID = i
+            , teamState = stateRef
+            , teamVision = grid
+            , teamSpawnCount = countRef
+            , teamUnits = noUnits
+            , teamBehaviors = behavRef
+            , teamDiscovered = discovered
+            , teamSendTiles  = sendTilesVar
+            } 
+    MV.write (gameTeams game) i t

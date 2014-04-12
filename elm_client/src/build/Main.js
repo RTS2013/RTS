@@ -31,6 +31,10 @@ Elm.Main.make = function (_elm) {
    var Transform2D = Elm.Transform2D.make(_elm);
    var Window = Elm.Window.make(_elm);
    var _op = {};
+   var cthulhu = Graphics.Collage.toForm(A3(Graphics.Element.image,
+   64,
+   64,
+   "build/resources/pure_evil.png"));
    var display = F2(function (g,
    _v0) {
       return function () {
@@ -39,15 +43,6 @@ Elm.Main.make = function (_elm) {
             return function () {
                  var cameraY = g.camera.posY;
                  var cameraX = g.camera.posX;
-                 var units = Graphics.Collage.group(List.map(function (u) {
-                    return Graphics.Collage.move({ctor: "_Tuple2"
-                                                 ,_0: u.posX * 16 - cameraX
-                                                 ,_1: u.posY * 16 - cameraY})(A2(Graphics.Collage.filled,
-                    Color.black,
-                    Graphics.Collage.circle(16)));
-                 })(A2(List.map,
-                 Basics.snd,
-                 Dict.values(g.units))));
                  var screenH = Basics.toFloat(_v0._1);
                  var screenW = Basics.toFloat(_v0._0);
                  var slice = A3(Basics.flip,
@@ -72,17 +67,31 @@ Elm.Main.make = function (_elm) {
                             _v4._0 * _v4._1,
                             255)))(Graphics.Collage.square(65)));}
                        _E.Case($moduleName,
-                       "between lines 106 and 109");
+                       "between lines 108 and 111");
                     }();
                  },
                  slice));
+                 var units = Graphics.Collage.group(List.map(function (u) {
+                    return Graphics.Collage.move({ctor: "_Tuple2"
+                                                 ,_0: u.posX * 64 - cameraX
+                                                 ,_1: u.posY * 64 - cameraY})(cthulhu);
+                 })(List.filter(function (u) {
+                    return _U.cmp(Math.pow(u.posX * 64 - cameraX,
+                    2) + Math.pow(u.posY * 64 - cameraY,
+                    2),
+                    Math.pow(screenW / 2,
+                    2) + Math.pow(screenH / 2,
+                    2)) < 0;
+                 })(A2(List.map,
+                 Basics.snd,
+                 Dict.values(g.units)))));
                  return A3(Graphics.Collage.collage,
                  _v0._0,
                  _v0._1,
                  _J.toList([tiles,units]));
               }();}
          _E.Case($moduleName,
-         "between lines 94 and 116");
+         "between lines 96 and 118");
       }();
    });
    var updateUnits = F2(function (i,
@@ -218,6 +227,7 @@ Elm.Main.make = function (_elm) {
                       ,updateUnits: updateUnits
                       ,gameS: gameS
                       ,main: main
+                      ,cthulhu: cthulhu
                       ,display: display};
    return _elm.Main.values;
 };Elm.Data = Elm.Data || {};
@@ -393,8 +403,8 @@ Elm.Data.make = function (_elm) {
    var initCamera = {_: {}
                     ,camAngle: 0
                     ,camSpeed: 0
-                    ,posX: gridW / 2
-                    ,posY: gridH / 2};
+                    ,posX: gridW / 2 * 64
+                    ,posY: gridH / 2 * 64};
    var initGame = {_: {}
                   ,camera: initCamera
                   ,grid: A2(Grid.make,gridWH,0)

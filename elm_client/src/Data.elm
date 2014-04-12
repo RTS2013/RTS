@@ -77,8 +77,8 @@ type Camera =
 
 initCamera : Camera
 initCamera =
-    { posX = gridW / 2
-    , posY = gridH / 2
+    { posX = gridW / 2 * 64
+    , posY = gridH / 2 * 64
     , camSpeed = 0
     , camAngle = 0
     } 
