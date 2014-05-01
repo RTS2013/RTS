@@ -115,14 +115,14 @@ makeFrom :: (Floating n, Ord n, Ord a) => KDTree n a -> [a] -> KDTree n a
 makeFrom (KDTree getters radius _) xs = make radius getters xs
 
 nearby :: (Floating n, Ord n, Ord a) => KDTree n a -> n -> [n] -> Set a
-nearby (KDTree getters _ kdt) r ns =
+nearby (KDTree getters radius kdt) r ns =
         if length getters == length ns
         then searchKDT leftRightChecks
         else error "Search dimensionality did not match KD-Tree dimensionality."
     where
         dims = length ns
         fns = zip getters ns
-        rangeFilter a = sum (map (\(f,n) -> (f a-n)^(2::Int)) fns) <= r^dims
+        rangeFilter a = sum (map (\(f,n) -> (f a-n)^(2::Int)) fns) <= (r+radius a)^dims
         leftRightChecks = map (\n v -> (n - r <= v, n + r >= v)) ns
         searchKDT checks = search kdt $ cycle checks
             where
@@ -135,14 +135,14 @@ nearby (KDTree getters _ kdt) r ns =
             search _ _ = error "This shouldn't have happened."
 
 nearbyMatching :: (Floating n, Ord n, Ord a) => KDTree n a -> (a -> Bool) -> n -> [n] -> Set a
-nearbyMatching (KDTree getters _ kdt) predicate r ns =
+nearbyMatching (KDTree getters radius kdt) predicate r ns =
         if length getters == length ns
         then searchKDT leftRightChecks
         else error "Search dimensionality did not match KD-Tree dimensionality."
     where
         dims = length ns
         fns = zip getters ns
-        rangeFilter a = sum (map (\(f,n) -> (f a-n)^(2::Int)) fns) <= r^dims
+        rangeFilter a = sum (map (\(f,n) -> (f a-n)^(2::Int)) fns) <= (r+radius a)^dims
         leftRightChecks = map (\n v -> (n - r <= v, n + r >= v)) ns
         searchKDT checks = search kdt $ cycle checks
             where
