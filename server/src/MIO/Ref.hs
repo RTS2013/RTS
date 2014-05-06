@@ -20,21 +20,13 @@ class (Monad m) => Write m where
 	write :: Ref a -> a -> m ()
 	modify :: Ref a -> (a -> a) -> m ()
 
-instance Read (Trainer s) where
-	read r = Trainer $! \_ -> readIORef r
+instance Read (Change s) where
+	read r = Change $! \_ -> readIORef r
 
 instance Read (Behavior s) where
 	read r = Behavior $! \_ -> readIORef r
 
-instance Read Change where
-	read a = Change $! readIORef a
-
-instance Write (Trainer s) where
-	make a = Trainer $! \_ -> newIORef a
-	write ref a = Trainer $! \_ -> writeIORef ref a
-	modify ref f = Trainer $! \_ -> modifyIORef' ref f
-
-instance Write Change where
-	make a = Change $! newIORef a
-	write ref a = Change $! writeIORef ref a
-	modify ref f = Change $! modifyIORef' ref f
+instance Write (Change s) where
+	make a = Change $! \_ -> newIORef a
+	write ref a = Change $! \_ -> writeIORef ref a
+	modify ref f = Change $! \_ -> modifyIORef' ref f

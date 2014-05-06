@@ -10,7 +10,7 @@ move ::
     (X,Y,Radius,Weight) -> -- Entity being moved
     (X,Y) -> -- Desination
     Distance -> -- Distance to move
-    [(X,Y,Radius,Weight)] ->
+    [(X,Y,Radius,Weight)] -> -- Entities in range
     (X,Y) -- New coordinates for entity
 move (sx,sy,r,w) (dx,dy) dist nearby = newXY $ push inRange
     where

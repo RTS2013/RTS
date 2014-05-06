@@ -18,24 +18,15 @@ class (Monad m) => Write m where
     write :: M.IOVector a -> Int -> a -> m ()
     modify :: M.IOVector a -> Int -> (a -> a) -> m ()
 
-instance Read (Trainer s) where
-    read v i = Trainer $! \_ -> if i < M.length v && i >= 0 then M.read v i >>= 
+instance Read (Change s) where
+    read v i = Change $! \_ -> if i < M.length v && i >= 0 then M.read v i >>= 
                \a -> (return $! Just $! a) else return Nothing
 
 instance Read (Behavior s) where
     read v i = Behavior $! \_ -> if i < M.length v && i >= 0 then M.read v i >>= 
                \a -> (return $! Just $! a) else return Nothing
 
-instance Read Change where
-    read v i = Change $! if i < M.length v && i >= 0 then M.read v i >>= 
-               \a -> (return $! Just $! a) else return Nothing
-
-instance Write (Trainer s) where
-    make n a = Trainer $! \_ -> M.replicate n a
-    write v i a = Trainer $! \_ -> M.write v i a
-    modify v i f = read v i >>= maybe (return ()) (write v i . f)
-
-instance Write Change where
-    make n a = Change $! M.replicate n a
-    write v i a = Change $! M.write v i a
+instance Write (Change s) where
+    make n a = Change $! \_ -> M.replicate n a
+    write v i a = Change $! \_ -> M.write v i a
     modify v i f = read v i >>= maybe (return ()) (write v i . f)

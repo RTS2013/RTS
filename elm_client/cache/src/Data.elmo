@@ -8,7 +8,6 @@ Elm.Data.make = function (_elm) {
    _U = _N.Utils.make(_elm),
    _L = _N.List.make(_elm),
    _E = _N.Error.make(_elm),
-   _J = _N.JavaScript.make(_elm),
    $moduleName = "Data";
    var Basics = Elm.Basics.make(_elm);
    var Color = Elm.Color.make(_elm);
@@ -20,6 +19,8 @@ Elm.Data.make = function (_elm) {
    var Grid = Elm.Grid.make(_elm);
    var List = Elm.List.make(_elm);
    var Maybe = Elm.Maybe.make(_elm);
+   var Native = Native || {};
+   Native.Json = Elm.Native.Json.make(_elm);
    var Native = Native || {};
    Native.Ports = Elm.Native.Ports.make(_elm);
    var Signal = Elm.Signal.make(_elm);
@@ -39,10 +40,10 @@ Elm.Data.make = function (_elm) {
                    ,middle: false
                    ,mouse: {_: {},posX: 0,posY: 0}
                    ,right: false
-                   ,touches: _J.toList([])
+                   ,touches: _L.fromArray([])
                    ,unitData: {_: {}
                               ,time: 0
-                              ,unitInfos: _J.toList([])}};
+                              ,unitInfos: _L.fromArray([])}};
    var Input = F6(function (a,
    b,
    c,
@@ -89,7 +90,7 @@ Elm.Data.make = function (_elm) {
          var key = {ctor: "_Tuple2"
                    ,_0: ui.unitID
                    ,_1: ui.teamID};
-         var maybePair = A2(Dict.lookup,
+         var maybePair = A2(Dict.get,
          key,
          ud);
          return function () {

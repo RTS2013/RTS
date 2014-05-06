@@ -2,7 +2,6 @@
 <html>
     <head>
         <script type="text/javascript" src="build/dependencies/elm-runtime.js"></script>
-        <script type="text/javascript" src="build/dependencies/Array.js"></script>
         <script type="text/javascript" src="build/dependencies/StringView.js"></script>
         <script type="text/javascript" src="build/dependencies/Chef.js"></script>
         <script type="text/javascript" src="build/dependencies/Cereal.js"></script>
@@ -77,18 +76,14 @@
             }
         }
 
-        var name = 'Zach';
-        var pass = 'Kittens';
-        var chef = new Chef();
-        chef.putString(name);
-        chef.putString(pass);
-        chef.trim();
-
         var conn = new WebSocket('ws://76.121.129.76:4444');
+        var chef = new Chef();
         conn.binaryType = "arraybuffer";
 
         conn.onopen = function(){
             console.log('Connection open.');
+            chef.putString('Zach');
+            chef.putString('Kittens');
             conn.send(chef.ab);
         }
 

@@ -11,7 +11,6 @@ import RIO.Prelude
 import Control.Monad (foldM)
 import qualified RIO.Grid as G
 
-
 -- Returns list of newly discoevered tiles after adding vision
 addVision :: G.MGrid Int -> (Int -> Int -> RIO ReadWrite Bool) -> (Int,Int) -> [(Int,Int)] -> RIO ReadWrite [(Int,Int)]
 addVision grid isOpen start xs = do

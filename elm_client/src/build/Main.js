@@ -8,7 +8,6 @@ Elm.Main.make = function (_elm) {
    _U = _N.Utils.make(_elm),
    _L = _N.List.make(_elm),
    _E = _N.Error.make(_elm),
-   _J = _N.JavaScript.make(_elm),
    $moduleName = "Main";
    var Basics = Elm.Basics.make(_elm);
    var Color = Elm.Color.make(_elm);
@@ -21,6 +20,8 @@ Elm.Main.make = function (_elm) {
    var Grid = Elm.Grid.make(_elm);
    var List = Elm.List.make(_elm);
    var Maybe = Elm.Maybe.make(_elm);
+   var Native = Native || {};
+   Native.Json = Elm.Native.Json.make(_elm);
    var Native = Native || {};
    Native.Ports = Elm.Native.Ports.make(_elm);
    var Signal = Elm.Signal.make(_elm);
@@ -88,7 +89,7 @@ Elm.Main.make = function (_elm) {
                  return A3(Graphics.Collage.collage,
                  _v0._0,
                  _v0._1,
-                 _J.toList([tiles,units]));
+                 _L.fromArray([tiles,units]));
               }();}
          _E.Case($moduleName,
          "between lines 96 and 118");
@@ -148,41 +149,41 @@ Elm.Main.make = function (_elm) {
    var unitData = Native.Ports.portIn("unitData",
    Native.Ports.incomingSignal(function (v) {
       return typeof v === "object" && "time" in v && "unitInfos" in v ? {_: {}
-                                                                        ,time: typeof v.time === "number" ? _J.toFloat(v.time) : _E.raise("invalid input, expecting JSNumber but got " + v.time)
-                                                                        ,unitInfos: typeof v.unitInfos === "object" && v.unitInfos instanceof Array ? _J.toList(v.unitInfos.map(function (v) {
+                                                                        ,time: typeof v.time === "number" ? v.time : _E.raise("invalid input, expecting JSNumber but got " + v.time)
+                                                                        ,unitInfos: _U.isJSArray(v.unitInfos) ? _L.fromArray(v.unitInfos.map(function (v) {
                                                                            return typeof v === "object" && "unitID" in v && "teamID" in v && "animID" in v && "typeID" in v && "posX" in v && "posY" in v && "posZ" in v && "facing" in v && "valueList" in v ? {_: {}
-                                                                                                                                                                                                                                                                ,unitID: typeof v.unitID === "number" ? _J.toInt(v.unitID) : _E.raise("invalid input, expecting JSNumber but got " + v.unitID)
-                                                                                                                                                                                                                                                                ,teamID: typeof v.teamID === "number" ? _J.toInt(v.teamID) : _E.raise("invalid input, expecting JSNumber but got " + v.teamID)
-                                                                                                                                                                                                                                                                ,animID: typeof v.animID === "number" ? _J.toInt(v.animID) : _E.raise("invalid input, expecting JSNumber but got " + v.animID)
-                                                                                                                                                                                                                                                                ,typeID: typeof v.typeID === "number" ? _J.toInt(v.typeID) : _E.raise("invalid input, expecting JSNumber but got " + v.typeID)
-                                                                                                                                                                                                                                                                ,posX: typeof v.posX === "number" ? _J.toFloat(v.posX) : _E.raise("invalid input, expecting JSNumber but got " + v.posX)
-                                                                                                                                                                                                                                                                ,posY: typeof v.posY === "number" ? _J.toFloat(v.posY) : _E.raise("invalid input, expecting JSNumber but got " + v.posY)
-                                                                                                                                                                                                                                                                ,posZ: typeof v.posZ === "number" ? _J.toFloat(v.posZ) : _E.raise("invalid input, expecting JSNumber but got " + v.posZ)
-                                                                                                                                                                                                                                                                ,facing: typeof v.facing === "number" ? _J.toFloat(v.facing) : _E.raise("invalid input, expecting JSNumber but got " + v.facing)
-                                                                                                                                                                                                                                                                ,valueList: typeof v.valueList === "object" && v.valueList instanceof Array ? _J.toList(v.valueList.map(function (v) {
+                                                                                                                                                                                                                                                                ,unitID: typeof v.unitID === "number" ? v.unitID : _E.raise("invalid input, expecting JSNumber but got " + v.unitID)
+                                                                                                                                                                                                                                                                ,teamID: typeof v.teamID === "number" ? v.teamID : _E.raise("invalid input, expecting JSNumber but got " + v.teamID)
+                                                                                                                                                                                                                                                                ,animID: typeof v.animID === "number" ? v.animID : _E.raise("invalid input, expecting JSNumber but got " + v.animID)
+                                                                                                                                                                                                                                                                ,typeID: typeof v.typeID === "number" ? v.typeID : _E.raise("invalid input, expecting JSNumber but got " + v.typeID)
+                                                                                                                                                                                                                                                                ,posX: typeof v.posX === "number" ? v.posX : _E.raise("invalid input, expecting JSNumber but got " + v.posX)
+                                                                                                                                                                                                                                                                ,posY: typeof v.posY === "number" ? v.posY : _E.raise("invalid input, expecting JSNumber but got " + v.posY)
+                                                                                                                                                                                                                                                                ,posZ: typeof v.posZ === "number" ? v.posZ : _E.raise("invalid input, expecting JSNumber but got " + v.posZ)
+                                                                                                                                                                                                                                                                ,facing: typeof v.facing === "number" ? v.facing : _E.raise("invalid input, expecting JSNumber but got " + v.facing)
+                                                                                                                                                                                                                                                                ,valueList: _U.isJSArray(v.valueList) ? _L.fromArray(v.valueList.map(function (v) {
                                                                                                                                                                                                                                                                    return typeof v === "object" && "k" in v && "v" in v ? {_: {}
-                                                                                                                                                                                                                                                                                                                          ,k: typeof v.k === "number" ? _J.toInt(v.k) : _E.raise("invalid input, expecting JSNumber but got " + v.k)
-                                                                                                                                                                                                                                                                                                                          ,v: typeof v.v === "number" ? _J.toInt(v.v) : _E.raise("invalid input, expecting JSNumber but got " + v.v)} : _E.raise("invalid input, expecting JSObject [\"k\",\"v\"] but got " + v);
+                                                                                                                                                                                                                                                                                                                          ,k: typeof v.k === "number" ? v.k : _E.raise("invalid input, expecting JSNumber but got " + v.k)
+                                                                                                                                                                                                                                                                                                                          ,v: typeof v.v === "number" ? v.v : _E.raise("invalid input, expecting JSNumber but got " + v.v)} : _E.raise("invalid input, expecting JSObject [\"k\",\"v\"] but got " + v);
                                                                                                                                                                                                                                                                 })) : _E.raise("invalid input, expecting JSArray but got " + v.valueList)} : _E.raise("invalid input, expecting JSObject [\"unitID\",\"teamID\",\"animID\",\"typeID\",\"posX\",\"posY\",\"posZ\",\"facing\",\"valueList\"] but got " + v);
                                                                         })) : _E.raise("invalid input, expecting JSArray but got " + v.unitInfos)} : _E.raise("invalid input, expecting JSObject [\"time\",\"unitInfos\"] but got " + v);
    }));
    var middleDown = Native.Ports.portIn("middleDown",
    Native.Ports.incomingSignal(function (v) {
-      return typeof v === "boolean" ? _J.toBool(v) : _E.raise("invalid input, expecting JSBoolean but got " + v);
+      return typeof v === "boolean" ? v : _E.raise("invalid input, expecting JSBoolean but got " + v);
    }));
    var rightDown = Native.Ports.portIn("rightDown",
    Native.Ports.incomingSignal(function (v) {
-      return typeof v === "boolean" ? _J.toBool(v) : _E.raise("invalid input, expecting JSBoolean but got " + v);
+      return typeof v === "boolean" ? v : _E.raise("invalid input, expecting JSBoolean but got " + v);
    }));
    var leftDown = Native.Ports.portIn("leftDown",
    Native.Ports.incomingSignal(function (v) {
-      return typeof v === "boolean" ? _J.toBool(v) : _E.raise("invalid input, expecting JSBoolean but got " + v);
+      return typeof v === "boolean" ? v : _E.raise("invalid input, expecting JSBoolean but got " + v);
    }));
    var mousePosition = Native.Ports.portIn("mousePosition",
    Native.Ports.incomingSignal(function (v) {
       return typeof v === "object" && "posX" in v && "posY" in v ? {_: {}
-                                                                   ,posX: typeof v.posX === "number" ? _J.toFloat(v.posX) : _E.raise("invalid input, expecting JSNumber but got " + v.posX)
-                                                                   ,posY: typeof v.posY === "number" ? _J.toFloat(v.posY) : _E.raise("invalid input, expecting JSNumber but got " + v.posY)} : _E.raise("invalid input, expecting JSObject [\"posX\",\"posY\"] but got " + v);
+                                                                   ,posX: typeof v.posX === "number" ? v.posX : _E.raise("invalid input, expecting JSNumber but got " + v.posX)
+                                                                   ,posY: typeof v.posY === "number" ? v.posY : _E.raise("invalid input, expecting JSNumber but got " + v.posY)} : _E.raise("invalid input, expecting JSObject [\"posX\",\"posY\"] but got " + v);
    }));
    var inputS = A2(Signal._op["~"],
    A2(Signal._op["~"],
@@ -240,7 +241,6 @@ Elm.Data.make = function (_elm) {
    _U = _N.Utils.make(_elm),
    _L = _N.List.make(_elm),
    _E = _N.Error.make(_elm),
-   _J = _N.JavaScript.make(_elm),
    $moduleName = "Data";
    var Basics = Elm.Basics.make(_elm);
    var Color = Elm.Color.make(_elm);
@@ -252,6 +252,8 @@ Elm.Data.make = function (_elm) {
    var Grid = Elm.Grid.make(_elm);
    var List = Elm.List.make(_elm);
    var Maybe = Elm.Maybe.make(_elm);
+   var Native = Native || {};
+   Native.Json = Elm.Native.Json.make(_elm);
    var Native = Native || {};
    Native.Ports = Elm.Native.Ports.make(_elm);
    var Signal = Elm.Signal.make(_elm);
@@ -271,10 +273,10 @@ Elm.Data.make = function (_elm) {
                    ,middle: false
                    ,mouse: {_: {},posX: 0,posY: 0}
                    ,right: false
-                   ,touches: _J.toList([])
+                   ,touches: _L.fromArray([])
                    ,unitData: {_: {}
                               ,time: 0
-                              ,unitInfos: _J.toList([])}};
+                              ,unitInfos: _L.fromArray([])}};
    var Input = F6(function (a,
    b,
    c,
@@ -321,7 +323,7 @@ Elm.Data.make = function (_elm) {
          var key = {ctor: "_Tuple2"
                    ,_0: ui.unitID
                    ,_1: ui.teamID};
-         var maybePair = A2(Dict.lookup,
+         var maybePair = A2(Dict.get,
          key,
          ud);
          return function () {
@@ -437,7 +439,6 @@ Elm.Grid.make = function (_elm) {
    _U = _N.Utils.make(_elm),
    _L = _N.List.make(_elm),
    _E = _N.Error.make(_elm),
-   _J = _N.JavaScript.make(_elm),
    $moduleName = "Grid";
    var Array = Elm.Array.make(_elm);
    var Basics = Elm.Basics.make(_elm);
@@ -449,6 +450,8 @@ Elm.Grid.make = function (_elm) {
    Graphics.Element = Elm.Graphics.Element.make(_elm);
    var List = Elm.List.make(_elm);
    var Maybe = Elm.Maybe.make(_elm);
+   var Native = Native || {};
+   Native.Json = Elm.Native.Json.make(_elm);
    var Native = Native || {};
    Native.Ports = Elm.Native.Ports.make(_elm);
    var Signal = Elm.Signal.make(_elm);
@@ -503,14 +506,14 @@ Elm.Grid.make = function (_elm) {
             return function () {
                  switch (_v13.ctor)
                  {case "_Tuple2":
-                    return A2(Array.get,
+                    return A2(Array.getOrFail,
                       _v14._0 * _v13._1 + _v13._0,
                       _v14._2);}
                  _E.Case($moduleName,
-                 "on line 15, column 28 to 49");
+                 "on line 15, column 28 to 55");
               }();}
          _E.Case($moduleName,
-         "on line 15, column 28 to 49");
+         "on line 15, column 28 to 55");
       }();
    });
    var modify = F3(function (xy,
@@ -591,63 +594,4 @@ Elm.Grid.make = function (_elm) {
                       ,sliceBounds: sliceBounds
                       ,Grid: Grid};
    return _elm.Grid.values;
-};Elm.Array = Elm.Array || {};
-Elm.Array.make = function (_elm) {
-   "use strict";
-   _elm.Array = _elm.Array || {};
-   if (_elm.Array.values)
-   return _elm.Array.values;
-   var _N = Elm.Native,
-   _U = _N.Utils.make(_elm),
-   _L = _N.List.make(_elm),
-   _E = _N.Error.make(_elm),
-   _J = _N.JavaScript.make(_elm),
-   $moduleName = "Array";
-   var Basics = Elm.Basics.make(_elm);
-   var Color = Elm.Color.make(_elm);
-   var Graphics = Graphics || {};
-   Graphics.Collage = Elm.Graphics.Collage.make(_elm);
-   var Graphics = Graphics || {};
-   Graphics.Element = Elm.Graphics.Element.make(_elm);
-   var List = Elm.List.make(_elm);
-   var Maybe = Elm.Maybe.make(_elm);
-   var Native = Native || {};
-   Native.Array = Elm.Native.Array.make(_elm);
-   var Native = Native || {};
-   Native.Ports = Elm.Native.Ports.make(_elm);
-   var Signal = Elm.Signal.make(_elm);
-   var String = Elm.String.make(_elm);
-   var Text = Elm.Text.make(_elm);
-   var Time = Elm.Time.make(_elm);
-   var _op = {};
-   var concat = Native.Array.concat;
-   var length = Native.Array.length;
-   var slice = Native.Array.slice;
-   var set = Native.Array.set;
-   var get = Native.Array.get;
-   var push = Native.Array.push;
-   var empty = Native.Array.empty;
-   var foldr = Native.Array.foldr;
-   var foldl = Native.Array.foldl;
-   var map = Native.Array.map;
-   var toList = Native.Array.toList;
-   var fromList = A2(List.foldl,
-   Native.Array.push,
-   Native.Array.empty);
-   var Array = {ctor: "Array"};
-   _elm.Array.values = {_op: _op
-                       ,fromList: fromList
-                       ,toList: toList
-                       ,map: map
-                       ,foldl: foldl
-                       ,foldr: foldr
-                       ,empty: empty
-                       ,push: push
-                       ,get: get
-                       ,set: set
-                       ,slice: slice
-                       ,length: length
-                       ,concat: concat
-                       ,Array: Array};
-   return _elm.Array.values;
 };

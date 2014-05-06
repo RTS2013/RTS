@@ -3,11 +3,12 @@
 module Mod.Setup
 ( runMod
 , defaultGameState
-, defaultTileState
+, defaultNodeState
 , defaultTeamState
 ) where
 
 import qualified Data.IntMap      as IM
+import qualified Data.Vector.Unboxed as UV
 import qualified MIO.HashTable    as HT
 import qualified MIO.Ref          as Ref
 import qualified MIO.Grid.Unboxed as GUM -- Grid Unboxed Mutable
@@ -16,83 +17,60 @@ import qualified Grid.Unboxed     as GU  -- Grid Unboxed Immutable
 import qualified Grid.Boxed       as GB  -- Grid Boxed Immutable
 import qualified Movers           as Move
 import qualified KDTree           as KDT
-import Data.Sequence (viewl,ViewL(..))
 import MIO.Privileges
 import Mod.Prelude
 import MIO.Random
-import Pathing
 import Data
 
 data GameS = GameS
 	{ 
 	}
 
+data UnitS = UnitS
+	{ moveType :: !MoveType
+	} 
+
 data TeamS = TeamS
 	{ 
 	}
 
-data UnitS = UnitS
-	{ unitTarget :: !(Maybe (Int,Int))
-	, unitPath   :: ![(Int,Int)]
-	, moveType   :: !MoveType
-	} 
+type NodeS = (Int,Bool)
 
 data MoveType = Ground
 
-type TileS = (Int,Bool)
+{-
+type ModGame = Game GameS UnitS TeamS
 
-type ModGame = Game GameS TeamS UnitS TileS
+type ModTeam = Team GameS UnitS TeamS
 
--- type ModTeam = Team GameS TeamS UnitS TileS
+type ModUnit = Unit GameS UnitS TeamS
 
-type ModUnit = Unit GameS TeamS UnitS TileS
-
-type UnitBehavior a = Behavior ModUnit a
+type UnitBehavior = PBehavior ModGame ModUnit ModTeam
+-}
+type ModChange a = Change (Game GameS UnitS TeamS) a
 
 defaultGameState :: GameS
 defaultGameState = GameS
 
-defaultTileState :: TileS
-defaultTileState = (-1,True)
+defaultNodeState :: NodeS
+defaultNodeState = (0,True)
 
 defaultTeamState :: TeamS
 defaultTeamState = TeamS
 
 defaultUnitState :: UnitS
 defaultUnitState = UnitS 
-	{ unitTarget = Nothing
-	, unitPath   = []
-	, moveType   = Ground
+	{ moveType = Ground
 	}
 
-runMod :: Int -> Trainer ModGame ()
+runMod :: Int -> ModChange ()
 runMod nTeams = do
 	rng <- getMIOGen
 	flip evalRandT rng $ do
 		flip mapM_ [0..nTeams-1] $ \nTeam -> do
-			flip mapM_ [0..499::Int] $ \_ -> do
-				x <- getRandomR (0,1024)
-				y <- getRandomR (0,1024)
+			flip mapM_ [0..199::Int] $ \_ -> do
+				x <- getRandomR (497,527)
+				y <- getRandomR (497,527)
 				a <- getRandomR (0,2*pi)
 				lift $ makeUnit (defaultUnit defaultUnitState) nTeam (x,y,0,a)
-
-{-
-handleOrders :: Trainer ModGame (UnitBehavior (Change ()))
-handleOrders = do
-	game <- training
-	return $ do
-		u <- behaving
-		case viewl (unitOrders u) of
-				EmptyL -> return $ return ()
-				(a:<_) -> case a of
-					(Move p) -> handleMoveOrder game p
-					_ -> return $ return ()
-
-handleMoveOrder :: ModGame -> Point -> UnitBehavior (Change ())
-handleMoveOrder (Point x y _) = do
-	u <- behaving
-	let (ux,uy) = getUnitPosition u
-	if null $ unitPath $ unitState u
-	then getPath 
-	else undefined
--}
+	

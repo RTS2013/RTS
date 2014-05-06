@@ -1,31 +1,30 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE Trustworthy, StandaloneDeriving, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE Trustworthy #-}
 
 module MIO.Privileges
 ( Change()
 , Behavior()
-, Trainer()
 , behaving
-, training
+, changing
 ) where
 
 import Control.Applicative (Applicative((<*>),pure))
 import MIO.MIO
 
-instance Functor (Trainer s) where
-	fmap f (Trainer a) = Trainer $! \s -> fmap f (a s)
+instance Functor (Change s) where
+	fmap f (Change a) = Change $! \s -> fmap f (a s)
 
-instance Applicative (Trainer s) where
-	pure a = Trainer $! \_ -> return a
-	(Trainer f) <*> (Trainer a) = Trainer $! \s -> (f s) <*> (a s)
+instance Applicative (Change s) where
+	pure a = Change $! \_ -> return a
+	(Change f) <*> (Change a) = Change $! \s -> (f s) <*> (a s)
 
-instance Monad (Trainer s) where
+instance Monad (Change s) where
 	return = pure
-	(Trainer io) >>= f = Trainer $! \s -> do
+	(Change io) >>= f = Change $! \s -> do
 		a <- io s
-		let (Trainer b) = f a
+		let (Change b) = f a
 		b s
-	(Trainer a) >> (Trainer b) = Trainer $! \s -> a s >> b s
+	(Change a) >> (Change b) = Change $! \s -> a s >> b s
 
 instance Functor (Behavior s) where
 	fmap f (Behavior a) = Behavior $! \s -> fmap f (a s)
@@ -42,12 +41,8 @@ instance Monad (Behavior s) where
 		b s
 	(Behavior a) >> (Behavior b) = Behavior $! \s -> a s >> b s
 
-deriving instance Functor Change
-deriving instance Applicative Change
-deriving instance Monad Change
-
 behaving :: Behavior s s
 behaving = Behavior return
 
-training :: Trainer s s
-training = Trainer return
+changing :: Change s s
+changing = Change return

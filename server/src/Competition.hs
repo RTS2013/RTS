@@ -101,7 +101,7 @@ begin port decodeMsg namesAndPasses = do
                             else 
                                 return Nothing
                         case joined of
-                            Just member -> forever $ do
+                            Just member -> TIO.putStrLn (name <> " connected.") >> forever (do
                                 msg <- onException (W.receive conn) $ do
                                     TIO.putStrLn $ name <> " disconnected."
                                     atomically $ writeTVar (memberStatus member) Disconnected
@@ -125,6 +125,7 @@ begin port decodeMsg namesAndPasses = do
                                         atomically $ writeTVar (memberStatus member) Disconnected
                                         W.sendClose conn ("Bad message format." :: ByteString)
                                         myThreadId >>= killThread
+                                )
                             Nothing -> do 
                                 TIO.putStrLn $ name <> " failed to join."
                                 W.sendClose conn ("Failed to join." :: ByteString)

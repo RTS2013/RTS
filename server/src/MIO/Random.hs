@@ -19,14 +19,8 @@ class (Monad m) => Write m where
 	setMIOGen :: R.StdGen -> m ()
 	newMIOGen :: m R.StdGen
 
-instance Write Change where
-	getMIORandom a = Change $! R.getStdRandom a
-	getMIOGen = Change $! R.getStdGen
-	setMIOGen a = Change $! R.setStdGen a
-	newMIOGen = Change $! R.newStdGen
-
-instance Write (Trainer s) where
-	getMIORandom a = Trainer $! \_ -> R.getStdRandom a
-	getMIOGen = Trainer $! \_ -> R.getStdGen
-	setMIOGen a = Trainer $! \_ -> R.setStdGen a
-	newMIOGen = Trainer $! \_ -> R.newStdGen
+instance Write (Change s) where
+	getMIORandom a = Change $! \_ -> R.getStdRandom a
+	getMIOGen = Change $! \_ -> R.getStdGen
+	setMIOGen a = Change $! \_ -> R.setStdGen a
+	newMIOGen = Change $! \_ -> R.newStdGen

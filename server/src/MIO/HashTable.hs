@@ -22,23 +22,14 @@ class (Monad m) => Write m where
 	delete :: (Eq k, Hashable k) => HashTable k v -> k -> m ()
 	modify :: (Eq k, Hashable k) => HashTable k v -> k -> (v -> v) -> m ()
 
-instance Read (Trainer s) where
-	read a b = Trainer $! \_ -> H.lookup a b
+instance Read (Change s) where
+	read a b = Change $! \_ -> H.lookup a b
 
 instance Read (Behavior s) where
 	read a b = Behavior $! \_ -> H.lookup a b
 
-instance Read Change where
-	read a b = Change $! H.lookup a b
-
-instance Write (Trainer s) where
-	make a = Trainer $! \_ -> H.newSized a
-	write a b c = Trainer $! \_ -> H.insert a b c
-	delete a b = Trainer $! \_ -> H.delete a b
-	modify a b c = read a b >>= maybe (return ()) (write a b . c)
-
-instance Write Change where
-	make a = Change $ H.newSized a
-	write a b c = Change $ H.insert a b c
-	delete a b = Change $ H.delete a b
+instance Write (Change s) where
+	make a = Change $! \_ -> H.newSized a
+	write a b c = Change $! \_ -> H.insert a b c
+	delete a b = Change $! \_ -> H.delete a b
 	modify a b c = read a b >>= maybe (return ()) (write a b . c)

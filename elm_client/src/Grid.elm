@@ -1,7 +1,6 @@
 module Grid where
 
 import Array as A
-import Debug
 
 data Grid a = Grid Int Int (A.Array a)
 
@@ -12,7 +11,7 @@ set : (Int,Int) -> a -> Grid a -> Grid a
 set (x,y) a (Grid w h arr) = Grid w h <| A.set (w * y + x) a arr
 
 get : (Int,Int) -> Grid a -> a
-get (x,y) (Grid w h arr) = A.get (w * y + x) arr
+get (x,y) (Grid w h arr) = A.getOrFail (w * y + x) arr
 
 modify : (Int,Int) -> (a -> a) -> Grid a -> Grid a
 modify xy f g = get xy g |> f |> \a -> set xy a g

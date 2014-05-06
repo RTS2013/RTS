@@ -23,23 +23,14 @@ class (Monad m) => Write m where
 	modify :: (Unbox a) => (Int,Int) -> (a -> a) -> Grid a -> m ()
 	freeze :: (Unbox a) => Grid a -> m (IG.Grid a)
 
-instance Read (Trainer s) where
-	read a b = Trainer $! \_ -> G.read a b
+instance Read (Change s) where
+	read a b = Change $! \_ -> G.read a b
 
 instance Read (Behavior s) where
 	read a b = Behavior $! \_ -> G.read a b
 
-instance Read Change where
-	read a b = Change $! G.read a b
-
-instance Write (Trainer s) where
-	make a b = Trainer $! \_ -> G.make a b
-	write a b c = Trainer $! \_ -> G.write a b c
-	modify a b c = Trainer $! \_ -> G.modify a b c
-	freeze a = Trainer $! \_ -> IG.freeze a
-
-instance Write Change where
-	make a b = Change $! G.make a b
-	write a b c = Change $! G.write a b c
-	modify a b c = Change $! G.modify a b c
-	freeze a = Change $! IG.freeze a
+instance Write (Change s) where
+	make a b = Change $! \_ -> G.make a b
+	write a b c = Change $! \_ -> G.write a b c
+	modify a b c = Change $! \_ -> G.modify a b c
+	freeze a = Change $! \_ -> IG.freeze a

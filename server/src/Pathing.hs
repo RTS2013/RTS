@@ -5,14 +5,13 @@ module Pathing where
 import qualified Data.Set as S
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as V
-import Control.Concurrent.ParallelIO.Global (parallel_)
 import Control.Monad.STM (atomically)
 import Control.Concurrent.STM.TVar
 import Data.Graph.AStar (aStar)
 
 getPath ::
     ((Int,Int) -> Bool) -> -- Is tile "open" predicate
-    ((Int,Int) -> Vector (Int,Int)) ->
+    ((Int,Int) -> Vector (Int,Int)) -> -- Get corner list for tile
     (Int,Int) -> -- Start XY
     (Int,Int) -> -- Goal XY
     Maybe [(Int,Int)] -- Empty list means you can move directly to goal
@@ -37,7 +36,7 @@ setGroupsM ::
 setGroupsM (w,h) isOpen setGroup = do
     corners <- getCornersM (w,h) isOpen
     groupsVar <- newTVarIO S.empty
-    parallel_ $ flip map [(x,y) | x <- [0..w], y <- [0..h]] $ \xy -> do
+    sequence_ $ flip map [(x,y) | x <- [0..w], y <- [0..h]] $ \xy -> do
         sighted <- V.filterM (inSightM isOpen xy) corners
         group <- atomically $ do
             groups <- readTVar groupsVar

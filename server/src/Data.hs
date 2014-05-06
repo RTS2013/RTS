@@ -4,11 +4,9 @@
 module Data where
 
 import           Blaze.ByteString.Builder
-import           Control.Concurrent.STM.TVar
 import           Data.Array.ST (newArray, readArray, MArray, STUArray)
 import           Data.Array.Unsafe (castSTUArray)
 import           Data.Binary (Binary, Get, put, get)
-import           Data.ByteString.Lazy (ByteString)
 import           Data.HashTable.IO (BasicHashTable)
 import           Data.Int (Int32)
 import           Data.IntMap (IntMap)
@@ -17,79 +15,75 @@ import           Data.List (genericLength)
 import           Data.Monoid (mconcat, (<>))
 import           Data.Sequence (Seq)
 import           Data.Text (Text)
+import           Data.Vector.Unboxed (Vector)
 import           Data.Vector.Mutable (IOVector)
 import           Data.Word (Word8, Word16, Word32, Word64)
 import           GHC.Generics (Generic)
 import           GHC.ST (runST, ST)
-import           Grid.UnboxedMutable (Grid)
+import qualified Grid.Boxed   as G
+import qualified Grid.Unboxed as UG
 import           KDTree (KDTree)
 import           MIO.Privileges
-import           Competition (Competition)
 
 type Ref = IORef
 type HashTable a = BasicHashTable Int a
 
-data Game gameS teamS unitS tileS = Game 
-    { gameStep      :: !(Ref Double)
-    , gameState     :: !(Ref gameS)
-    , gameKDT       :: !(Ref (KDTree Float (Unit gameS teamS unitS tileS)))
-    , gameTiles     :: !(Grid tileS)
-    , gameParty     :: !(Competition ControlMessage)
-    , gameTeams     :: !(IOVector (Team gameS teamS unitS tileS))
-    , gameBehaviors :: !(Ref (IntMap (Behavior () (Change ()))))
+data Game g u t = Game 
+    { gameStepRef      :: !(Ref Double)
+    , gameStateRef     :: !(Ref g)
+    , gameKDTRef       :: !(Ref (KDTree Float (Unit g u t)))
+    , gameTilesRef     :: !(Ref (UG.Grid (Int,Bool)))
+    , gameCornersRef   :: !(Ref (G.Grid (Vector (Int,Int))))
+    , gameTeamsVec     :: !(IOVector (Team g u t))
+    , gameBehaviorsRef :: !(Ref (IntMap (Behavior (Game g u t, Float) (Change (Game g u t) ()))))
     } 
 
-data Team gameS teamS unitS tileS = Team
-    { teamID         :: {-# UNPACK #-} !Int
-    , teamState      :: !(Ref teamS)
-    , teamVision     :: !(Grid Int)
+data Team g u t = Team
+    { teamID         :: !Int
+    , teamState      :: !(Ref t)
     , teamSpawnCount :: !(Ref Int) -- Incremented with each new unit
-    , teamUnits      :: !(HashTable (Unit gameS teamS unitS tileS))
-    , teamBehaviors  :: !(Ref (IntMap (Behavior (Team gameS teamS unitS tileS) (Change ()))))
-    , teamDiscovered :: !(Ref (Seq (Int,Int)))
-    , teamSendTiles  :: !(TVar [(Int,Int)])
+    , teamUnits      :: !(HashTable (Unit g u t))
+    , teamBehaviors  :: !(Ref (IntMap (Behavior (Game g u t, Float, Team g u t) (Change (Game g u t) ()))))
     } 
 
-data Unit gameS teamS unitS tileS = Unit
-    { unitState        :: !unitS
-    , unitID           :: {-# UNPACK #-} !Int
-    , unitTeam         :: {-# UNPACK #-} !Int
-    , unitType         :: {-# UNPACK #-} !Int
-    , unitAnimation    :: {-# UNPACK #-} !Int
-    , unitOrders       :: !(Seq Order)
-    , unitMoveState    :: !MoveState
-    , unitMoveStats    :: !MoveStats
-    , unitValues       :: !(Unit gameS teamS unitS tileS -> [(Word8,Word16)])
-    , unitBehaviors    :: !(IntMap (Behavior (Unit gameS teamS unitS tileS) (Change ())))
+data Unit g u t = Unit
+    { unitModState    :: !u
+    , unitAnimation   :: !Int
+    , unitOrders      :: !(Seq Order)
+    , unitMoveState   :: !Vec4
+    , unitStaticState :: !(StaticState g u t)
+    , unitBehaviors   :: !(IntMap (Behavior (Game g u t, Float, Unit g u t) (Change (Game g u t) ())))
     } 
 
-data Point = Point {_X,_Y,_Z :: {-# UNPACK #-} !Float}
-
-instance Eq (Unit gameS teamS unitS tileS) where
-    a == b = unitTeam a == unitTeam b && unitID a == unitID b
-
-instance Ord (Unit gameS teamS unitS tileS) where
-    compare a b = compare (unitID a, unitTeam a) (unitID b, unitTeam b)
-
-instance Show (Unit gameS teamS unitS tileS) where
-    show u = let ms = unitMoveState u in
-        show (msX ms, msY ms)
-
-data MoveState = MoveState
-    { msX   :: {-# UNPACK #-} !Float
-    , msY   :: {-# UNPACK #-} !Float
-    , msZ   :: {-# UNPACK #-} !Float
-    , angle :: {-# UNPACK #-} !Float
-    , speed :: {-# UNPACK #-} !Float
+data Vec4 = Vec4
+    { _v1 :: !Float
+    , _v2 :: !Float
+    , _v3 :: !Float
+    , _v4 :: !Float
     } 
 
-data MoveStats = MoveStats
-    { angleRate :: {-# UNPACK #-} !Float
-    , speedMax  :: {-# UNPACK #-} !Float
-    , speedRate :: {-# UNPACK #-} !Float
-    , weight    :: {-# UNPACK #-} !Float
-    , radius    :: {-# UNPACK #-} !Float
+data StaticState g u t = StaticState
+    { unitID    :: !Int
+    , unitTeam  :: !Int
+    , unitType  :: !Int
+    , speedBase :: !Float
+    , speed     :: !Float
+    , weight    :: !Float
+    , radius    :: !Float
+    , unitVals  :: !(Unit g u t -> [(Word8,Word16)])
     }
+
+instance Eq (Unit g u t) where
+    a == b = unitTeam (unitStaticState a) == unitTeam (unitStaticState b) 
+             && unitID (unitStaticState a) == unitID (unitStaticState b)
+
+instance Ord (Unit g u t) where
+    compare a b = compare (unitID (unitStaticState a), unitTeam (unitStaticState a)) 
+                          (unitID (unitStaticState b), unitTeam (unitStaticState b))
+
+instance Show (Unit g u t) where
+    show u = let ms = unitMoveState u in
+        show (_v1 ms, _v2 ms)
 
 ----------------------------------------------------------------------------
 --             # DATA SENT OVER WIRE FROM CLIENT TO SERVER #              --
@@ -105,45 +99,61 @@ data ControlMessage
 
 instance Binary ControlMessage
 
+data Point = Point {_X,_Y,_Z :: !Float}
+
 data Orders = Orders !Bool ![Int] !Order
     deriving (Generic)
 
 data Order 
     = Standby
-    | Move    !Point
-    | Assault !Point
-    | Target  {-# UNPACK #-} !Word8 {-# UNPACK #-} !Int
-    | Hold    !Point
-    | Patrol  !Point !Point 
-    | Invoke {-# UNPACK #-} !Word16 {- Ability ID -}
-    | InvokeAt {-# UNPACK #-} !Word16 {- Ability ID -} !Point
-    | InvokeOn 
-    {-# UNPACK #-} !Word16 -- Ability ID
-    {-# UNPACK #-} !Word8  -- Team ID
-    {-# UNPACK #-} !Int -- Unit ID
+    | Move      !Float -- x
+                !Float -- y
+                ![(Float,Float)] -- Path
+    | Assault   !Float -- x
+                !Float -- y
+                ![(Float,Float)] -- Path
+    | Target    !Int !Int
+                ![(Float,Float)] -- Path
+    | Hold      !Float -- x
+                !Float -- y
+    | Patrol    !Float -- xa
+                !Float -- ya
+                !Float -- xb
+                !Float -- yb
+                ![(Float,Float)] -- Path
+    | Invoke    !Int {- Ability ID -}
+    | InvokeAt  !Int {- Ability ID -} 
+                !Float -- x
+                !Float -- y
+                ![(Float,Float)] -- Path
+    | InvokeOn  !Int -- Ability ID
+                !Int -- Team ID
+                !Int -- Unit ID
+                ![(Float,Float)] -- Path
     deriving (Generic)
 
-instance Binary Orders where
+instance Binary Orders
 instance Binary Order
 
 ----------------------------------------------------------------------------
 --             # DATA SENT OVER WIRE FROM SERVER TO CLIENT #              --
 ----------------------------------------------------------------------------
 
-buildUnit :: Unit gameS teamS unitS tileS -> Builder
+buildUnit :: Unit g u t -> Builder
 buildUnit u = buildCore <> buildVals
     where
+    stat = unitStaticState u
     xyz = unitMoveState u
-    vals = (unitValues u) u
+    vals = (unitVals stat) u
     buildCore = fromWrite $
-                writeInt32be  (fromIntegral $ unitID u       ) <>
-                writeWord8    (fromIntegral $ unitTeam u     ) <>
+                writeInt32be  (fromIntegral $ unitID stat    ) <>
+                writeWord8    (fromIntegral $ unitTeam stat  ) <>
                 writeWord8    (fromIntegral $ unitAnimation u) <>
-                writeWord16be (fromIntegral $ unitType u     ) <>
-                writeWord16be (coordTo16    $ msX xyz        ) <>
-                writeWord16be (coordTo16    $ msY xyz        ) <>
-                writeWord16be (coordTo16    $ msZ xyz        ) <>
-                writeWord8    (faceTo8      $ angle xyz      ) <>
+                writeWord16be (fromIntegral $ unitType stat  ) <>
+                writeWord16be (coordTo16    $ _v1 xyz        ) <>
+                writeWord16be (coordTo16    $ _v2 xyz        ) <>
+                writeWord16be (coordTo16    $ _v3 xyz        ) <>
+                writeWord8    (faceTo8      $ _v4 xyz        ) <>
                 writeWord8    (genericLength vals            )
     buildVals = mconcat $ map (\(k,v) -> fromWrite $ writeWord8 k <> writeWord16be v) vals
     faceTo8 :: Float -> Word8
@@ -153,17 +163,17 @@ buildUnit u = buildCore <> buildVals
     coordTo16 a = floor $ a * 64
 
 -- Datagram sent to client
-data ClientDatagram gameS teamS unitS tileS
-    = UnitDatagram     ![Unit gameS teamS unitS tileS]
+data ClientDatagram g u t
+    = UnitDatagram     ![Unit g u t]
     | TeamDatagram     ![(Word8,Word16)]
     | TerrainDatagram  ![Terrain]
     | LineFXDatagram   ![LineFX]
     | SFXDatagram      ![SFX]
     | TargetFXDatagram ![TargetFX]
     | MessageDatagram  !Text
-    | YourPlaceInLife  {-# UNPACK #-} !Word8 -- Team ID
-                       {-# UNPACK #-} !Word16 -- X Coord
-                       {-# UNPACK #-} !Word16 -- Y Coord
+    | YourPlaceInLife  !Word8 -- Team ID
+                       !Word16 -- X Coord
+                       !Word16 -- Y Coord
 
 instance Binary Point where
     put = undefined
@@ -176,39 +186,39 @@ instance Binary Point where
 instance Binary Terrain
 
 data Terrain = Terrain
-    { terrainID :: {-# UNPACK #-} !Word16
-    , terrainX  :: {-# UNPACK #-} !Word16
-    , terrainY  :: {-# UNPACK #-} !Word16
-    , terrainZ  :: {-# UNPACK #-} !Word16
+    { terrainID :: !Word16
+    , terrainX  :: !Word16
+    , terrainY  :: !Word16
+    , terrainZ  :: !Word16
     } deriving (Generic)
 
 instance Binary SFX
 
 data SFX = SFX
-    { sfxID :: {-# UNPACK #-} !Word16
-    , sfxX  :: {-# UNPACK #-} !Word16
-    , sfxY  :: {-# UNPACK #-} !Word16
-    , sfxZ  :: {-# UNPACK #-} !Word16
+    { sfxID :: !Word16
+    , sfxX  :: !Word16
+    , sfxY  :: !Word16
+    , sfxZ  :: !Word16
     } deriving (Generic)
 
 instance Binary TargetFX
 
 data TargetFX = TargetFX
-    { targetfxID   :: {-# UNPACK #-} !Word16
-    , targetfxUID  :: {-# UNPACK #-} !Int32
-    , targetfxteam :: {-# UNPACK #-} !Word8
+    { targetfxID   :: !Word16
+    , targetfxUID  :: !Int32
+    , targetfxteam :: !Word8
     } deriving (Generic)
 
 instance Binary LineFX
 
 data LineFX = LineFX
-    { linefxID :: {-# UNPACK #-} !Word16
-    , linefxXA :: {-# UNPACK #-} !Word16
-    , linefxYA :: {-# UNPACK #-} !Word16
-    , linefxZA :: {-# UNPACK #-} !Word16
-    , linefxXB :: {-# UNPACK #-} !Word16
-    , linefxYB :: {-# UNPACK #-} !Word16
-    , linefxZB :: {-# UNPACK #-} !Word16
+    { linefxID :: !Word16
+    , linefxXA :: !Word16
+    , linefxYA :: !Word16
+    , linefxZA :: !Word16
+    , linefxXB :: !Word16
+    , linefxYB :: !Word16
+    , linefxZB :: !Word16
     } deriving (Generic)
 
 

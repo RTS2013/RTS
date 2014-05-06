@@ -47,14 +47,14 @@ main = do
 shapeMap f array = R.fromFunction (R.extent array) (\sh@(R.Z R.:.x R.:. y) -> f x y $ array R.! sh)
 
 randomPerlin :: Seed -- Perlin Seed
-           -> Seed -- Random Seed
-           -> (Double,Double) -- Random Range
-           -> (Int,Int) -- Matrix Width & Height
-           -> R.Array R.U R.DIM2 Double
+             -> Seed -- Random Seed
+             -> (Double,Double) -- Random Range
+             -> (Int,Int) -- Matrix Width & Height
+             -> R.Array R.U R.DIM2 Double
 randomPerlin pSeed rSeed range (w,h) = R.fromListUnboxed shape zips
     where
     perl = perlin pSeed 16 (1/128) (1/2)
-    shape = (R.Z R.:. w R.:. h)
+    shape = R.ix2 w h
     rnds = randomRs range $ mkStdGen rSeed
     zips = zipWith (\(x,y) rnd -> rnd + noiseValue perl (fromIntegral x, fromIntegral y, 0)) 
                        [(x,y) | x <- [0..w-1], y <- [0..h-1]]

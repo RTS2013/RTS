@@ -54,7 +54,7 @@ type UnitInfo =
 updateUnitDict : Time -> UnitInfo -> UnitDict -> UnitDict
 updateUnitDict time ui ud = 
     let key = (ui.unitID,ui.teamID)
-        maybePair = Dict.lookup key ud
+        maybePair = Dict.get key ud
         new = { animID = ui.animID
               , typeID = ui.typeID
               , posX   = ui.posX
