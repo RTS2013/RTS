@@ -1,0 +1,59 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+	<meta charset="UTF-8" />
+	<title>Phaser - RTS HUD</title>
+	<script type="text/javascript" src="../js/phaser.min.js"></script>
+    <script type="text/javascript" src="Unit.js"></script>
+    <script type="text/javascript" src="Level.js"></script>
+    <script type="text/javascript" src="HUD.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+
+var unit = null;
+var level = null;
+var hud = null;
+
+function preload()
+{
+	level = new Level(game);
+    level.preload();
+
+    unit = new Unit(game);
+    unit.preload();
+
+    hud = new HUD(game);
+    hud.preload();
+}
+
+function create()
+{
+    level.create();
+    unit.create();
+    hud.create();
+}
+
+function update() 
+{
+    level.update();
+    unit.update();
+    hud.update();
+}
+/*
+function render(){
+    level.render();
+}
+*/
+</script>
+
+</body>
+</html>
