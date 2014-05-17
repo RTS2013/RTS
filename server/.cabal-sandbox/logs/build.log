@@ -1,0 +1,984 @@
+
+package: stm-2.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: base-4.7.0.0 array-0.5.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: split-0.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: split-0.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: text-1.1.1.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -integer-simple -developer
+dependencies: integer-gmp-0.5.1.0 ghc-prim-0.3.1.0 deepseq-1.3.0.2
+              bytestring-0.10.4.0 base-4.7.0.0 array-0.5.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: SHA-1.6.4
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -test -exe decoderinterface
+dependencies: directory-1.2.1.0 bytestring-0.10.4.0 binary-0.7.1.0
+              base-4.7.0.0 array-0.5.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: attoparsec-0.11.3.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -developer
+dependencies: text-1.1.1.2 scientific-0.2.0.2 deepseq-1.3.0.2
+              containers-0.5.5.1 bytestring-0.10.4.0 base-4.7.0.0 array-0.5.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: base64-bytestring-1.0.0.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: blaze-builder-0.3.3.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: case-insensitive-1.2.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 hashable-1.2.2.0 deepseq-1.3.0.2
+              bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: entropy-0.2.2.4
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: hashable-1.2.2.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -sse41 sse2 integer-gmp
+dependencies: text-1.1.1.2 integer-gmp-0.5.1.0 ghc-prim-0.3.1.0
+              bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: mtl-2.1.3.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: transformers-0.3.0.0 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: parsec-3.1.5
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: base4
+dependencies: text-1.1.1.2 mtl-2.1.3.1 bytestring-0.10.4.0
+              base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: primitive-0.5.3.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: ghc-prim-0.3.1.0 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: random-1.0.1.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: time-1.4.2 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: scientific-0.2.0.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 hashable-1.2.2.0 deepseq-1.3.0.2
+              base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: vector-0.10.9.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -unsafechecks -internalchecks boundschecks
+dependencies: primitive-0.5.3.0 ghc-prim-0.3.1.0 deepseq-1.3.0.2
+              base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: zlib-0.5.4.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: zlib-bindings-0.1.1.5
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: zlib-0.5.4.1 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: entropy-0.2.2.4
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: entropy-0.2.2.4
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: ConfigureFailed
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: DependencyFailed network-2.5.0.0
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: io-streams-1.1.4.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -nointeractivetests
+dependencies: zlib-bindings-0.1.1.5 vector-0.10.9.1
+              transformers-0.3.0.0 time-1.4.2 text-1.1.1.2 process-1.2.0.0
+              primitive-0.5.3.0 network-2.5.0.0 bytestring-0.10.4.0
+              blaze-builder-0.3.3.2 base-4.7.0.0 attoparsec-0.11.3.1
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: network-2.5.0.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: parsec-3.1.5 bytestring-0.10.4.0 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: websockets-0.8.2.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: text-1.1.1.2 random-1.0.1.1 network-2.5.0.0
+              mtl-2.1.3.1 io-streams-1.1.4.3 entropy-0.2.2.4 containers-0.5.5.1
+              case-insensitive-1.2.0.0 bytestring-0.10.4.0 blaze-builder-0.3.3.2
+              binary-0.7.1.0 base64-bytestring-1.0.0.1 base-4.7.0.0
+              attoparsec-0.11.3.1 SHA-1.6.4
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: QuickCheck-2.7.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: templatehaskell base4 base3
+dependencies: tf-random-0.5 template-haskell-2.9.0.0 random-1.0.1.1
+              base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: repa-3.2.5.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: vector-0.10.9.1 template-haskell-2.9.0.0
+              ghc-prim-0.3.1.0 bytestring-0.10.4.0 base-4.7.0.0 QuickCheck-2.7.3
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: tf-random-0.5
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: time-1.4.2 random-1.0.1.1 primitive-0.5.3.0
+              base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: abstract-deque-0.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -usecas
+dependencies: time-1.4.2 random-1.0.1.1 containers-0.5.5.1
+              base-4.7.0.0 array-0.5.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: abstract-par-0.3.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: deepseq-1.3.0.2 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: cereal-0.4.0.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: split-base
+dependencies: ghc-prim-0.3.1.0 containers-0.5.5.1
+              bytestring-0.10.4.0 base-4.7.0.0 array-0.5.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: monad-par-0.3.4.6
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -newgeneric -chaselev
+dependencies: parallel-3.2.0.4 mwc-random-0.13.1.1 mtl-2.1.3.1
+              monad-par-extras-0.3.3 deepseq-1.3.0.2 containers-0.5.5.1
+              base-4.7.0.0 array-0.5.0.0 abstract-par-0.3.3 abstract-deque-0.3
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: monad-par-extras-0.3.3
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: transformers-0.3.0.0 random-1.0.1.1 mtl-2.1.3.1
+              deepseq-1.3.0.2 cereal-0.4.0.1 base-4.7.0.0 abstract-par-0.3.3
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: mwc-random-0.13.1.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: vector-0.10.9.1 time-1.4.2 primitive-0.5.3.0
+              base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: parallel-3.2.0.4
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: deepseq-1.3.0.2 containers-0.5.5.1 base-4.7.0.0
+              array-0.5.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: hashtables-1.1.2.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: unsafe-tricks -sse41 -portable -debug -bounds-checking
+dependencies: vector-0.10.9.1 primitive-0.5.3.0 hashable-1.2.2.0
+              ghc-prim-0.3.1.0 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: MonadRandom-0.1.13
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: transformers-0.3.0.0 random-1.0.1.1 mtl-2.1.3.1
+              base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: async-2.0.1.5
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: stm-2.4.3 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: hsnoise-0.0.2
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: vector-0.10.9.1 base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: PSQueue-1.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: base-4.7.0.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: astar-0.2.1
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+dependencies: containers-0.5.5.1 base-4.7.0.0 PSQueue-1.1
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: accelerate-0.8.1.0
+os: windows
+arch: x86_64
+compiler: ghc-7.8.2
+client: cabal-install-1.20.0.1
+flags: -unsafe-checks -test-suite -pcache -llvm -internal-checks
+       -cuda bounds-checks
+dependencies: pretty-1.1.1.1 haskell98-2.0.0.3 ghc-prim-0.3.1.0
+              base-4.7.0.0 array-0.5.0.0
+install-outcome: BuildFailed
+docs-outcome: NotTried
+tests-outcome: NotTried

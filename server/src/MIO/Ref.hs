@@ -27,6 +27,6 @@ instance Read (Behavior s) where
 	read r = Behavior $! \_ -> readIORef r
 
 instance Write (Change s) where
-	make a = Change $! \_ -> newIORef a
-	write ref a = Change $! \_ -> writeIORef ref a
+	make a = Change $! \_ -> a `seq` newIORef a
+	write ref a = Change $! \_ -> a `seq` writeIORef ref a
 	modify ref f = Change $! \_ -> modifyIORef' ref f

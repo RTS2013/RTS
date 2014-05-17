@@ -1,4 +1,4 @@
-{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE Trustworthy, BangPatterns #-}
 
 module MIO.Grid.Boxed
 ( Grid()
@@ -32,4 +32,4 @@ instance Write (Change s) where
 	make a b = Change $! \_ -> G.make a b
 	write a b c = Change $! \_ -> G.write a b c
 	modify a b c = Change $! \_ -> G.modify a b c
-	freeze a = Change $! \_ -> IG.freeze a
+	freeze !a = Change $! \_ -> IG.freeze a

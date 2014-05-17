@@ -1,39 +1,43 @@
 module Movers where
 
-type X = Float
-type Y = Float
-type Radius = Float
-type Weight = Float
-type Distance = Float
+import Data.List (foldl')
 
+type X = Double
+type Y = Double
+type Radius = Double
+type Weight = Double
+type Distance = Double
+
+{-# INLINE move #-}
 move ::
     (X,Y,Radius,Weight) -> -- Entity being moved
     (X,Y) -> -- Desination
     Distance -> -- Distance to move
     [(X,Y,Radius,Weight)] -> -- Entities in range
     (X,Y) -- New coordinates for entity
-move (sx,sy,r,w) (dx,dy) dist nearby = newXY $ push inRange
+move (sx,sy,r,w) (dx,dy) dist nearby = newXY push
     where
     two = 2 :: Int
     len = length inRange
     inRange = flip filter nearby $ \(nx,ny,_,_) -> nx /= sx && ny /= sy
-    push xs = foldr 
-        (\(nx,ny) (ox,oy) -> (ox+nx,oy+ny)) (0,0) $ map (\(nx,ny,nr,nw) -> 
+    push = foldl' 
+        (\(nx,ny) (ox,oy) -> (nx+ox,ny+oy)) (0,0) $ map (\(nx,ny,nr,nw) -> 
             let (xDif,yDif) = (sx-nx,sy-ny) in
-            let wDif = (nw + w) / fromIntegral len / w * 0.8 in
-            let rDif = (r + nr) - (sqrt $ xDif^two + yDif^two) in
+            let wDif = (w + nw) / (2 * w) / (fromIntegral len + 1) in
+            let rDif = (r + nr) - (sqrt $ (xDif^two) + (yDif^two)) in
             let angl = atan2 yDif xDif in
             (cos angl * rDif * wDif, sin angl * rDif * wDif)
-        ) xs
+        ) inRange
     newXY (ox,oy) = 
         if len < 6 then 
-            let angl = atan2 (dy - sy) (dx - sx) 
+            let angl = atan2 (dy - sy) (dx - sx)
                 rDif = min (sqrt $ (dy - sy)^two + (dx - sx)^two) dist
             in 
                 (sx + ox + cos angl * rDif, sy + oy + sin angl * rDif)
         else 
             (sx + ox, sy + oy)
 
+{-# INLINE wallStop #-}
 wallStop :: (Monad m) => 
     ((X,Y) -> m Bool) -> 
     (X,Y,Radius) -> 
@@ -55,6 +59,7 @@ wallStop isOpen (ax,ay,r) (bx,by) =
             -- SW move
             angleWallStop isOpen (0,0) ((-),(-)) ((+),(+)) ((<),(<)) (ax,ay,r) (bx,by)
 
+{-# INLINE angleWallStop #-}
 angleWallStop :: (Monad m) =>
     ((X,Y) -> m Bool) -> 
     (X,Y) ->
@@ -67,8 +72,8 @@ angleWallStop :: (Monad m) =>
 angleWallStop 
     isOpen
     (px,py) -- Shift check X/Y coord (1 or 0)
-    (fx,fy) -- Float X/Y addition/subtraction (should be same as ix & iy)
-    (fx',fy') -- Float X addition/subtraction (should be opposite fx & fy)
+    (fx,fy) -- Double X/Y addition/subtraction (should be same as ix & iy)
+    (fx',fy') -- Double X addition/subtraction (should be opposite fx & fy)
     (ox,oy) -- Greater when ix/iy is (+). Less when ix/iy is (-).
     (ax,ay,r) -- Start X/Y
     (bx,by) -- New X/Y
@@ -80,13 +85,13 @@ angleWallStop
         if xOpen then do -- X open
             xyOpen <- isOpen ((ax `fx` 1), (ay `fy` 1))
             if xyOpen then -- Corner open
-                return ((bx, by) :: (Float,Float))
+                return ((bx, by) :: (Double,Double))
             else -- Corner closed
                 let tx = fromIntegral $ (floor $ ax + px :: Int)
                     ty = fromIntegral $ (floor $ ay + py :: Int) in
                 if (bx - tx)^two + (by - ty)^two <= r^two then
                     -- Get angle from new coords to old coords
-                    let na = atan2 (by - ay) (bx - ax) :: Float in
+                    let na = atan2 (by - ay) (bx - ax) :: Double in
                     return (tx `fx` (cos na * min 0.5 r), ty `fy` (sin na * min 0.5 r))
                 else
                     return (bx, by)

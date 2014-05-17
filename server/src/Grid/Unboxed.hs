@@ -6,6 +6,8 @@ module Grid.Unboxed
 , make
 , read
 , freeze
+, fromVector
+, toVector
 ) where
 
 import Prelude hiding (read)
@@ -18,13 +20,19 @@ size :: Grid a -> (Int,Int)
 size (Grid mx my _) = (mx,my)
 
 make :: (V.Unbox a) => (Int,Int) -> a -> Grid a
-make (x,y) a = Grid x y $ V.replicate (x*y) a
+make (x,y) a = Grid x y $! V.replicate (x*y) a
 
 read :: (V.Unbox a) => Grid a -> (Int,Int) -> Maybe a
-read (Grid mx my vec) (x,y) = 
+read (Grid mx my !vec) (x,y) = 
 	if x >= 0 && y >= 0 && x < mx && y < my
 	then vec V.!? (y * mx + x)
 	else Nothing
 
 freeze :: (V.Unbox a) => M.Grid a -> IO (Grid a)
-freeze (M.Grid x y vec) = fmap (Grid x y$) $ V.freeze vec
+freeze (M.Grid x y !vec) = fmap (Grid x y$!) $! V.freeze vec
+
+fromVector :: (V.Unbox a) => (Int,Int) -> V.Vector a -> Grid a
+fromVector (x,y) !v = Grid x y v
+
+toVector :: (V.Unbox a) => Grid a -> V.Vector a
+toVector (Grid _ _ !vec) = vec

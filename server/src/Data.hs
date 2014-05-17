@@ -22,7 +22,7 @@ import           GHC.Generics (Generic)
 import           GHC.ST (runST, ST)
 import qualified Grid.Boxed   as G
 import qualified Grid.Unboxed as UG
-import           KDTree (KDTree)
+import           Tree2D (Tree2D)
 import           MIO.Privileges
 
 type Ref = IORef
@@ -31,45 +31,45 @@ type HashTable a = BasicHashTable Int a
 data Game g u t = Game 
     { gameStepRef      :: !(Ref Double)
     , gameStateRef     :: !(Ref g)
-    , gameKDTRef       :: !(Ref (KDTree Float (Unit g u t)))
+    , gameKDTRef       :: !(Ref (Tree2D Double (Unit g u t)))
     , gameTilesRef     :: !(Ref (UG.Grid (Int,Bool)))
     , gameCornersRef   :: !(Ref (G.Grid (Vector (Int,Int))))
     , gameTeamsVec     :: !(IOVector (Team g u t))
-    , gameBehaviorsRef :: !(Ref (IntMap (Behavior (Game g u t, Float) (Change (Game g u t) ()))))
+    , gameBehaviorsRef :: !(Ref (IntMap (Behavior (Game g u t, Double) (Change (Game g u t) ()))))
     } 
 
 data Team g u t = Team
-    { teamID         :: !Int
+    { teamID         :: Int
     , teamState      :: !(Ref t)
     , teamSpawnCount :: !(Ref Int) -- Incremented with each new unit
     , teamUnits      :: !(HashTable (Unit g u t))
-    , teamBehaviors  :: !(Ref (IntMap (Behavior (Game g u t, Float, Team g u t) (Change (Game g u t) ()))))
+    , teamBehaviors  :: !(Ref (IntMap (Behavior (Game g u t, Double, Team g u t) (Change (Game g u t) ()))))
     } 
 
 data Unit g u t = Unit
     { unitModState    :: !u
-    , unitAnimation   :: !Int
+    , unitAnimation   :: Int
     , unitOrders      :: !(Seq Order)
     , unitMoveState   :: !Vec4
     , unitStaticState :: !(StaticState g u t)
-    , unitBehaviors   :: !(IntMap (Behavior (Game g u t, Float, Unit g u t) (Change (Game g u t) ())))
+    , unitBehaviors   :: !(IntMap (Behavior (Game g u t, Double, Unit g u t) (Change (Game g u t) ())))
     } 
 
 data Vec4 = Vec4
-    { _v1 :: !Float
-    , _v2 :: !Float
-    , _v3 :: !Float
-    , _v4 :: !Float
+    { _v1 :: Double
+    , _v2 :: Double
+    , _v3 :: Double
+    , _v4 :: Double
     } 
 
 data StaticState g u t = StaticState
-    { unitID    :: !Int
-    , unitTeam  :: !Int
-    , unitType  :: !Int
-    , speedBase :: !Float
-    , speed     :: !Float
-    , weight    :: !Float
-    , radius    :: !Float
+    { unitID    :: Int
+    , unitTeam  :: Int
+    , unitType  :: Int
+    , speedBase :: Double
+    , speed     :: Double
+    , weight    :: Double
+    , radius    :: Double
     , unitVals  :: !(Unit g u t -> [(Word8,Word16)])
     }
 
@@ -99,37 +99,37 @@ data ControlMessage
 
 instance Binary ControlMessage
 
-data Point = Point {_X,_Y,_Z :: !Float}
+data Point = Point {_X,_Y,_Z :: Double}
 
 data Orders = Orders !Bool ![Int] !Order
     deriving (Generic)
 
 data Order 
     = Standby
-    | Move      !Float -- x
-                !Float -- y
-                ![(Float,Float)] -- Path
-    | Assault   !Float -- x
-                !Float -- y
-                ![(Float,Float)] -- Path
-    | Target    !Int !Int
-                ![(Float,Float)] -- Path
-    | Hold      !Float -- x
-                !Float -- y
-    | Patrol    !Float -- xa
-                !Float -- ya
-                !Float -- xb
-                !Float -- yb
-                ![(Float,Float)] -- Path
-    | Invoke    !Int {- Ability ID -}
-    | InvokeAt  !Int {- Ability ID -} 
-                !Float -- x
-                !Float -- y
-                ![(Float,Float)] -- Path
-    | InvokeOn  !Int -- Ability ID
-                !Int -- Team ID
-                !Int -- Unit ID
-                ![(Float,Float)] -- Path
+    | Move      Double -- x
+                Double -- y
+                ![(Double,Double)] -- Path
+    | Assault   Double -- x
+                Double -- y
+                ![(Double,Double)] -- Path
+    | Target    Int Int
+                ![(Double,Double)] -- Path
+    | Hold      Double -- x
+                Double -- y
+    | Patrol    Double -- xa
+                Double -- ya
+                Double -- xb
+                Double -- yb
+                ![(Double,Double)] -- Path
+    | Invoke    Int {- Ability ID -}
+    | InvokeAt  Int {- Ability ID -} 
+                Double -- x
+                Double -- y
+                ![(Double,Double)] -- Path
+    | InvokeOn  Int -- Ability ID
+                Int -- Team ID
+                Int -- Unit ID
+                ![(Double,Double)] -- Path
     deriving (Generic)
 
 instance Binary Orders
@@ -139,8 +139,10 @@ instance Binary Order
 --             # DATA SENT OVER WIRE FROM SERVER TO CLIENT #              --
 ----------------------------------------------------------------------------
 
+{-# INLINE buildUnit #-}
 buildUnit :: Unit g u t -> Builder
-buildUnit u = buildCore <> buildVals
+buildUnit u = 
+    buildCore <> buildVals
     where
     stat = unitStaticState u
     xyz = unitMoveState u
@@ -156,10 +158,10 @@ buildUnit u = buildCore <> buildVals
                 writeWord8    (faceTo8      $ _v4 xyz        ) <>
                 writeWord8    (genericLength vals            )
     buildVals = mconcat $ map (\(k,v) -> fromWrite $ writeWord8 k <> writeWord16be v) vals
-    faceTo8 :: Float -> Word8
+    faceTo8 :: Double -> Word8
     faceTo8 a | a < 0 = floor $ (2*pi + a) / (2*pi) * 256
               | True  = floor $ a / (2*pi) * 256
-    coordTo16 :: Float -> Word16
+    coordTo16 :: Double -> Word16
     coordTo16 a = floor $ a * 64
 
 -- Datagram sent to client
@@ -178,10 +180,10 @@ data ClientDatagram g u t
 instance Binary Point where
     put = undefined
     get = do
-        x <- get :: Get Word32
-        y <- get :: Get Word32
-        z <- get :: Get Word32
-        return $ Point (wordToFloat x) (wordToFloat y) (wordToFloat z)
+        x <- get :: Get Word64
+        y <- get :: Get Word64
+        z <- get :: Get Word64
+        return $ Point (wordToDouble x) (wordToDouble y) (wordToDouble z)
 
 instance Binary Terrain
 
@@ -205,7 +207,7 @@ instance Binary TargetFX
 
 data TargetFX = TargetFX
     { targetfxID   :: !Word16
-    , targetfxUID  :: !Int32
+    , targetfxUID  :: Int32
     , targetfxteam :: !Word8
     } deriving (Generic)
 

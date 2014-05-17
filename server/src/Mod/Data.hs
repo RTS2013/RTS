@@ -1,36 +1,31 @@
 module Mod.Data where
 
-import qualified Data as D
+import Data
 import MIO.Privileges
 
 data GameS = GameS
-	{ 
-	}
-
-data TeamS = TeamS
-	{ 
-	}
+    { 
+    }
 
 data UnitS = UnitS
-	{ unitTarget :: !(Maybe (Int,Int))
-	, unitPath   :: ![(Int,Int)]
-	, moveType   :: !MoveType
-	} 
+    { moveType :: !MoveType
+    } 
 
-data MoveType = Ground | Flying
+data TeamS = TeamS
+    { 
+    }
 
-type TileS = (Int,Bool)
+type NodeS = (Int,Bool)
 
-type Game = D.Game GameS TeamS UnitS TileS
+data MoveType = Ground
 
-type Team = D.Team GameS TeamS UnitS TileS
+{-
+type ModGame = Game GameS UnitS TeamS
 
-type Unit = D.Unit GameS TeamS UnitS TileS
+type ModTeam = Team GameS UnitS TeamS
 
-type ModTrainer a = Trainer Game a
+type ModUnit = Unit GameS UnitS TeamS
 
-type UnitBehavior = Behavior Unit (Change ())
-
-type GameBehavior = Behavior Game (Change ())
-
-type TeamBehavior = Behavior Team (Change ())
+type UnitBehavior = PBehavior ModGame ModUnit ModTeam
+-}
+type ModChange a = Change (Game GameS UnitS TeamS) a

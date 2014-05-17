@@ -62,11 +62,9 @@ Elm.Main.make = function (_elm) {
                           return Graphics.Collage.move({ctor: "_Tuple2"
                                                        ,_0: Basics.toFloat(_v4._0) * 64 - cameraX
                                                        ,_1: Basics.toFloat(_v4._1) * 64 - cameraY})(Graphics.Collage.filled(A3(Color.rgb,
-                            A2(Basics.mod,_v4._0,255),
-                            A2(Basics.mod,_v4._1,255),
-                            A2(Basics.mod,
-                            _v4._0 * _v4._1,
-                            255)))(Graphics.Collage.square(65)));}
+                            255,
+                            255,
+                            255))(Graphics.Collage.square(65)));}
                        _E.Case($moduleName,
                        "between lines 108 and 111");
                     }();
@@ -443,7 +441,6 @@ Elm.Grid.make = function (_elm) {
    var Array = Elm.Array.make(_elm);
    var Basics = Elm.Basics.make(_elm);
    var Color = Elm.Color.make(_elm);
-   var Debug = Elm.Debug.make(_elm);
    var Graphics = Graphics || {};
    Graphics.Collage = Elm.Graphics.Collage.make(_elm);
    var Graphics = Graphics || {};
@@ -474,7 +471,7 @@ Elm.Grid.make = function (_elm) {
               _v0._0 * _v0._1,
               a)));}
          _E.Case($moduleName,
-         "on line 9, column 16 to 58");
+         "on line 8, column 16 to 58");
       }();
    });
    var set = F3(function (_v4,
@@ -492,10 +489,10 @@ Elm.Grid.make = function (_elm) {
                       a,
                       _v5._2));}
                  _E.Case($moduleName,
-                 "on line 12, column 30 to 65");
+                 "on line 11, column 30 to 65");
               }();}
          _E.Case($moduleName,
-         "on line 12, column 30 to 65");
+         "on line 11, column 30 to 65");
       }();
    });
    var get = F2(function (_v13,
@@ -510,10 +507,10 @@ Elm.Grid.make = function (_elm) {
                       _v14._0 * _v13._1 + _v13._0,
                       _v14._2);}
                  _E.Case($moduleName,
-                 "on line 15, column 28 to 55");
+                 "on line 14, column 28 to 55");
               }();}
          _E.Case($moduleName,
-         "on line 15, column 28 to 55");
+         "on line 14, column 28 to 55");
       }();
    });
    var modify = F3(function (xy,
@@ -545,7 +542,7 @@ Elm.Grid.make = function (_elm) {
                  });
               }));}
          _E.Case($moduleName,
-         "between lines 21 and 24");
+         "between lines 20 and 23");
       }();
    });
    var sliceBounds = F2(function (_v28,
@@ -579,10 +576,10 @@ Elm.Grid.make = function (_elm) {
                          });
                       })));}
                  _E.Case($moduleName,
-                 "between lines 27 and 35");
+                 "between lines 26 and 34");
               }();}
          _E.Case($moduleName,
-         "between lines 27 and 35");
+         "between lines 26 and 34");
       }();
    });
    _elm.Grid.values = {_op: _op

@@ -1,14 +1,37 @@
-{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE BangPatterns, Trustworthy #-}
 
 module Pathing where
 
+import qualified Data.Array.Repa.Repr.Vector as R
+import qualified Data.Array.Repa as R
 import qualified Data.Set as S
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as V
 import Control.Monad.STM (atomically)
 import Control.Concurrent.STM.TVar
 import Data.Graph.AStar (aStar)
+import ToDo (toDoList)
 
+{-# INLINE setGroupsP #-}
+setGroupsP ::
+    (Int,Int) -> -- Width/Height
+    ((Int,Int) -> Bool) -> -- Is open predicate
+    IO (R.Array R.V R.DIM2 (Vector (Int,Int)))
+setGroupsP (w,h) isOpen = do
+    let corners = getCorners (w,h) isOpen
+    let sighted xy = V.filter (inSight isOpen xy) corners
+    R.computeVectorP $! R.fromFunction (R.ix2 w h) (\(R.Z R.:. x R.:. y) -> sighted (x,y))
+
+setGroupsPM ::
+    (Int,Int) -> -- Width/Height
+    ((Int,Int) -> Bool) -> -- Is open predicate
+    IO (R.Array R.V R.DIM2 (Vector (Int,Int)))
+setGroupsPM (w,h) isOpen = do
+    let corners = getCorners (w,h) isOpen
+    let sighted xy = V.filter (inSight isOpen xy) corners
+    undefined -- $ toDoList 1 $ map sighted [(x,y)| x <- [0..w-1], y <- [0..h-1]]
+
+{-# INLINE getPath #-}
 getPath ::
     ((Int,Int) -> Bool) -> -- Is tile "open" predicate
     ((Int,Int) -> Vector (Int,Int)) -> -- Get corner list for tile
@@ -20,14 +43,15 @@ getPath isOpen corners xy exy@(gx,gy) =
     then Just [] 
     else aStar 
         (V.foldr' S.insert S.empty . corners)
-        (\(ax,ay) (bx,by) -> sqrt $ fromIntegral $ (ax-bx)^two + (ay-by)^two :: Double)
-        (\(x,y) -> sqrt $ fromIntegral $ (x-gx)^two + (y-gy)^two)
+        (\(ax,ay) (bx,by) -> sqrt $! fromIntegral $! (ax-bx)^two + (ay-by)^two :: Double)
+        (\(x,y) -> sqrt $! fromIntegral $! (x-gx)^two + (y-gy)^two)
         (flip S.member endCorners)
         xy
     where 
     two = 2 :: Int
     endCorners = V.foldr' S.insert S.empty $ corners exy
 
+{-# INLINE setGroupsM #-}
 setGroupsM ::
     (Int,Int) -> -- Width/Height
     ((Int,Int) -> IO Bool) -> -- Is open predicate
@@ -36,15 +60,19 @@ setGroupsM ::
 setGroupsM (w,h) isOpen setGroup = do
     corners <- getCornersM (w,h) isOpen
     groupsVar <- newTVarIO S.empty
-    sequence_ $ flip map [(x,y) | x <- [0..w], y <- [0..h]] $ \xy -> do
-        sighted <- V.filterM (inSightM isOpen xy) corners
-        group <- atomically $ do
-            groups <- readTVar groupsVar
-            if S.notMember sighted groups
-            then modifyTVar' groupsVar (S.insert sighted) >> return sighted
-            else maybe (return sighted) return $ S.lookupLE sighted groups
-        setGroup xy group
+    let setupNodeM xy = do
+            sighted <- V.filterM (inSightM isOpen xy) corners
+            group <- atomically $ do
+                groups <- readTVar groupsVar
+                if S.notMember sighted groups
+                then modifyTVar' groupsVar (S.insert sighted) >> return sighted
+                else maybe (return sighted) return $ S.lookupLE sighted groups
+            group `seq` setGroup xy group
+            putStrLn $! show xy ++ " done"
+    toDoList (w*h `div` 8) $ map setupNodeM [(x,y) | x <- [0..w-1], y <- [0..h-1]]
+    return ()
 
+{-# INLINE inSightM #-}
 inSightM :: (Monad m) =>
     ((Int,Int) -> m Bool) -> -- Is tile "open" predicate
     (Int,Int) -> -- Start x/y coordinates
@@ -78,8 +106,9 @@ inSightM isOpen (x0,y0) (x1,y1) = rat (1 + dx + dy) x0 y0 err
     eitherOpen x0' y0' x1' y1' = do
         a <- isOpen (x0',y0') 
         b <- isOpen (x1',y1')
-        return $ a || b
+        return $! a || b
 
+{-# INLINE getCornersM #-}
 getCornersM :: (Monad m) =>
     (Int,Int) -> -- Width/Height
     ((Int,Int) -> m Bool) -> -- Is tile "open" predicate
@@ -100,13 +129,14 @@ getCornersM (width,height) isOpen = V.filterM isCorner $ V.fromList [(x,y) | x <
         ee <- isOpen ((x + 2), y)
         ss <- isOpen (x, (y - 2))
         ww <- isOpen ((x - 2), y)
-        return $
+        return $!
             cn && ( (not ne && n && e && (nn || ee)) 
                   ||(not se && s && e && (ss || ee))
                   ||(not sw && s && w && (ss || ww))
                   ||(not nw && n && w && (nn || ww))
                   )
 
+{-# INLINE inSight #-}
 inSight :: 
     ((Int,Int) -> Bool) -> -- Is tile "open" predicate
     (Int,Int) -> -- Start XY
@@ -120,7 +150,7 @@ inSight isOpen (x0,y0) (x1,y1) = rat (1 + dx + dy) (x0,y0) err
     x_inc = if x1 > x0 then 1 else -1
     y_inc = if y1 > y0 then 1 else -1
     rat 0 _ _ = True
-    rat c (x,y) e =
+    rat !c (!x,!y) !e =
         if isOpen (x,y) then
             if x == x1 && y == y1 then 
                 True 
@@ -137,13 +167,16 @@ inSight isOpen (x0,y0) (x1,y1) = rat (1 + dx + dy) (x0,y0) err
             False
     eitherOpen axy bxy = isOpen axy || isOpen bxy
 
+{-# INLINE getCorners #-}
 getCorners :: 
     (Int,Int) -> -- Width/Height
     ((Int,Int) -> Bool) -> -- Is tile "open" predicate
     Vector (Int,Int) -- List of corners
-getCorners (width,height) isOpen = V.filter isCorner $ V.fromList [(x,y) | x <- [0..width], y <- [0..height]]
+getCorners (width,height) isOpen =
+    let vec = V.fromList [(x,y) | x <- [0..width], y <- [0..height]] in
+    vec `seq` V.filter isCorner vec
     where
-    isCorner (x,y) = 
+    isCorner (!x,!y) = 
         let cn = isOpen (x, y) -- Checked node is open?
             n  = isOpen (x, (y + 1)) -- Node above (North) is open?
             ne = isOpen ((x + 1), (y + 1)) -- So on and so forth.

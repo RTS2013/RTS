@@ -4,7 +4,6 @@
 module Mod.Prelude where
 
 import           Control.Monad.Identity (runIdentity)
-import qualified Data.Set as Set
 import qualified Data.Vector.Unboxed as UV
 import qualified Grid.Boxed as GB
 import qualified Grid.Unboxed as GU
@@ -14,45 +13,49 @@ import qualified MIO.Ref as Ref
 import qualified MIO.Vector as V
 import qualified Data.IntMap as IM
 import qualified Data.Sequence as Seq
-import qualified KDTree as KDT
+import qualified Tree2D as KDT
 import Data
 import Pathing
 import Movers (wallStop,move)
 
-type TimeDelta = Float
+type TimeDelta = Double
 
 type PChange g u t = Change (Game g u t) ()
 type PBehavior g u t = Behavior (Game g u t, TimeDelta, Unit g u t) (Change (Game g u t) ())
 
+{-# INLINE defaultUnit #-}
 defaultUnit :: u -> Unit g u t
 defaultUnit unitS = Unit
     { unitModState = unitS
     , unitAnimation = 0
     , unitOrders = Seq.singleton Standby
     , unitMoveState = Vec4 0 0 0 0
-    , unitStaticState = StaticState 0 0 0 1 1 1 1 (\_ -> [])
+    , unitStaticState = StaticState 0 0 0 2 2 1 1 (\_ -> [])
     , unitBehaviors = IM.empty
     }
 
+{-# INLINE makeUnit #-}
 makeUnit :: 
     Unit g u t -> 
     Int ->
-    (Float,Float,Float,Float) -> 
-    Change (Game g u t) ()
+    (Double,Double,Double,Double) -> 
+    Change (Game g u t) Int
 makeUnit unit teamN xyza = do
     game <- changing
     mTeam <- V.read (gameTeamsVec game) teamN
     case mTeam of
-        Nothing -> return ()
+        Nothing -> fail "You suck"
         Just team -> do
             newUnitID <- Ref.read (teamSpawnCount team)
             Ref.write (teamSpawnCount team) (newUnitID+1)
             HT.write (teamUnits team) newUnitID 
                      (css (setUnitOrientation xyza unit) $ \s -> s {unitID=newUnitID,unitTeam=teamN})
+            return newUnitID
     where
     -- Change static state
     css u f = u {unitStaticState = f $ unitStaticState u}
 
+{-# INLINE changeSpecificUnit #-}
 changeSpecificUnit :: Int -> Int -> (Unit g u t -> Unit g u t) -> PChange g u t
 changeSpecificUnit tID uID f = do
     game <- changing
@@ -61,6 +64,7 @@ changeSpecificUnit tID uID f = do
         Nothing -> return ()
         Just team -> HT.modify (teamUnits team) uID f
 
+{-# INLINE changeUnit #-}
 changeUnit :: Unit g u t -> (Unit g u t -> Unit g u t) -> PChange g u t
 changeUnit u f = do
     game <- changing
@@ -69,10 +73,12 @@ changeUnit u f = do
         Nothing -> return ()
         Just team -> HT.modify (teamUnits team) (unitID $ unitStaticState u) f
 
-getUnitPosition :: Unit g u t -> (Float,Float)
+{-# INLINE getUnitPosition #-}
+getUnitPosition :: Unit g u t -> (Double,Double)
 getUnitPosition u = let m = (unitMoveState u) in (_v1 m, _v2 m)
 
-setUnitPosition :: (Float,Float) -> Unit g u t -> Unit g u t
+{-# INLINE setUnitPosition #-}
+setUnitPosition :: (Double,Double) -> Unit g u t -> Unit g u t
 setUnitPosition (x,y) u = u 
     { unitMoveState = (unitMoveState u)
         { _v1 = x
@@ -80,7 +86,8 @@ setUnitPosition (x,y) u = u
         }
     }
 
-setUnitOrientation :: (Float,Float,Float,Float) -> Unit g u t -> Unit g u t
+{-# INLINE setUnitOrientation #-}
+setUnitOrientation :: (Double,Double,Double,Double) -> Unit g u t -> Unit g u t
 setUnitOrientation (x,y,z,a) u = u 
     { unitMoveState = (unitMoveState u)
         { _v1 = x
@@ -90,45 +97,49 @@ setUnitOrientation (x,y,z,a) u = u
         }
     }
 
-setUnitFacingAngle :: Float -> Unit g u t -> Unit g u t
+{-# INLINE setUnitFacingAngle #-}
+setUnitFacingAngle :: Double -> Unit g u t -> Unit g u t
 setUnitFacingAngle a u = u 
     { unitMoveState = (unitMoveState u)
         { _v4 = a }
     }
 
+{-# INLINE handleOrdersBehavior #-}
 handleOrdersBehavior :: PBehavior g u t
 handleOrdersBehavior = do
     (_,_,unit) <- behaving
     case Seq.viewl (unitOrders unit) of
-        Seq.EmptyL -> return $ return ()
+        Seq.EmptyL -> let (x,y) = getUnitPosition unit in groundMoveBehavior x y [(x,y)]
         (a Seq.:<_) -> case a of
             Move x y path -> groundMoveBehavior x y path
-            _ -> return $ return ()
+            _ -> let (x,y) = getUnitPosition unit in groundMoveBehavior x y [(x,y)]
 
-groundMoveBehavior :: Float -> Float -> [(Float,Float)] -> PBehavior g u t
-groundMoveBehavior x y path = do
+
+{-# INLINE groundMoveBehavior #-}
+groundMoveBehavior :: Double -> Double -> [(Double,Double)] -> PBehavior g u t
+groundMoveBehavior x y _ = do
     (game,td,unit) <- behaving
-    if null path
-    then do
-        let unitToStats u = let (ux,uy) = getUnitPosition u in (ux,uy,radius $ unitStaticState u, weight $ unitStaticState u)
-        let (!ux,!uy,!ur,!uw) = unitToStats unit
-        tiles <- Ref.read (gameTilesRef game)
-        corners <- Ref.read (gameCornersRef game)
-        kdt <- Ref.read (gameKDTRef game)
-        let !newPath = maybe [(floor x, floor y)] id $ getPath
-                (\xy -> maybe False snd $ GU.read tiles xy)
-                (maybe UV.empty id . GB.read corners)
-                (floor ux, floor uy)
-                (floor x, floor y)
-        let moveXY dx dy = runIdentity . wallStop 
-                (\(tx,ty) -> return . maybe False snd $ GU.read tiles (floor tx, floor ty))
-                (ux,uy,ur) $ move (ux,uy,ur,uw) (dx,dy) 
-                                  (td * speed (unitStaticState unit))
-                                  (map unitToStats . Set.toList $ KDT.nearby kdt ur [ux,uy])
-        case newPath of
-            (dx,dy):_ -> do
-                let (!nx,!ny) = moveXY (fromIntegral dx) (fromIntegral dy)
-                return $ do
-                    changeUnit unit (setUnitFacingAngle (atan2 (ny-uy) (nx-ux)) . setUnitPosition (nx,ny))
-            _ -> return $ return ()
-    else return $ return ()
+    let unitToStats u = let (ux,uy) = getUnitPosition u in (ux,uy,radius $ unitStaticState u, weight $ unitStaticState u)
+    let (!ux,!uy,!ur,!uw) = unitToStats unit
+    tiles <- Ref.read (gameTilesRef game)
+    corners <- Ref.read (gameCornersRef game)
+    kdt <- Ref.read (gameKDTRef game)
+    let newPath = maybe [(floor x, floor y)] id $ getPath
+            (\xy -> maybe False snd $ GU.read tiles xy)
+            (maybe UV.empty id . GB.read corners)
+            (floor ux, floor uy)
+            (floor x, floor y)
+    let moveXY dx dy = runIdentity . wallStop 
+            (\(tx,ty) -> return . maybe False snd $ GU.read tiles (floor tx, floor ty))
+            (ux,uy,ur) $ move (ux,uy,ur,uw) (dx,dy) 
+                              (td * speed (unitStaticState unit))
+                              (map unitToStats $ KDT.inRange kdt (ux,uy,ur))
+    case newPath of
+        (dx,dy):_ -> do
+            let (nx,ny) = moveXY (fromIntegral dx) (fromIntegral dy)
+            dx `seq` dy `seq` nx `seq` ny `seq` return $! do
+                changeUnit unit (setUnitFacingAngle (atan2 (ny-uy) (nx-ux)) . setUnitPosition (nx,ny))
+        _ -> do
+            let (nx,ny) = moveXY 500 500
+            nx `seq` ny `seq`
+                return $! changeUnit unit (setUnitFacingAngle (atan2 (ny-uy) (nx-ux)) . setUnitPosition (nx,ny))
