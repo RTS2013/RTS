@@ -10,5 +10,7 @@ var sendMoveCommand = function(chef,unitIDArray,x,y,queue) {
 		for (i = 0; i < unitIDArray.length; i++) {
 			chef.put32(unitIDArray[i]);
 		}
+		chef.putF64(x);
+		chef.putF64(y);
 		chef.trim();
 	};
