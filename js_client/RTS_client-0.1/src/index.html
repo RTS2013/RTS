@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>phaser RTS</title>
+	<link rel="shortcut icon" href="favicon.png" type="image/x-icon" />
+
+	<meta name="description" content="Full RTS" />
+	<!--
+	<style>
+		body { margin: 0; background: #088B85; }
+		@font-face {
+			font-family: 'BigFish';
+			src: url('fonts/bigfish.eot');
+			src: url('fonts/bigfish.eot?#iefix') format('embedded-opentype'),
+				url('fonts/bigfish.woff') format('woff'),
+				url('fonts/bigfish.ttf') format('truetype'),
+				url('fonts/bigfish.svg#bigfishblack') format('svg');
+			font-weight: normal;
+			font-style: normal;
+		}
+	</style>	
+	-->
+	<script src="js/chef/Buckets.js"></script>
+	<script src="js/chef/StringView.js"></script>
+	
+	<script src="js/chef/Data.js"></script>
+	<script src="js/chef/Cereal.js"></script>
+	<script src="js/chef/Chef.js"></script>
+
+	<script src="js/phaser.min.js"></script>
+	<script src="js/Boot.js"></script>
+	<script src="js/Preloader.js"></script>
+	<script src="js/MainMenu.js"></script>
+	<script src="js/Game.js"></script>
+</head>
+<body>
+<script>
+/*(function(){*/
+	// get dimensions of the window considering retina displays
+	var DEVICE_W = window.innerWidth * window.devicePixelRatio,
+    	DEVICE_H = window.innerHeight * window.devicePixelRatio;
+	
+	var game = new Phaser.Game((DEVICE_H > DEVICE_W) ? DEVICE_H : DEVICE_W, 
+							   (DEVICE_H > DEVICE_W) ? DEVICE_W : DEVICE_H, 
+							   Phaser.CANVAS, 'game');
+	game.state.add('Boot', RTS.Boot);
+	game.state.add('Preloader', RTS.Preloader);
+	game.state.add('MainMenu', RTS.MainMenu);
+	game.state.add('Game', RTS.Game);
+	game.state.start('Boot');
+
+	var scaleManager = new Phaser.ScaleManager(game, window.innerWidth, window.innerHeight);
+/*})();*/
+</script>
+</body>
+</html>
