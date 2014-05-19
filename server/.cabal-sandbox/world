@@ -1,0 +1,12 @@
+accelerate -any
+astar -any
+hsnoise -any
+async -any
+MonadRandom -any
+hashtables -any
+monad-par -any
+repa -any
+websockets -any
+text -any
+split -any
+stm -any

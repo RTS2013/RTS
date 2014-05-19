@@ -62,11 +62,9 @@ Elm.Main.make = function (_elm) {
                           return Graphics.Collage.move({ctor: "_Tuple2"
                                                        ,_0: Basics.toFloat(_v4._0) * 64 - cameraX
                                                        ,_1: Basics.toFloat(_v4._1) * 64 - cameraY})(Graphics.Collage.filled(A3(Color.rgb,
-                            A2(Basics.mod,_v4._0,255),
-                            A2(Basics.mod,_v4._1,255),
-                            A2(Basics.mod,
-                            _v4._0 * _v4._1,
-                            255)))(Graphics.Collage.square(65)));}
+                            255,
+                            255,
+                            255))(Graphics.Collage.square(65)));}
                        _E.Case($moduleName,
                        "between lines 108 and 111");
                     }();

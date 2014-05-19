@@ -106,7 +106,7 @@ display g (w,h) =
             ) 
         tiles = 
             group <| map (\(mouseX,mouseY,a) -> square 65
-            |> filled (rgb (mod mouseX 255) (mod mouseY 255) (mod (mouseX * mouseY) 255) )
+            |> filled (rgb 255 255 255 )
             |> move ( toFloat mouseX * 64 - cameraX
                     , toFloat mouseY * 64 - cameraY
                     ) ) slice

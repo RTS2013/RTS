@@ -6,6 +6,7 @@ module MIO.Privileges
 , Behavior()
 , behaving
 , changing
+, putStrLnMIO
 ) where
 
 import Control.Applicative (Applicative((<*>),pure))
@@ -46,3 +47,6 @@ behaving = Behavior return
 
 changing :: Change s s
 changing = Change return
+
+putStrLnMIO :: String -> Change s ()
+putStrLnMIO str = Change $! \_ -> putStrLn str

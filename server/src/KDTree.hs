@@ -15,6 +15,9 @@ import           Control.Parallel.Strategies (rpar, rseq, runEval)
 
 data KDTree n a = KDTree ![a -> n] !(a -> n) !(KDT n a)
 
+instance (Show n, Show a) => Show (KDTree n a) where
+    show (KDTree _ _ kdt) = show kdt
+
 data KDT n a = Fork !n !(KDT n a) !(KDT n a) | Leaf !(Set a)
 
 instance (Show n, Show a) => Show (KDT n a) where
@@ -36,7 +39,7 @@ empty radius getters = KDTree getters radius $ Leaf Set.empty
 make :: (Floating n, Ord n, Ord a) => (a -> n) -> [a -> n] -> [a] -> KDTree n a
 make _ [] _ = error "Cannot make 0 dimensionality KD-Tree."
 make radius getters entities = KDTree getters radius $ 
-        mkKDT (2::Int) 
+        mkKDT (20::Int) 
               (cycle $ tail getters) 
               (split (mean 0 0 (head getters) entities) 
                      (head getters) 
@@ -61,7 +64,30 @@ make radius getters entities = KDTree getters radius $
                       then split avg f xs (x:ls) (x:rs) (la+v) (ln+1) (ra+v) (rn+1) 
                       else split avg f xs ls (x:rs) la ln (ra+v) (rn+1)
 
-        mkKDT 0 (f:fs) (ls,la,ln,rs,ra,rn) pln prn =
+        mkKDT 0 _ (ls,_,_,rs,_,_) _ _ = Leaf . Set.fromList $ rs ++ ls
+        mkKDT n (f:fs) (ls,la,ln,rs,ra,rn) pln prn =
+            if ln <= 1
+            then if rn <= 1 
+                 then if ln == 1 && rn == 1
+                      then if ls == rs
+                           then Leaf $ Set.fromList ls
+                           else Fork ((la+ra)/2) (Leaf $ Set.fromList ls) (Leaf $ Set.fromList rs)
+                      else if ln == 0
+                           then Leaf $ Set.fromList rs
+                           else Leaf $ Set.fromList ls
+                 else let lKDT = (mkKDT (n-1) fs (split (la/ln) f ls [] [] 0 0 0 0) ln rn)
+                          rKDT = (mkKDT (n-1) fs (split (ra/rn) f rs [] [] 0 0 0 0) ln rn) in
+                      Fork ((la+ra) / (ln+rn)) lKDT rKDT
+            else if rn == 0
+                 then Leaf $ Set.fromList ls
+                 else if pln == ln && prn == rn 
+                      then if ls == rs
+                           then Leaf $ Set.fromList ls
+                           else Fork ((la+ra)/2) (Leaf $ Set.fromList ls) (Leaf $ Set.fromList rs)
+                      else let lKDT = (mkKDT (n-1) fs (split (la/ln) f ls [] [] 0 0 0 0) ln rn)
+                               rKDT = (mkKDT (n-1) fs (split (ra/rn) f rs [] [] 0 0 0 0) ln rn) in
+                            Fork ((la+ra) / (ln+rn)) lKDT rKDT
+        {-mkKDT 0 (f:fs) (ls,la,ln,rs,ra,rn) pln prn =
             if ln <= 1
             then if rn <= 1 
                  then if ln == 1 && rn == 1
@@ -109,6 +135,7 @@ make radius getters entities = KDTree getters radius $
                               rKDT <- rseq (mkKDT (n-1) fs (split (ra/rn) f rs [] [] 0 0 0 0) ln rn)
                               _    <- rseq lKDT
                               return $ Fork ((la+ra) / (ln+rn)) lKDT rKDT
+        -}
         mkKDT _ _ _ _ _ = error "This shouldn't have happened."
 
 makeFrom :: (Floating n, Ord n, Ord a) => KDTree n a -> [a] -> KDTree n a
