@@ -3,7 +3,12 @@ RTS.Game = function(game) {
 	//Basic Game variables
 	////////////////////////
 	this.game = game;
-
+/*
+	if(this.game.device.desktop === false)
+	{
+		this.game.stage.scale.startFullScreen();
+	}
+*/
 	SCREEN_W = DEVICE_W; SCREEN_H = DEVICE_H;
 
 	STAGE_W = 3200; STAGE_H = 3200;
@@ -153,6 +158,7 @@ RTS.Game.prototype = {
 ////////////////////////////////////////////////////////////////////end
 
     	cursors = this.game.input.keyboard.createCursorKeys();
+    	cursors.SHIFT = Phaser.Keyboard.SHIFT;
 
     	/*
     	//Moved to the marquee select function in update
@@ -163,6 +169,7 @@ RTS.Game.prototype = {
     	selectBox.lineStyle(2, 0x00ff00, 1);
     	selectBox.drawRect(0, 0, 32, 32);
     	*/
+
 	    //create HUD Function
 		this.createHUD();
 		
@@ -189,6 +196,13 @@ RTS.Game.prototype = {
 	    }
 	    else if (cursors.right.isDown){
 	        this.game.camera.x += 24;
+	    }
+
+	    if(this.game.input.keyboard.isDown(cursors.SHIFT)){
+	    	console.log("SHIFT is being pressed");
+
+	    	////////////////start here///////////////////
+	    	////////////////////////////////////////////
 	    }
 
 	    //Mouse pointer
@@ -258,7 +272,8 @@ RTS.Game.prototype = {
 			*/
 			touchData.w = Math.abs(touchData.oldX - touchData.nowX);
 			touchData.h = Math.abs(touchData.oldY - touchData.nowY);
-	/*
+			
+			/*
 		    console.log("selectBox.bottom : " + selectBox.bottom);
 		    console.log("selectBox.right : " + selectBox.right);
 		    console.log("selectBox.top : " + selectBox.top);
@@ -266,10 +281,11 @@ RTS.Game.prototype = {
 
 		    console.log("selectBox.x : " + selectBox.x);
 		    console.log("selectBox.y : " + selectBox.y);
-*/
+			*/
 
 		    //selectBox.width = touchData.w;
 		    //selectBox.height = touchData.h;
+		    
 		    var maxY = Math.max(touchData.oldY, touchData.nowY);
 		    var minY = Math.min(touchData.oldY, touchData.nowY);
 		    var maxX = Math.max(touchData.oldY, touchData.nowY);
@@ -293,6 +309,7 @@ RTS.Game.prototype = {
 
 			touchData.oldX = this.game.input.pointer1.x;
 			touchData.oldY = this.game.input.pointer1.y;
+			
 			//touchData.nowX = this.game.input.pointer2.x;
 			//touchData.nowY = this.game.input.pointer2.y;
 
@@ -320,6 +337,7 @@ RTS.Game.prototype = {
 		    	}
 		    	screenQuads.atCenterX = false;
 		    }
+
 		    //down
 		    if(Math.round(touchData.centerY) === 0) {
 		       	if(screenQuads.atCenterX){
@@ -330,6 +348,7 @@ RTS.Game.prototype = {
 			    }
 			    screenQuads.atCenterX = false;
 		    }	
+
 		    //left	
 		    if(Math.round(touchData.centerX) === 0){
 			 	if(screenQuads.atCenterY){
@@ -340,6 +359,7 @@ RTS.Game.prototype = {
 		    	}
 		    	screenQuads.atCenterY = false;
 		    }
+
 		    //right
 		    if(Math.round(touchData.centerX) === 1){
 			 	if(screenQuads.atCenterY){
