@@ -34,17 +34,25 @@ RTS.Game = function(game) {
 		//w: Math.abs(this.oldX - this.nowX),
 		//h: Math.abs(this.oldY - this.nowY)
 		w: 0, h: 0,
-		centerX: 0.0, centerY: 0.0,
+		velX: 0.0, velY: 0.0,
 		touchDrag: false,
 		touchDown: false,
-		touchUp: true
+		touchUp: true,
+		decayX: 0,
+		decayY: 0
 	};
 
     screenQuads = {
+    	screenMinX: 0,
+    	screenMinY: 0,
 		screenHalfX: (SCREEN_W/2),
 		screenHalfY: (SCREEN_H/2),
-		atCenterX: false,
-		atCenterY: false
+		inUpperLeft: false,
+		inUpperRight: false,
+		inLowerLeft: false,
+		inLowerRight: false,
+		numX: 1,
+		numY: 1
 	};
 
 	///////////////////////////
@@ -104,13 +112,6 @@ RTS.Game.prototype = {
 
     	this.game.stage.backgroundColor = '#2d2d2d';
 
-    	// Stretch to fill
-    	//this.game.stage.scale.fullScreenScaleMode = Phaser.ScaleManager.EXACT_FIT;
-    	//this.game.stage.scale.startFullScreen();
-    	
-    	//stretch/update technique
-	    //this.game.stage.fullScreenScaleMode = Phaser.ScaleManager.SHOW_ALL;
-
     	this.game.world.setBounds(0, 0, 3200, 3200);
 
     	this.game.add.sprite(0, 0, 'seamlessConcreteHUGE');
@@ -126,18 +127,11 @@ RTS.Game.prototype = {
 		console.log("screen half Y" + screenQuads.screenHalfY);
     	console.log("screen half X" + screenQuads.screenHalfX);
 
-    	/*
-		window.addEventListener('resize', function(event){
-    		resizeGame();
-		});
-		*/
 //////////////////////////////////////////////////////////////////begin
 
-    	//I think I have to give it a tile map in order for it to register touch events on the level.
-    	//
-    	//It would also make selcting much easier because I could simply query the tile's coordinates.
-    	//Grabbing all the units who fall in the given area.
-
+		//I don't think I need this but I'm keeping it for now.
+		//I know I figured out how to get the world coordinates of a touchpoint but 
+		//I'm still not exactly sure how to dynamically draw the rectangle
 	    //  Creates a blank tilemap
 	    map = this.game.add.tilemap();
 
@@ -159,16 +153,6 @@ RTS.Game.prototype = {
 
     	cursors = this.game.input.keyboard.createCursorKeys();
     	cursors.SHIFT = Phaser.Keyboard.SHIFT;
-
-    	/*
-    	//Moved to the marquee select function in update
-		selectBox = this.game.add.graphics(100,100);
-
-		selectBox.fixedToCamera = true;
-    	
-    	selectBox.lineStyle(2, 0x00ff00, 1);
-    	selectBox.drawRect(0, 0, 32, 32);
-    	*/
 
 	    //create HUD Function
 		this.createHUD();
@@ -235,24 +219,24 @@ RTS.Game.prototype = {
 	    }
 		*/
 
-		/*
+		/*		
 		//Screen drag functionality
 		this.game.input.onDown.add(function(e){
 		
 		    if (Math.round(e.x/SCREEN_W) === 1) {
-		       //console.log("Right side onTap Registered");
+		       console.log("Right side onTap Registered");
 		       this.game.camera.x += 4;
 		    }
 		    if (Math.round(e.y/SCREEN_H) === 1) {
-		       //console.log("Right side onTap Registered");
+		       console.log("Right side onTap Registered");
 		       this.game.camera.y += 4;
 		    }		
 		    if (Math.round(e.x/SCREEN_W) === 0){
-		        //console.log("Left side onTap Registered");
+		        console.log("Left side onTap Registered");
 		        this.game.camera.x -= 4;
 		    }
 		    if (Math.round(e.y/SCREEN_H) === 0){
-		        //console.log("Left side onTap Registered");
+		        console.log("Left side onTap Registered");
 		    	this.game.camera.y -= 4;
 		    }
 		});
@@ -264,28 +248,10 @@ RTS.Game.prototype = {
 			touchData.oldY = this.game.input.pointer1.worldY;
 			touchData.nowX = this.game.input.pointer2.worldX;
 			touchData.nowY = this.game.input.pointer2.worldY;
-			/*
-			touchData.oldX = this.game.input.pointer1.x;
-			touchData.oldY = this.game.input.pointer1.y;
-			touchData.nowX = this.game.input.pointer2.x;
-			touchData.nowY = this.game.input.pointer2.y;
-			*/
+
 			touchData.w = Math.abs(touchData.oldX - touchData.nowX);
 			touchData.h = Math.abs(touchData.oldY - touchData.nowY);
 			
-			/*
-		    console.log("selectBox.bottom : " + selectBox.bottom);
-		    console.log("selectBox.right : " + selectBox.right);
-		    console.log("selectBox.top : " + selectBox.top);
-		    console.log("selectBox.left : " + selectBox.left);
-
-		    console.log("selectBox.x : " + selectBox.x);
-		    console.log("selectBox.y : " + selectBox.y);
-			*/
-
-		    //selectBox.width = touchData.w;
-		    //selectBox.height = touchData.h;
-		    
 		    var maxY = Math.max(touchData.oldY, touchData.nowY);
 		    var minY = Math.min(touchData.oldY, touchData.nowY);
 		    var maxX = Math.max(touchData.oldY, touchData.nowY);
@@ -302,169 +268,156 @@ RTS.Game.prototype = {
 			console.log("touchData.w : " + touchData.w);
 			
 		}
-		//else do this
-	else {
-		if(this.game.input.activePointer.isDown){
 
-
-			touchData.oldX = this.game.input.pointer1.x;
-			touchData.oldY = this.game.input.pointer1.y;
-			
-			//touchData.nowX = this.game.input.pointer2.x;
-			//touchData.nowY = this.game.input.pointer2.y;
-
-			//touchData.w = Math.abs(touchData.oldX - touchData.nowX);
-			//touchData.h = Math.abs(touchData.oldY - touchData.nowY);
-
-			touchData.centerY = touchData.oldY/SCREEN_H;
-			touchData.centerX = touchData.oldX/SCREEN_W;
-
-			if(touchData.centerX > 0.33 && touchData.centerX < 0.66){
-		       	screenQuads.atCenterX = true;
-		    }
-
-			if(touchData.centerY > 0.33 && touchData.centerY < 0.66){
-		       	screenQuads.atCenterY = true;
-		    }
-
-			//up
-			 if(Math.round(touchData.centerY) === 1) {
-			 	if(screenQuads.atCenterX){
-			 		//do nothing
-			 		//this.game.camera.y += 4;
-			 	}else{
-		       		this.game.camera.y += 4;
-		    	}
-		    	screenQuads.atCenterX = false;
-		    }
-
-		    //down
-		    if(Math.round(touchData.centerY) === 0) {
-		       	if(screenQuads.atCenterX){
-			 		//do nothing
-			 		//this.game.camera.y -= 4;
-			 	}else{
-		       		this.game.camera.y -= 4;
-			    }
-			    screenQuads.atCenterX = false;
-		    }	
-
-		    //left	
-		    if(Math.round(touchData.centerX) === 0){
-			 	if(screenQuads.atCenterY){
-			 		//do nothing
-			 		//this.game.camera.x -= 4;
-			 	}else{
-		        	this.game.camera.x -= 4;
-		    	}
-		    	screenQuads.atCenterY = false;
-		    }
-
-		    //right
-		    if(Math.round(touchData.centerX) === 1){
-			 	if(screenQuads.atCenterY){
-			 		//do nothing
-			 		//this.game.camera.x += 4;
-			 	}else{
-		    		this.game.camera.x += 4;
-		    	}
-		    	screenQuads.atCenterY = false;
-			}
-			/*
-		    //move action once vars are set
-			if(touchData.moveUp){
-				this.game.camera.y += 10;
-			}
-			if(touchData.moveDown){
-				this.game.camera.y -= 10;
-			}
-			if(touchData.moveLeft){
-				this.game.camera.x -= 10;
-			}
-			if(touchData.moveRight){
-				this.game.camera.x += 10;
-			}
-			*/
-
-		}
-	}
-		/*
-		//new screen pan dragging attempt
-		this.game.input.onDrag.add(function(e){
+		if(this.game.input.activePointer.isDown && this.notOverButtons(this.game.input.pointer1.x, this.game.input.pointer1.y)){
 		
-		    if (Math.round(e.x/SCREEN_W) === 1) {
-		       //console.log("Right side onTap Registered");
-		    }			
-		    if (Math.round(e.x/SCREEN_W) === 0){
-		        //console.log("Left side onTap Registered");
-		});
-		*/
+			if(touchData.oldX != touchData.nowX || touchData.oldY != touchData.nowY){
+				touchData.oldX = this.game.input.pointer1.x;
+				touchData.oldY = this.game.input.pointer1.y;
+			}
+			touchData.nowX = this.game.input.pointer1.x;
+			touchData.nowY = this.game.input.pointer1.y;
 
-		/*
-		//try at marquee select   
-		if (drawingLine){
-        	if (this.game.input.activePointer.isDown){
-            	//selectLine.end.set(this.game.input.activePointer.x, this.game.input.activePointer.y);
-        		console.log("drawing line is true");
-        	}else{
-            	settingLine = false;
-            	//console.log("drawing line is false");
-        	}
-    	}
-		*/
+			this.setQuads(touchData.oldX, touchData.oldY);
+
+			//upper left
+			if(screenQuads.inUpperLeft){
+				//negative x, negative y
+				//normalize pointer coordinates
+				var normX = (touchData.oldX - screenQuads.screenMinX)/(SCREEN_W/2 - screenQuads.screenMinX) -1; 
+				var normY = (touchData.oldY - screenQuads.screenMinY)/(SCREEN_H/2 - screenQuads.screenMinY) -1;
+
+				//var normX = 1-(touchData.oldX/SCREEN_W/2); 
+				//var normY = 1-(touchData.oldY/SCREEN_H/2);
+				this.game.camera.x += normX * 20; //normX * scrollSpeed;
+				this.game.camera.y += normY * 20;
+				//this.game.camera.x += touchData.velX;
+				//this.game.camera.y += touchData.velY;
+
+				touchData.decayX = touchData.oldX - touchData.nowX;
+				touchData.decayY = touchData.oldY - touchData.nowY;
+
+				console.log("Registering upper left: " +normX +", "+normY);
+			}
+			//lower left
+			if(screenQuads.inLowerLeft){
+				//negative x, positive y
+				//normalize pointer coordinates
+				var normX = (touchData.oldX - screenQuads.screenMinX)/(SCREEN_W/2 - screenQuads.screenMinX) -1; 
+				var normY = (touchData.oldY - screenQuads.screenHalfY)/(SCREEN_H - screenQuads.screenHalfY);
+
+				//var normX = (touchData.oldX/SCREEN_W/2) -1; 
+				//var normY = touchData.oldY/SCREEN_H/2;
+				this.game.camera.x += normX * 20; //normX * scrollSpeed;
+				this.game.camera.y += normY * 20;
+				//this.game.camera.x += touchData.velX;
+				//this.game.camera.y += touchData.velY;
+
+				touchData.decayX = touchData.oldX - touchData.nowX;
+				touchData.decayY = touchData.oldY - touchData.nowY;
+
+				console.log("Registering lower left: " + normX +", "+normY);
+			}
+			//upper right
+			if(screenQuads.inUpperRight){
+				//positive x, negative y
+				//normalize pointer coordinates
+				var normX = (touchData.oldX - screenQuads.screenHalfX)/(SCREEN_W - screenQuads.screenHalfX);
+				var normY = (touchData.oldY - screenQuads.screenMinY)/(SCREEN_H/2 - screenQuads.screenMinY) -1; 
 
 
+				//var normX = touchData.oldX/SCREEN_W/2; 
+				//var normY = (touchData.oldY/SCREEN_H/2) - 1;
+				this.game.camera.x += normX * 20; //normX * scrollSpeed;
+				this.game.camera.y += normY * 20;
+				//this.game.camera.x += touchData.velX;
+				//this.game.camera.y += touchData.velY;
 
-		/*
-		//touch panning HOPEFULLY
-    	if(this.game.input.activePointer.isDown){
-    		if(!touchData.touchDrag){
+				touchData.decayX = touchData.oldX - touchData.nowX;
+				touchData.decayY = touchData.oldY - touchData.nowY;
+			
+				console.log("Registering upper right: " + ((touchData.oldX/SCREEN_W/2)) +", "+((touchData.oldY/SCREEN_W/2) -1));
+			}
+			//lower right
+			if(screenQuads.inLowerRight){
+				//positive x, positive y
+				//normalize pointer coordinateX
+				var normX = (touchData.oldX - screenQuads.screenHalfX)/(SCREEN_W - screenQuads.screenHalfX);
+				var normY = (touchData.oldY - screenQuads.screenHalfY)/(SCREEN_H - screenQuads.screenHalfY);
 
-    			touchData.oldX = this.game.input.activePointer.x;
-    			touchData.oldY = this.game.input.activePointer.y;
-    			console.log("DOWN touchData X/Y: "+touchData.oldX + ", "+touchData.oldY);
-	    		
-	    		touchData.touchDrag = true;
-	    	}
-    	}
+				//var normX = touchData.oldX/SCREEN_W/2; 
+				//var normY = touchData.oldY/SCREEN_H/2;
+				this.game.camera.x += normX * 20; //normX * scrollSpeed;
+				this.game.camera.y += normY * 20;
+				//this.game.camera.x += touchData.velX;
+				//this.game.camera.y += touchData.velY;
+							
+				touchData.decayX = touchData.oldX - touchData.nowX;
+				touchData.decayY = touchData.oldY - touchData.nowY;
 
-    	if(this.game.input.activePointer.isUp){
-    		if(touchData.touchDrag){
-    			touchData.touchDrag = false;
-    			touchData.nowX = this.game.input.activePointer.x;
-    			touchData.nowY = this.game.input.activePointer.y;
+				console.log("Registering lower right: " + normX +", "+normY);
+			}
+		}
 
-    			console.log("UP touchData X/Y: "+touchData.nowX + ", "+touchData.nowY);
+		if(touchData.decayX > 0 || touchData.decayY > 0){
+			this.screenRolling();
+		}
+	},
 
-    			if(touchData.oldX - touchData.nowX < 0){
-					this.game.camera.x -= Math.abs(touchData.oldX - touchData.nowX);
-					//this.game.camera.x -= 20;
-				}
-				else{
-					this.game.camera.x += Math.abs(touchData.oldX - touchData.nowX);
-					//this.game.camera.x += 20;
-				}
-				if(touchData.oldY - touchData.nowY < 0){
-					this.game.camera.y -= Math.abs(touchData.oldX - touchData.nowX);
-					//this.game.camera.y -= 20;   			
-				}
-				else{
-					this.game.camera.y += Math.abs(touchData.oldX - touchData.nowX);
-					//this.game.camera.y += 20; 
-				}
-
-				touchData.oldX = this.game.input.activePointer.x;
-    			touchData.oldY = this.game.input.activePointer.y;
-    		}
-    	}
-
-		*/
+	screenRolling: function(){
+		this.game.camera.x += touchData.decayX;
+		this.game.camera.y += touchData.decayY;
+		touchData.decayX--;
+		touchData.decayY--;
 	},
 
 	click: function(pointer) {
     	drawingLine = true;
     	console.log(""+selectBox);
    	 	//selectLine.start.set(pointer.x, pointer.y);	
+	},
+
+	setQuads: function(x, y){
+		this.x = x;
+		this.y = y;
+		if(this.x < SCREEN_W/2 && this.y < SCREEN_H/2){
+			screenQuads.inUpperLeft = true;
+			screenQuads.inLowerLeft = false;
+			screenQuads.inUpperRight = false;
+			screenQuads.inLowerRight = false;
+		}
+		if(this.x < SCREEN_W/2 && this.y > SCREEN_H/2){
+			screenQuads.inUpperLeft = false;
+			screenQuads.inLowerLeft = true;
+			screenQuads.inUpperRight = false;
+			screenQuads.inLowerRight = false;
+		}
+		if(this.x > SCREEN_W/2 && this.y < SCREEN_H/2){
+			screenQuads.inUpperLeft = false;
+			screenQuads.inLowerLeft = false;
+			screenQuads.inUpperRight = true;
+			screenQuads.inLowerRight = false;
+		
+		}
+		if(this.x > SCREEN_W/2 && this.y > SCREEN_H/2){
+			screenQuads.inUpperLeft = false;
+			screenQuads.inLowerLeft = false;
+			screenQuads.inUpperRight = false;
+			screenQuads.inLowerRight = true;
+			
+		}
+
+		if(touchData.oldX < SCREEN_W/2){
+			screenQuads.numX = -1; 
+		}else{
+			screenQuads.numX = 1;
+		}
+		//be careful of the reversed Y coordinates for screen movement
+		if(touchData.oldY > SCREEN_H/2){
+			screenQuads.numY = -1;
+		}else{
+			screenQuads.numY = 1;
+		}
 	},
 
 	populate: function(){
@@ -478,6 +431,67 @@ RTS.Game.prototype = {
     			}
     		}
     	}
+	},
+
+	notOverButtons: function(x, y){
+		this.x = x;
+		this.y = y;
+		if(this.overAnyButton(this.x, this.y)){
+			return false;
+		}
+		return true;
+	},
+
+	overAnyButton: function(x, y){
+		this.x = x;
+		this.y = y;
+		if( this.overButtonA(this.x, this.y) ||
+			this.overButtonB(this.x, this.y) ||
+			this.overButtonE(this.x, this.y) ||
+			this.overControlGroups(this.x, this.y)){
+			
+			return true;
+		}
+		return false;
+	},
+
+	overButtonA: function(x, y){
+		this.x = x;
+		this.y = y;
+
+		if((this.x > 10 && this.x < 74) && (this.y < SCREEN_H - 10 && this.y > SCREEN_H - 74)){
+			return true;
+		}
+		return false;
+	},
+
+	overButtonB: function(x, y){
+		this.x = x;
+		this.y = y;
+		
+		if((this.x > 84 && this.x < 138) && (this.y < SCREEN_H - 10 && this.y > SCREEN_H - 74)){
+			return true;
+		}
+		return false;	
+	},
+
+	overButtonE: function(x, y){
+		this.x = x;
+		this.y = y;
+		
+		if((this.x > 158 && this.x < 202) && (this.y < SCREEN_H - 10 && this.y > SCREEN_H - 74)){
+			return true;
+		}
+		return false;
+	},
+
+	overControlGroups: function(x, y){
+		this.x = x;
+		this.y = y;
+		if((this.x > SCREEN_W - 420) && (this.y > 10 && this.y < 42)){
+			return true;
+		}
+		return false;
 	},
 
 	createHUD: function() {
@@ -541,18 +555,6 @@ RTS.Game.prototype = {
     	ctrlGroupBtn10 = this.game.add.button(SCREEN_W - 32 - 10, 10, 'metalButton32', this.selectCG10, this, 2, 1, 0);
 		ctrlGroupBtn10.inputEnabled = true;
     	ctrlGroupBtn10.fixedToCamera = true;
-		
-    	/*
-2.2 + 32 + 10, 10, 
-2.2 + 64 + 20, 10, 
-2.2 + 96 + 30, 10, 
-2.2 + 128 + 40, 10,
-2.2 + 160 + 50, 10,
-2.2 + 192 + 60, 10,
-2.2 + 224 + 70, 10,
-2.2 + 256 + 80, 10,
-2.2 + 288 + 90, 10
-		*/
 
 		console.log("HUD is working ");
 	},
@@ -561,7 +563,6 @@ RTS.Game.prototype = {
 	},
 	actionOnClickB: function(){
 		console.log("I don't do anything says the re-re button");
-
 	},
 	actionOnClickE: function(){
 		this.spawnEnemyUnit();

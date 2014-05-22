@@ -8,8 +8,14 @@ RTS.Boot.prototype = {
 	},
 	create: function(){
 		//Set device settings before loading level settings
-		/*
-		this.game.input.maxPointers = 1;
+
+    	/*
+		window.addEventListener('resize', function(event){
+    		resizeGame();
+		});
+		*/
+		
+		this.game.input.maxPointers = 2;
 		this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
 		if(!this.game.device.desktop) {
 			this.game.scale.forcePortrait = true;
@@ -17,7 +23,6 @@ RTS.Boot.prototype = {
 		this.game.scale.pageAlignHorizontally = true;
 		this.game.scale.pageAlignVertically = true;
 		this.game.scale.setScreenSize(true);
-		*/
 
 		//move to the next state
 		console.log("In Boot, heading to preloader");
