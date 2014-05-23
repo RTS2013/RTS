@@ -14,6 +14,7 @@ RTS.Boot.prototype = {
     		resizeGame();
 		});
 		*/
+
 		
 		this.game.input.maxPointers = 2;
 		this.game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
