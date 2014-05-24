@@ -29,36 +29,40 @@ var IN = {
 	numY: 1,
 
 	setQuads: function(x, y){
+		//console.log("is IN.setQuads() even firing?");
 		this.x = x;
 		this.y = y;
 		screenHalfX: game.SCREEN_W/2;
 		screenHalfY: game.SCREEN_H/2;
+		//console.log("quad data: (" + this.x +", "+this.y+")");
 
-		if(this.x < game.SCREEN_W/2 && this.y < game.SCREEN_H/2){
-			inUpperLeft = true;
-			inLowerLeft = false;
-			inUpperRight = false;
-			inLowerRight = false;
+		if(this.x < this.screenHalfX && this.y < this.screenHalfY){
+			this.inUpperLeft = true;
+			this.inLowerLeft = false;
+			this.inUpperRight = false;
+			this.inLowerRight = false;
+			//console.log("quad data: inUpperLeft = " + this.inUpperLeft);
 		}
-		if(this.x < game.SCREEN_W/2 && this.y > game.SCREEN_H/2){
-			inUpperLeft = false;
-			inLowerLeft = true;
-			inUpperRight = false;
-			inLowerRight = false;
+		if(this.x < this.screenHalfX && this.y > this.screenHalfY){
+			this.inUpperLeft = false;
+			this.inLowerLeft = true;
+			this.inUpperRight = false;
+			this.inLowerRight = false;
+			//console.log("quad data: inLowerLeft = " + this.inLowerLeft);
 		}
-		if(this.x > game.SCREEN_W/2 && this.y < game.SCREEN_H/2){
-			inUpperLeft = false;
-			inLowerLeft = false;
-			inUpperRight = true;
-			inLowerRight = false;
-		
+		if(this.x > this.screenHalfX && this.y < this.screenHalfY){
+			this.inUpperLeft = false;
+			this.inLowerLeft = false;
+			this.inUpperRight = true;
+			this.inLowerRight = false;
+			//console.log("quad data: inUpperRight = " + this.inUpperRight);
 		}
-		if(this.x > game.SCREEN_W/2 && this.y > game.SCREEN_H/2){
-			inUpperLeft = false;
-			inLowerLeft = false;
-			inUpperRight = false;
-			inLowerRight = true;
-			
+		if(this.x > this.screenHalfX && this.y > this.screenHalfY){
+			this.inUpperLeft = false;
+			this.inLowerLeft = false;
+			this.inUpperRight = false;
+			this.inLowerRight = true;
+			//console.log("quad data: inLowerRight = " + this.inLowerRight);
 		}
 
 		if(this.oldX < game.SCREEN_W/2){
@@ -75,10 +79,10 @@ var IN = {
 	},
 
 	screenRolling: function(){
-		game.camera.x += decayX;
-		game.camera.y += decayY;
-		decayX--;
-		decayY--;
+		//game.camera.x += IN.decayX;
+		//game.camera.y += IN.decayY;
+		//IN.decayX--;
+		//IN.decayY--;
 	},
 
 	click: function(pointer) {
@@ -145,16 +149,22 @@ var IN = {
 
 			IN.nowX = game.input.pointer2.worldX;
 			IN.nowY = game.input.pointer2.worldY;
+					
+			IN.oldX = game.input.pointer1.x;
+			IN.oldY = game.input.pointer1.y;
 
 			IN.w = Math.abs(IN.oldX - IN.nowX);
 			IN.h = Math.abs(IN.oldY - IN.nowY);
 			
+			console.log("IN.oldX, IN.oldY : " + IN.oldX + ", " + IN.oldY);
+
 		    var maxY = Math.max(IN.oldY, IN.nowY);
 		    var minY = Math.min(IN.oldY, IN.nowY);
-		    var maxX = Math.max(IN.oldY, IN.nowY);
-		    var minX = Math.min(IN.oldY, IN.nowY);
+		    var maxX = Math.max(IN.oldX, IN.nowX);
+		    var minX = Math.min(IN.oldX, IN.nowX);
 
 			selectBox = game.add.graphics(minX,minY);
+			console.log("minX, minY : " + minX + ", " + minY);
 			selectBox.visible = false;
     	
     		selectBox.lineStyle(2, 0x00ff00, 1);
@@ -162,7 +172,7 @@ var IN = {
 
  			selectBox.fixedToCamera = true;
 			
-			console.log("IN.w : " + IN.w);
+			console.log("IN.w, IN.h : " + IN.w + ", " + IN.h);
 
 			IN.oldX = IN.nowX;
 			IN.oldY = IN.nowY;
@@ -171,7 +181,7 @@ var IN = {
 		}else{
 
 			if(game.input.activePointer.isDown && HUD.notOverButtons(game.input.pointer1.x, game.input.pointer1.y)){
-			
+			console.log("At least it's working !!! ");
 				if(IN.oldX != IN.nowX || IN.oldY != IN.nowY){
 					
 					IN.oldX = game.input.pointer1.x;
@@ -179,9 +189,12 @@ var IN = {
 				}
 				
 				IN.nowX = game.input.pointer1.x;
-				IN.nowY = game.input.pointer1.y;
+				IN.nowY = game.input.pointer1.y;	
+				console.log("IN.nowX, IN.nowY: " +IN.nowX+", "+IN.nowY);
 
-				IN.setQuads(IN.oldX, IN.oldY);
+				IN.setQuads(IN.nowX, IN.nowY);
+
+				console.log("IN.inUpperLeft: "+IN.inUpperLeft);
 
 				//upper left
 				if(IN.inUpperLeft){

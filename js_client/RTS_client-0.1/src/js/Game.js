@@ -74,7 +74,7 @@ RTS.Game.prototype = {
     	this.populate();
 
 //////////////////////////////////////////////////////////////////begin
-
+/*
 		//I don't think I need this but I'm keeping it for now.
 		//I know I figured out how to get the world coordinates of a touchpoint but 
 		//I'm still not exactly sure how to dynamically draw the rectangle
@@ -94,7 +94,7 @@ RTS.Game.prototype = {
 
 	    //  Resize the world
 	    layer1.resizeWorld();
-
+*/
 ////////////////////////////////////////////////////////////////////end
 
 	    //create HUD Function

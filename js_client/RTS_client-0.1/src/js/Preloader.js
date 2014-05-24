@@ -37,6 +37,9 @@ RTS.Preloader.prototype = {
 		this.load.image('bevBrownTile64', '../assets/brokenBunkerTile1_64x64.png');
 		this.load.image('regBrownTile64', '../assets/brokenBunkerTile2_64x64.png');
 
+		this.load.image('mainMenuBG', '../assets/futureProofPhaserMenu.png');
+		this.load.image('startButton', '../assets/Start.png');
+
 		game.load.image('ground_1x1', '../assets/ground_1x1.png');
 	},
 	create: function() {

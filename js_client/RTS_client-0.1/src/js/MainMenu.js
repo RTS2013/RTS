@@ -3,14 +3,18 @@ RTS.MainMenu = function(game) {
 	buttonStart = null;
 	depth = 0;
 	starsCount = 0;
+	SCREEN_NORMX = DEVICE_W/1278; //bgImgWidth;
+	SCREEN_NORMY = DEVICE_H/901;  //bgImgHeight;
 };
 RTS.MainMenu.prototype = {
 	create: function() {
 		console.log("In Main menu, heading to Game");
-		this.game.state.start('Game');
+		//this.game.state.start('Game');
+		
+		var bg = this.add.sprite(0, 0, 'mainMenuBG');
+ 		bg.scale.setTo(SCREEN_NORMX,SCREEN_NORMY);
+		startButton = this.add.button((DEVICE_W/2 - 96), (DEVICE_H-300), 'startButton', this.clickStart, this);
 		/*
-		this.add.sprite(0, 0, 'screen-mainmenu');
-
 		highscoreTxt = this.game.add.sprite(640-261-60, 580, 'text-highscore');
 		highscoreText = this.game.add.text(450, 665, ""+Math.floor(depth/10)+" m", { font: "48px BigFish", fill: "#FFF", stroke: '#000', strokeThickness: 8 });
 		highscoreText.anchor.setTo(0.5,0.5);
@@ -21,7 +25,7 @@ RTS.MainMenu.prototype = {
 		totalscoreText.anchor.setTo(0.5,0.5);
 
 		buttonStart = this.add.button(640, 960-220-20, 'button-start', this.clickStart, this);
-		buttonEnclave = this.add.button(-225, 960-80-20-83-30, 'button-enclave', this.clickEnclave, this);
+		buttonEnclave = this.add.button(-225, 960-80-20-83-30, 'futureProofButton', this.clickFutureProof, this);
 		buttonMoreGames = this.add.button(-250, 960-83-20, 'button-moregames', this.clickMoreGames, this, 1, 0, 2);
 
 		this.game.add.tween(buttonStart).to({x: 640-220-40}, 1000, Phaser.Easing.Elastic.Out, true, 0, false);
@@ -41,7 +45,7 @@ RTS.MainMenu.prototype = {
 	clickStart: function() {
 		this.game.state.start('Game');
 	}, 
-	clickEnclave: function() {
+	clickFutureProof: function() {
 		window.top.open('http://playfutureproof.com/');
 	},
 	clickMoreGames: function() {
