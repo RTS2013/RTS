@@ -5,6 +5,7 @@ module Tree2D
 , empty
 , make
 , makeFrom
+, kNearest
 , inRange
 , inRangeMatching
 ) where
@@ -12,20 +13,19 @@ module Tree2D
 import Data.Monoid ((<>))
 
 data Tree2D n a = Tree2D !(a -> n) !(a -> n) !(a -> n) !(XTree n a)
-data XTree n a = XFork !n !(YTree n a) !(YTree n a) !(YTree n a) | XLeaf ![a]
-data YTree n a = YFork !n !(XTree n a) !(XTree n a) !(XTree n a) | YLeaf ![a]
-data TreeVal n a = TreeVal {_x, _y, _xr, _yr :: !n, _val :: !a}
+data XTree n a = XFork !n !Int !(YTree n a) !(YTree n a) !(YTree n a) | XLeaf ![a]
+data YTree n a = YFork !n !Int !(XTree n a) !(XTree n a) !(XTree n a) | YLeaf ![a]
 
 instance (Show n, Show a) => Show (Tree2D n a) where
     show (Tree2D _ _ _ t) = show t
 
 instance (Show n, Show a) => Show (XTree n a) where
-    show (XFork n a b c) = "XFork " <> show n <> " (" <> show a <> ") (" <> show b <>  ") (" <> show c <> ")"
-    show (XLeaf xs)     = "XLeaf " <> show xs
+    show (XFork avg n a b c) = "XFork " <> show avg <> " " <> show n <> " (" <> show a <> ") (" <> show b <>  ") (" <> show c <> ")"
+    show (XLeaf xs)        = "XLeaf " <> show xs
 
 instance (Show n, Show a) => Show (YTree n a) where
-    show (YFork n a b c) = "YFork " <> show n <> " (" <> show a <> ") (" <> show b <>  ") (" <> show c <> ")"
-    show (YLeaf xs)     = "YLeaf " <> show xs
+    show (YFork avg n a b c) = "YFork " <> show avg <> " " <> show n <> " (" <> show a <> ") (" <> show b <>  ") (" <> show c <> ")"
+    show (YLeaf xs)        = "YLeaf " <> show xs
 
 {-# INLINE empty #-}
 empty :: (Floating n, Ord n) => (a -> n) -> (a -> n) -> (a -> n) -> Tree2D n a
@@ -38,7 +38,7 @@ make getR getX getY xs = makeFrom (empty getR getX getY) xs
 {-# INLINE makeFrom #-}
 makeFrom :: (Floating n, Ord n, Ord a, Show a, Show n) => Tree2D n a -> [a] -> Tree2D n a
 makeFrom (Tree2D getR getX getY _) qs = {-# SCC "makeFrom" #-}
-    Tree2D getR getX getY $ makeX (mean 0 0 getX qs) qs
+    Tree2D getR getX getY $ makeX (mean (0::Int) 0 getX qs) qs
     where
     makeX _ [] = XLeaf []
     makeX avg xs =
@@ -50,7 +50,11 @@ makeFrom (Tree2D getR getX getY _) qs = {-# SCC "makeFrom" #-}
             else
                 if rn < 1 && cn < 1
                 then XLeaf ls
-                else XFork avg (makeY (la / ln) ls) (makeY (ca / cn) cs) (makeY (ra / rn) rs)
+                else XFork avg 
+                           (ln + cn + rn) 
+                           (makeY (la / fromIntegral ln) ls) 
+                           (makeY (ca / fromIntegral cn) cs) 
+                           (makeY (ra / fromIntegral rn) rs)
         where
         (ls,la,ln,cs,ca,cn,rs,ra,rn) = split avg getX xs [] 0 0 [] 0 0 [] 0 0
 
@@ -64,11 +68,15 @@ makeFrom (Tree2D getR getX getY _) qs = {-# SCC "makeFrom" #-}
             else
                 if rn < 1 && cn < 1
                 then YLeaf ls
-                else YFork avg (makeX (la / ln) ls) (makeX (ca / cn) cs) (makeX (ra / rn) rs)
+                else YFork avg 
+                           (ln + cn + rn) 
+                           (makeX (la / fromIntegral ln) ls) 
+                           (makeX (ca / fromIntegral cn) cs) 
+                           (makeX (ra / fromIntegral rn) rs)
         where
         (ls,la,ln,cs,ca,cn,rs,ra,rn) = split avg getY xs [] 0 0 [] 0 0 [] 0 0
 
-    mean n a _ [    ] = a / n
+    mean n a _ [    ] = a / fromIntegral n
     mean n a f (x:xs) = mean (n + 1) (a + f x) f xs
 
     split _   _ []     !ls !la !ln !cs !ca !cn !rs !ra !rn = (ls,la,ln,cs,ca,cn,rs,ra,rn)
@@ -84,13 +92,62 @@ makeFrom (Tree2D getR getX getY _) qs = {-# SCC "makeFrom" #-}
             then split avg f xs ls la ln (x:cs) (ca+v) (cn+1) rs ra rn
             else split avg f xs ls la ln cs ca cn (x:rs) (ra+v) (rn+1)
 
+sortGroups :: (Ord n) => Tree2D n a -> (n,n,n) -> [a]
+sortGroups (Tree2D _ _ _ (XLeaf set))   _         = set
+sortGroups (Tree2D getR getX getY fork) (x,y,r) = kNearX fork
+    where
+    ---------------------------------------------------
+    kNearX (XFork avg _ l c r) = 
+        if x < avg
+        then kNearY l ++ kNearY c ++ kNearY r
+        else kNearY r ++ kNearY c ++ kNearY l
+    kNearX (XLeaf xs) = xs
+    ---------------------------------------------------
+    kNearY (YFork avg _ l c r) = 
+        if x < avg
+        then kNearX l ++ kNearX c ++ kNearX r
+        else kNearX r ++ kNearX c ++ kNearX l
+    kNearY (YLeaf xs) = xs
+
+    numX (XFork _ n _ _ _) = n
+    numX (XLeaf xs)        = length xs
+    numY (YFork _ n _ _ _) = n
+    numY (YLeaf xs)        = length xs
+
+kNearest :: (Ord n) => Tree2D n a -> Int -> (n,n,n) -> [a]
+kNearest (Tree2D _ _ _ (XLeaf set))   k _       = take k set
+kNearest (Tree2D getR getX getY fork) k (x,y,r) = kNearX fork
+    where
+    ---------------------------------------------------
+    kNearX (XFork avg _ l c r) = 
+        if numY l + numY c <= k || numY r + numY c <= k
+        then kNearY l ++ kNearY c ++ kNearY r
+        else 
+            if x < avg
+            then kNearY l
+            else kNearY r
+    kNearX (XLeaf xs) = xs
+    ---------------------------------------------------
+    kNearY (YFork avg _ l c r) = 
+        if numX l + numX c <= k || numX r + numX c <= k
+        then kNearX l ++ kNearX c ++ kNearX r
+        else 
+            if x < avg
+            then kNearX l
+            else kNearX r
+    kNearY (YLeaf xs) = xs
+
+    numX (XFork _ n _ _ _) = n
+    numX (XLeaf xs)        = length xs
+    numY (YFork _ n _ _ _) = n
+    numY (YLeaf xs)        = length xs
+
 {-# INLINE inRange #-}
 inRange :: (Floating n, Ord n, Ord a) => Tree2D n a -> (n,n,n) -> [a]
 inRange (Tree2D _ _ _ (XLeaf set)) _ = set
-inRange (Tree2D getR getX getY fork) (x,y,r) =
-    inRngX fork
+inRange (Tree2D getR getX getY fork) (x,y,r) = inRngX fork
     where
-    inRngX (XFork avg left center right) =
+    inRngX (XFork avg _ left center right) =
         if x < avg
         then 
             if x + r >= avg
@@ -102,7 +159,7 @@ inRange (Tree2D getR getX getY fork) (x,y,r) =
             else inRngY right <> inRngY center
     inRngX (XLeaf set) = filter isNear set
     
-    inRngY (YFork avg left center right) =
+    inRngY (YFork avg _ left center right) =
         if y < avg
         then 
             if y + r >= avg
@@ -124,7 +181,7 @@ inRangeMatching (Tree2D getR getX getY (XLeaf xs)) f (x,y,r) = filter (\a -> isN
 inRangeMatching (Tree2D getR getX getY fork) f (x,y,r) =
     inRngX fork
     where
-    inRngX (XFork avg left center right) =
+    inRngX (XFork avg _ left center right) =
         if x < avg
         then 
             if x + r >= avg
@@ -136,7 +193,7 @@ inRangeMatching (Tree2D getR getX getY fork) f (x,y,r) =
             else inRngY right <> inRngY center
     inRngX (XLeaf xs) = filter (\a -> isNear a && f a) xs
     
-    inRngY (YFork avg left center right) =
+    inRngY (YFork avg _ left center right) =
         if y < avg
         then 
             if y + r >= avg

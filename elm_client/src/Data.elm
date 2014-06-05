@@ -5,8 +5,8 @@ import Grid
 import Window
 import Dict
 
-gridW = 1024
-gridH = 1024
+gridW = 128
+gridH = 128
 gridWH = (gridW,gridH)
 
 type UnitDict = Dict.Dict (Int,Int) (Unit,Unit)

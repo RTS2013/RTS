@@ -1,3 +1,7 @@
+websockets ==0.8.2.2
+scientific ==0.2.0.2
+io-streams ==1.1.4.3
+criterion -any
 accelerate -any
 astar -any
 hsnoise -any
@@ -6,7 +10,6 @@ MonadRandom -any
 hashtables -any
 monad-par -any
 repa -any
-websockets -any
 text -any
 split -any
 stm -any

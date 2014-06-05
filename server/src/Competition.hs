@@ -1,9 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Competition 
-( getMessages
+( messages
+, joiners
+, playerTeam
 , begin
 , sendPiecesToParty
+, sendPiecesPerMicrosecondsToPlayer
 , Competition(..)
 , Name
 ) where
@@ -13,7 +16,8 @@ import           Control.Concurrent.STM
 import           Control.Concurrent ( ThreadId
                                     , forkIO
                                     , killThread
-                                    , myThreadId )
+                                    , myThreadId
+                                    , threadDelay )
 import           Control.Exception (onException)
 import           Control.Monad (forever)
 import           Data.Binary (get)
@@ -46,6 +50,7 @@ data Competition a = Competition
     { cptnParties :: TVar (IntMap (Map Name Member))
     , cptnMembers :: TVar (Map Name PartyID)
     , cptnMailbox :: TVar [(a, Name)]
+    , cptnJoiners :: TVar [Name]
     } 
 
 data Member = Member
@@ -57,12 +62,22 @@ data Member = Member
 data Status = Connected Connection ThreadId
             | Disconnected
 
-getMessages :: Competition a -> IO [(a,Name)]
-getMessages cptn = atomically $ do
+messages :: Competition a -> IO [(a,Name)]
+messages cptn = atomically $ do
     let mailbox = cptnMailbox cptn
     msgs <- readTVar mailbox
     writeTVar mailbox []
     return msgs
+
+playerTeam :: Competition a -> Name -> IO Int
+playerTeam cptn name = fmap (M.! name) $ atomically $ readTVar (cptnMembers cptn)
+
+-- List of players who joined since the last time this function was called
+joiners :: Competition a -> IO [Name]
+joiners cptn = atomically $ do
+    joins <- readTVar (cptnJoiners cptn)
+    writeTVar (cptnJoiners cptn) []
+    return joins
 
 begin :: Int -> Get a -> [[(Name,Pass)]] -> IO (ThreadId,Competition a)
 begin port decodeMsg namesAndPasses = do
@@ -71,9 +86,11 @@ begin port decodeMsg namesAndPasses = do
     partiesVar   <- newTVarIO $ IM.fromList $ zip [0..] $ map M.fromList partyMembers
     membersVar   <- newTVarIO $ M.fromList $ concat $ zipWith (\i xs -> map (\v -> (fst v,i)) xs) [0..] $ namesAndPasses
     mailboxVar   <- newTVarIO []
+    joinersVar   <- newTVarIO []
     let cptn = Competition { cptnParties = partiesVar
                            , cptnMailbox = mailboxVar
-                           , cptnMembers = membersVar }
+                           , cptnMembers = membersVar 
+                           , cptnJoiners = joinersVar }
     cptnThread <- forkIO $ W.runServer "0.0.0.0" port $ \pconn -> do
         conn  <- W.acceptRequest pconn
         hello <- W.receive conn
@@ -97,35 +114,37 @@ begin port decodeMsg namesAndPasses = do
                                     else do
                                         writeTVar (memberLast member) joinTime
                                         writeTVar (memberStatus member) $ Connected conn joinThread
+                                        modifyTVar' joinersVar (name:)
                                         return $ Just member
                             else 
                                 return Nothing
                         case joined of
-                            Just member -> TIO.putStrLn (name <> " connected.") >> forever (do
-                                msg <- onException (W.receive conn) $ do
-                                    TIO.putStrLn $ name <> " disconnected."
-                                    atomically $ writeTVar (memberStatus member) Disconnected
-                                    myThreadId >>= killThread
-                                case msg of 
-                                    W.DataMessage (W.Binary msgBS) -> 
-                                        case G.runGetOrFail decodeMsg msgBS of
-                                            Left _ -> do
-                                                TIO.putStrLn $ name <> " sent an incorrectly encoded message."
-                                                atomically $ writeTVar (memberStatus member) Disconnected
-                                                W.sendClose conn ("Bad message encoding." :: ByteString)
-                                                myThreadId >>= killThread
-                                            Right (_,_,newMsg) -> do
-                                                lastTime <- Clock.getCurrentTime
-                                                atomically $ do
-                                                    writeTVar (memberLast member) lastTime
-                                                    mail <- readTVar mailboxVar 
-                                                    writeTVar mailboxVar $ (newMsg,name):mail
-                                    _ -> do
-                                        TIO.putStrLn $ name <> " used the wrong message format."
+                            Just member -> do
+                                TIO.putStrLn (name <> " connected.")
+                                forever $ do
+                                    msg <- onException (W.receive conn) $ do
+                                        TIO.putStrLn $ name <> " disconnected."
                                         atomically $ writeTVar (memberStatus member) Disconnected
-                                        W.sendClose conn ("Bad message format." :: ByteString)
                                         myThreadId >>= killThread
-                                )
+                                    case msg of 
+                                        W.DataMessage (W.Binary msgBS) -> 
+                                            case G.runGetOrFail decodeMsg msgBS of
+                                                Left _ -> do
+                                                    TIO.putStrLn $ name <> " sent an incorrectly encoded message."
+                                                    atomically $ writeTVar (memberStatus member) Disconnected
+                                                    W.sendClose conn ("Bad message encoding." :: ByteString)
+                                                    myThreadId >>= killThread
+                                                Right (_,_,newMsg) -> do
+                                                    lastTime <- Clock.getCurrentTime
+                                                    atomically $ do
+                                                        writeTVar (memberLast member) lastTime
+                                                        mail <- readTVar mailboxVar 
+                                                        writeTVar mailboxVar $ (newMsg,name):mail
+                                        _ -> do
+                                            TIO.putStrLn $ name <> " used the wrong message format."
+                                            atomically $ writeTVar (memberStatus member) Disconnected
+                                            W.sendClose conn ("Bad message format." :: ByteString)
+                                            myThreadId >>= killThread
                             Nothing -> do 
                                 TIO.putStrLn $ name <> " failed to join."
                                 W.sendClose conn ("Failed to join." :: ByteString)
@@ -147,14 +166,22 @@ newMember time (name,pass) = do
 sendPiecesToParty :: Competition a -> Int -> Builder -> [Builder] -> Int -> IO ()
 sendPiecesToParty cptn chunkSize header pieces pID = ignore $ forkIO $ do
     members <- atomically $ fmap (IM.! pID) $ readTVar (cptnParties cptn) 
-    flip mapM_ (M.elems members) $ withMemberConn (\c -> mapM_ (sendMsg c) chopList)
+    let choppedList = chopList chunkSize header pieces
+    flip mapM_ (M.elems members) $ withMemberConn (\c -> mapM_ (sendMsg c) choppedList)
     where
     ignore m = m >> return ()
-    sendMsg :: Connection -> ByteString -> IO ()
-    sendMsg conn = flip onException (putStrLn "You suck")
-                 . W.send conn . W.DataMessage . W.Binary
-    chopList :: [ByteString]
-    chopList = map (\xs -> toLazyByteString . mconcat $ (header:fromWord16be (genericLength xs):xs)) $ chunksOf chunkSize pieces
+
+
+chopList :: Int -> Builder -> [Builder] -> [ByteString]
+chopList chunkSize header pieces
+    = map (\xs -> toLazyByteString . mconcat 
+    $ (header:fromWord16be (genericLength xs):xs)) 
+    $ chunksOf chunkSize pieces
+
+
+sendMsg :: Connection -> ByteString -> IO ()
+sendMsg conn = flip onException (TIO.putStrLn "You suck")
+             . W.send conn . W.DataMessage . W.Binary
 
 
 decodeText :: Get Text
@@ -176,3 +203,12 @@ withMemberConn f m = do
     case ms of
         Connected conn _ -> f conn
         _                -> return ()
+
+sendPiecesPerMicrosecondsToPlayer :: Competition a -> Int -> Int -> Builder -> [Builder] -> Name -> IO ()
+sendPiecesPerMicrosecondsToPlayer cptn microseconds chunkSize header pieces name = ignore $ forkIO $ do
+    pID <- playerTeam cptn name
+    members <- atomically $ fmap (IM.! pID) $ readTVar (cptnParties cptn) 
+    let choppedList = chopList chunkSize header pieces
+    withMemberConn (\c -> mapM_ (\bs -> sendMsg c bs >> threadDelay microseconds) choppedList) $ members M.! name
+    where
+    ignore m = m >> return ()

@@ -161,8 +161,8 @@
   (major1) == 2 && (major2) <  4 || \
   (major1) == 2 && (major2) == 4 && (minor) <= 3)
 
-/* package text-1.1.1.2 */
-#define VERSION_text "1.1.1.2"
+/* package text-1.1.1.3 */
+#define VERSION_text "1.1.1.3"
 #define MIN_VERSION_text(major1,major2,minor) (\
   (major1) <  1 || \
   (major1) == 1 && (major2) <  1 || \

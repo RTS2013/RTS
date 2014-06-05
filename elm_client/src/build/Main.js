@@ -395,8 +395,8 @@ Elm.Data.make = function (_elm) {
              ,mode: d
              ,units: e};
    });
-   var gridH = 1024;
-   var gridW = 1024;
+   var gridH = 128;
+   var gridW = 128;
    var gridWH = {ctor: "_Tuple2"
                 ,_0: gridW
                 ,_1: gridH};

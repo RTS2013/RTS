@@ -24,6 +24,7 @@ import qualified Grid.Boxed   as G
 import qualified Grid.Unboxed as UG
 import           Tree2D (Tree2D)
 import           MIO.Privileges
+import qualified Pathfinding as P
 
 type Ref = IORef
 type HashTable a = BasicHashTable Int a
@@ -32,14 +33,13 @@ data Game g u t = Game
     { gameStepRef      :: !(Ref Double)
     , gameStateRef     :: !(Ref g)
     , gameKDTRef       :: !(Ref (Tree2D Double (Unit g u t)))
-    , gameTilesRef     :: !(Ref (UG.Grid (Int,Bool)))
-    , gameCornersRef   :: !(Ref (G.Grid (Vector (Int,Int))))
+    , gamePathing      :: !(Ref P.Pathing)
     , gameTeamsVec     :: !(IOVector (Team g u t))
     , gameBehaviorsRef :: !(Ref (IntMap (Behavior (Game g u t, Double) (Change (Game g u t) ()))))
     } 
 
 data Team g u t = Team
-    { teamID         :: Int
+    { teamID         :: !Int
     , teamState      :: !(Ref t)
     , teamSpawnCount :: !(Ref Int) -- Incremented with each new unit
     , teamUnits      :: !(HashTable (Unit g u t))
@@ -48,7 +48,7 @@ data Team g u t = Team
 
 data Unit g u t = Unit
     { unitModState    :: !u
-    , unitAnimation   :: Int
+    , unitAnimation   :: !Int
     , unitOrders      :: !(Seq Order)
     , unitMoveState   :: !Vec4
     , unitStaticState :: !(StaticState g u t)
@@ -63,13 +63,13 @@ data Vec4 = Vec4
     } 
 
 data StaticState g u t = StaticState
-    { unitID    :: Int
-    , unitTeam  :: Int
-    , unitType  :: Int
-    , speedBase :: Double
-    , speed     :: Double
-    , weight    :: Double
-    , radius    :: Double
+    { unitID    :: !Int
+    , unitTeam  :: !Int
+    , unitType  :: !Int
+    , speedBase :: !Double
+    , speed     :: !Double
+    , weight    :: !Double
+    , radius    :: !Double
     , unitVals  :: !(Unit g u t -> [(Word8,Word16)])
     }
 
@@ -132,8 +132,24 @@ data Order
                 ![(Double,Double)] -- Path
     deriving (Generic)
 
-instance Binary Orders
-instance Binary Order
+instance Binary Orders where
+    put _ = undefined
+    get = do
+        order <- get :: Get Order
+        n     <- get :: Get Word16
+        ids <- mapM (\_ -> get :: Get Int) [1..n]
+        return $ Orders True ids order
+
+instance Binary Order where
+    put _ = undefined
+    get = do
+        header <- get :: Get Word8
+        case header of
+            1 -> do
+                x <- fmap wordToDouble get
+                y <- fmap wordToDouble get
+                return $ Move x y []
+            _ -> return Standby
 
 ----------------------------------------------------------------------------
 --             # DATA SENT OVER WIRE FROM SERVER TO CLIENT #              --
@@ -207,7 +223,7 @@ instance Binary TargetFX
 
 data TargetFX = TargetFX
     { targetfxID   :: !Word16
-    , targetfxUID  :: Int32
+    , targetfxUID  :: !Int32
     , targetfxteam :: !Word8
     } deriving (Generic)
 

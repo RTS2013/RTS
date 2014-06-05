@@ -55,7 +55,7 @@ getPrefixDirRel dirRel = try_size 2048 -- plenty, PATH_MAX is 512 under Win32.
               return ((bindir `minusFileName` bindirrel) `joinFileName` dirRel)
             | otherwise  -> try_size (size * 2)
 
-foreign import stdcall unsafe "windows.h GetModuleFileNameW"
+foreign import ccall unsafe "windows.h GetModuleFileNameW"
   c_GetModuleFileName :: Ptr () -> CWString -> Int32 -> IO Int32
 
 minusFileName :: FilePath -> String -> FilePath

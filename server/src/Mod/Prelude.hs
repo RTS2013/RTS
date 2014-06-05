@@ -15,7 +15,7 @@ import qualified Data.IntMap as IM
 import qualified Data.Sequence as Seq
 import qualified Tree2D as KDT
 import Data
-import Pathing
+import Pathfinding
 import Movers (wallStop,move)
 
 type TimeDelta = Double
@@ -119,27 +119,26 @@ handleOrdersBehavior = do
 groundMoveBehavior :: Double -> Double -> [(Double,Double)] -> PBehavior g u t
 groundMoveBehavior x y _ = do
     (game,td,unit) <- behaving
-    let unitToStats u = let (ux,uy) = getUnitPosition u in (ux,uy,radius $ unitStaticState u, weight $ unitStaticState u)
+    let unitToStats u = let (ux,uy) = getUnitPosition u in (ux,uy,radius $! unitStaticState u, weight $! unitStaticState u)
     let (!ux,!uy,!ur,!uw) = unitToStats unit
-    tiles <- Ref.read (gameTilesRef game)
-    corners <- Ref.read (gameCornersRef game)
+    pathing <- Ref.read (gamePathing game)
     kdt <- Ref.read (gameKDTRef game)
-    let newPath = maybe [(floor x, floor y)] id $ getPath
-            (\xy -> maybe False snd $ GU.read tiles xy)
-            (maybe UV.empty id . GB.read corners)
+    let newPath = maybe [(floor x, floor y)] id $! getPath
+            pathing
             (floor ux, floor uy)
             (floor x, floor y)
-    let moveXY dx dy = runIdentity . wallStop 
-            (\(tx,ty) -> return . maybe False snd $ GU.read tiles (floor tx, floor ty))
-            (ux,uy,ur) $ move (ux,uy,ur,uw) (dx,dy) 
-                              (td * speed (unitStaticState unit))
-                              (map unitToStats $ KDT.inRange kdt (ux,uy,ur))
+    let moveXY dx dy = runIdentity 
+                    $! wallStop (\(tx,ty) -> return . maybe False id $! isTileOpen pathing (floor tx) (floor ty))
+                                (ux,uy,ur) 
+                    $! move (ux,uy,ur,uw) (dx,dy) 
+                            (td * speed (unitStaticState unit))
+                            (map unitToStats $ KDT.inRange kdt (ux,uy,ur))
     case newPath of
         (dx,dy):_ -> do
             let (nx,ny) = moveXY (fromIntegral dx) (fromIntegral dy)
-            dx `seq` dy `seq` nx `seq` ny `seq` return $! do
+            dx `seq` dy `seq` nx `seq` ny `seq` return $!
                 changeUnit unit (setUnitFacingAngle (atan2 (ny-uy) (nx-ux)) . setUnitPosition (nx,ny))
         _ -> do
-            let (nx,ny) = moveXY 500 500
+            let (nx,ny) = moveXY x y
             nx `seq` ny `seq`
                 return $! changeUnit unit (setUnitFacingAngle (atan2 (ny-uy) (nx-ux)) . setUnitPosition (nx,ny))

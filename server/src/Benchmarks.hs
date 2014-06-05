@@ -2,15 +2,15 @@ module Benchmarks where
 
 import qualified Data.Set as Set
 import qualified Data.IntMap.Strict as IM
-import Data.List (foldl')
-import Criterion (bench,nf)
-import Criterion.Main (defaultMain)
-import Control.Monad (replicateM_)
-import Control.Monad.Par.IO as P
-import Control.Monad.Par.Class as P
-import Control.Monad.IO.Class (liftIO)
-import Data.IORef
-import Data.Time.Clock (diffUTCTime,getCurrentTime)
+import           Data.List (foldl')
+import           Criterion (bench,nf)
+import           Criterion.Main (defaultMain)
+import           Control.Monad (replicateM_)
+import           Control.Monad.Par.IO as P
+import           Control.Monad.Par.Class as P
+import           Control.Monad.IO.Class (liftIO)
+import           Data.IORef
+import           Data.Time.Clock (diffUTCTime,getCurrentTime)
 
 main2 :: IO ()
 main2 = do
