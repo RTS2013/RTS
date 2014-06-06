@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script src="StringView.js"></script>
+<script src="Buckets.js"></script>
+<script src="Chef.js"></script>
+<script src="Cereal.js"></script>
+<script src="Data.js"></script>
+
+<script>
+var game = new Game('Zach','Kittens',new Array());
+var chef = new Chef();
+chef.putString('Zach');
+chef.putString('Kittens');
+chef.trim();
+var conn = new WebSocket('ws://76.121.129.76:4444');
+conn.binaryType = "arraybuffer";
+conn.onopen = function(){
+   conn.send(chef.ab);
+   console.log('Connection open!');
+}
+
+conn.onmessage = function (event) {
+	console.log('Received Packet');
+    //game.getGameInfo(new Cereal(new DataView(event.data)));
+}
+
+conn.onerror = function (event) {
+	console.log('Socket Error');
+}
+
+conn.onclose = function (event) {
+	console.log('Closed Socket')
+}
+</script>
+</body>
+</html>

@@ -25,6 +25,7 @@ RTS.Preloader.prototype = {
 		//any layout you can think of.
 		
 		this.load.spritesheet('testUnitImg', '../assets/units/testUnitSprite.png', 64, 64, 4);
+		this.load.spritesheet('animUnitSheet', '../assets/units/fullUnitSpriteSheet2.png', 64, 64, 28);
 		this.load.image('aButtonImg', '../assets/UIbuttons/A-Button.png');
 		this.load.image('bButtonImg', '../assets/UIbuttons/B-Button.png');
 		this.load.image('eButtonImg', '../assets/UIbuttons/Exl-Button.png');
@@ -36,6 +37,9 @@ RTS.Preloader.prototype = {
 
 		this.load.image('bevBrownTile64', '../assets/brokenBunkerTile1_64x64.png');
 		this.load.image('regBrownTile64', '../assets/brokenBunkerTile2_64x64.png');
+
+		this.load.image('mainMenuBG', '../assets/futureProofPhaserMenu.png');
+		this.load.image('startButton', '../assets/Start.png');
 
 		game.load.image('ground_1x1', '../assets/ground_1x1.png');
 	},
