@@ -99,7 +99,7 @@ var IN = {
 
 	listen: function(){
 		 //Mouse pointer
-//MARQUEE SELECT IS ALL F'd UP
+		//MARQUEE SELECT IS ALL F'd UP
 		if (game.input.pointer1.isDown && game.input.pointer2.isDown){
 			this.setQuads(game.input.pointer1.x, game.input.pointer1.y);
 
